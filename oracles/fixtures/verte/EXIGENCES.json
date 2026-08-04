@@ -1,0 +1,81 @@
+{
+  "projet": "Suivi des demandes d'absence",
+  "date_generation": "2026-08-04",
+  "entrant": {
+    "type": "cdc",
+    "libelle": "Cahier des charges simple, 4 pages, fourni par le client",
+    "seuil_suffisance": "atteint : 2 objets métier et 2 rôles identifiés"
+  },
+  "identifiants_retires": ["E-003"],
+  "besoins": [
+    { "id": "B-01", "enonce": "Un salarié doit pouvoir déclarer une absence sans passer par son responsable." },
+    { "id": "B-02", "enonce": "Un responsable doit savoir qui est absent à une date donnée." },
+    { "id": "B-03", "enonce": "L'entreprise doit respecter ses obligations de conservation des données." }
+  ],
+  "surface": [
+    { "id": "S-01", "type": "objet", "libelle": "Demande d'absence" },
+    { "id": "S-02", "type": "objet", "libelle": "Solde de congés" },
+    { "id": "S-03", "type": "role", "libelle": "Salarié" },
+    { "id": "S-04", "type": "role", "libelle": "Responsable" },
+    { "id": "S-05", "type": "parcours", "libelle": "Déclaration d'une absence" }
+  ],
+  "exigences": [
+    {
+      "id": "E-001",
+      "besoin": "B-01",
+      "enonce": "Le salarié enregistre une demande d'absence depuis son espace personnel.",
+      "critere": "La demande est enregistrée avec un identifiant propre et un statut initial.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC client section 2.1" },
+      "surface": ["S-01", "S-03"],
+      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+    },
+    {
+      "id": "E-002",
+      "besoin": "B-01",
+      "enonce": "Le solde de congés du salarié est diminué à la validation de la demande.",
+      "critere": "Le solde affiché après validation égale le solde antérieur diminué des jours demandés, écart toléré 0 jour.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "hypothèse",
+        "validation": "à confirmer avec le service paie avant le palier V1"
+      },
+      "surface": ["S-02"],
+      "cotation": { "impact": 4, "confiance": 2, "effort": 3 }
+    },
+    {
+      "id": "E-004",
+      "besoin": "B-02",
+      "enonce": "Le responsable consulte la liste des absents pour une date choisie.",
+      "critere": "La liste retourne uniquement les demandes au statut validé chevauchant la date choisie.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "Entretien responsable RH, compte rendu joint" },
+      "surface": ["S-04", "S-05"],
+      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+    },
+    {
+      "id": "E-005",
+      "besoin": "B-02",
+      "enonce": "Le responsable reçoit une notification à chaque nouvelle demande de son équipe.",
+      "critere": "La notification est envoyée dans un délai inférieur ou égal à 5 min après enregistrement.",
+      "palier": "V1",
+      "statut_epistemique": {
+        "nature": "hypothèse",
+        "validation": "atelier de cadrage avec les responsables, non encore tenu"
+      },
+      "surface": ["S-05"],
+      "cotation": { "impact": 3, "confiance": 2, "effort": 3 }
+    },
+    {
+      "id": "E-006",
+      "besoin": "B-03",
+      "enonce": "Les données d'absence sont conservées pendant la durée légale applicable.",
+      "critere": "Une demande dont la date de fin dépasse 60 mois est purgée.",
+      "palier": "V1",
+      "statut_epistemique": { "nature": "fait constaté", "source": "Politique de conservation, version en vigueur" },
+      "surface": [],
+      "hors_surface": "exigence de rétention, sans élément de surface fonctionnelle associé",
+      "cotation": { "impact": 4, "confiance": 5, "effort": 1 }
+    }
+  ]
+}

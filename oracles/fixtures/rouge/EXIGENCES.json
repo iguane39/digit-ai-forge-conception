@@ -1,0 +1,59 @@
+{
+  "projet": "FIXTURE ROUGE — un défaut planté par règle. Ne jamais servir de modèle.",
+  "date_generation": "2026-08-04",
+  "entrant": { "type": "cdc", "libelle": "fixture" },
+  "identifiants_retires": ["R-900"],
+  "besoins": [
+    { "id": "B-01", "enonce": "Réduire le délai de traitement des dossiers." },
+    { "id": "B-02", "enonce": "Assurer la traçabilité des pièces jointes." }
+  ],
+  "surface": [
+    { "id": "S-01", "type": "objet", "libelle": "Dossier" },
+    { "id": "S-02", "type": "objet", "libelle": "Pièce jointe" },
+    { "id": "S-03", "type": "role", "libelle": "Agent" }
+  ],
+  "exigences": [
+    {
+      "_defauts_plantes": ["E3", "E4", "E5", "E6", "T4", "A1"],
+      "id": "R-001",
+      "besoin": "B-01",
+      "enonce": "L'agent traite 3 000 dossiers par mois ; puis les archive.",
+      "critere": "Le traitement est rapide et complet.",
+      "palier": "Phase 1",
+      "statut_epistemique": { "nature": "fait constaté" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 4, "confiance": 3, "effort": 3 }
+    },
+    {
+      "_defauts_plantes": ["E1", "T1", "T2", "S3"],
+      "id": "R-002",
+      "besoin": "B-99",
+      "enonce": "Le dossier est consultable.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC section 1" },
+      "cotation": { "impact": 3, "confiance": 3, "effort": 2 }
+    },
+    {
+      "_defauts_plantes": ["E2"],
+      "id": "R-001",
+      "besoin": "B-01",
+      "enonce": "L'agent clôture le dossier.",
+      "critere": "Le dossier est enregistré comme clos.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC section 3" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 3, "confiance": 4, "effort": 1 }
+    },
+    {
+      "_defauts_plantes": ["E2", "T2", "T4", "S3"],
+      "id": "R-900",
+      "besoin": "B-01",
+      "enonce": "Une pièce jointe est ajoutée au dossier.",
+      "critere": ["deux critères", "dans un tableau"],
+      "palier": "V2",
+      "statut_epistemique": { "nature": "hypothèse" },
+      "surface": ["S-77"],
+      "cotation": { "impact": 2, "confiance": 2, "effort": 2 }
+    }
+  ]
+}
