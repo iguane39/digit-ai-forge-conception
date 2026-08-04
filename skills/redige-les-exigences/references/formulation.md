@@ -36,6 +36,16 @@ Un nombre sans unité n'est pas un critère chiffré : « le délai est de 5 » 
 Liste **fermée et versionnée** dans `oracles/oracle-exigences.mjs`. L'élargir est une décision,
 pas une commodité : chaque ajout affaiblit la règle.
 
+Les formes accordées de ces prédicats sont acceptées sans reformulation artificielle — féminin,
+pluriel, et la bascule `est` → `sont` qui va avec un sujet pluriel :
+
+> Les demandes concernées **sont présentes** dans la notification envoyée au responsable.
+
+`sont présentes`, `est présente`, `sont créés`, `ne sont pas affichées`… sont dérivées de leur
+entrée dans la liste, pas ajoutées à la main : la liste fermée elle-même ne bouge pas. Seuls les
+prédicats verbaux (`retourne`, `existe`, `échoue`…) restent à écrire tels quels — un verbe plein
+n'a pas d'accord de genre, et sa conjugaison plurielle sort du périmètre de cette règle.
+
 ## La liste noire
 
 Aucun de ces termes ne peut apparaître dans un énoncé ni dans un critère — E4 :

@@ -10,7 +10,11 @@
   "besoins": [
     { "id": "B-01", "enonce": "Un salarié doit pouvoir déclarer une absence sans passer par son responsable." },
     { "id": "B-02", "enonce": "Un responsable doit savoir qui est absent à une date donnée." },
-    { "id": "B-03", "enonce": "L'entreprise doit respecter ses obligations de conservation des données." }
+    {
+      "id": "B-03",
+      "enonce": "L'entreprise doit respecter ses obligations de conservation des données pendant 60 mois.",
+      "source": "Politique de conservation, version en vigueur"
+    }
   ],
   "surface": [
     { "id": "S-01", "type": "objet", "libelle": "Demande d'absence" },
@@ -76,6 +80,19 @@
       "surface": [],
       "hors_surface": "exigence de rétention, sans élément de surface fonctionnelle associé",
       "cotation": { "impact": 4, "confiance": 5, "effort": 1 }
+    },
+    {
+      "id": "E-007",
+      "besoin": "B-02",
+      "enonce": "Les responsables sont notifiés lorsque plusieurs demandes se chevauchent pour leur équipe.",
+      "critere": "Les demandes concernées sont présentes dans la notification envoyée au responsable.",
+      "palier": "V1",
+      "statut_epistemique": {
+        "nature": "hypothèse",
+        "validation": "à confirmer avec les responsables lors de l'atelier V1"
+      },
+      "surface": ["S-05"],
+      "cotation": { "impact": 2, "confiance": 2, "effort": 2 }
     }
   ]
 }

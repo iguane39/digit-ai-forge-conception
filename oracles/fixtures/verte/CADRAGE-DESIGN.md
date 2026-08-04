@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: c74af1807b4abdba3f0e4f6ae844d31706dbf8e0211372aa6296bba95751a8eb -->
+<!-- source-sha256: 19ab3f3d5f62b338addf3a892d010be0db42a7504541b5b8884f9de7eb29328f -->
 
 # Fiche de cadrage design — Suivi des demandes d'absence
 
@@ -23,7 +23,7 @@ puis la vue est régénérée. Une vue éditée est détectée par `oracle-traca
 | Solde de congés | objet | E-002 |
 | Salarié | rôle | E-001 |
 | Responsable | rôle | E-004 |
-| Déclaration d'une absence | parcours | E-004, E-005 |
+| Déclaration d'une absence | parcours | E-004, E-005, E-007 |
 
 ## Ce que cette vue ne dit pas
 

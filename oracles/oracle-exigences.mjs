@@ -29,6 +29,42 @@ const PREDICATS_BINAIRES = [
   'échoue', 'aboutit', 'est identique', 'est différent'
 ]
 
+// R-C5 — les prédicats « est … » / « n'est pas … » acceptent aussi leurs formes accordées
+// (féminin, pluriel : « est présente », « sont présentes », « ne sont pas créés »). La liste
+// fermée ci-dessus ne change pas : chaque variante est DÉRIVÉE de son entrée, aucune n'est
+// ajoutée à la main. Les prédicats verbaux (retourne, existe, échoue…) n'ont pas d'accord de
+// genre et restent matchés tels quels — élargir à leur conjugaison plurielle sortirait du
+// périmètre de ce correctif.
+const ACCORD_IRREGULIER = { faux: ['fausse', 'fausses'] }
+
+function formesAccordees (mot) {
+  if (ACCORD_IRREGULIER[mot]) return [...ACCORD_IRREGULIER[mot], mot]
+  const feminin = mot.endsWith('e') ? mot : mot + 'e'
+  return [...new Set([feminin, mot + 's', feminin + 's'])]
+}
+
+function variantesPredicat (predicat) {
+  let prefixeSingulier, prefixePluriel
+  if (predicat.startsWith("n'est pas ")) {
+    prefixeSingulier = "n'est pas "
+    prefixePluriel = 'ne sont pas '
+  } else if (predicat.startsWith('est ')) {
+    prefixeSingulier = 'est '
+    prefixePluriel = 'sont '
+  } else {
+    return [predicat] // prédicat verbal : forme unique, pas d'accord dérivé
+  }
+  const base = predicat.slice(prefixeSingulier.length)
+  const variantes = new Set([predicat])
+  for (const forme of formesAccordees(base)) {
+    variantes.add(`${prefixeSingulier}${forme}`)
+    variantes.add(`${prefixePluriel}${forme}`)
+  }
+  return [...variantes]
+}
+
+const PREDICATS_BINAIRES_ACCORDES = PREDICATS_BINAIRES.flatMap(variantesPredicat)
+
 // E4 — liste noire. Un critère subjectif n'est pas un critère.
 const LISTE_NOIRE = [
   'optimal', 'optimale', 'optimaux', 'optimales',
@@ -91,7 +127,7 @@ for (const [i, e] of exigences.entries()) {
 
   // E3 — le critère est chiffré ou binaire.
   const chiffre = CHIFFRE.test(critere) || COMPARATEUR.test(critere)
-  const binaire = PREDICATS_BINAIRES.some(p => critere.toLowerCase().includes(p))
+  const binaire = PREDICATS_BINAIRES_ACCORDES.some(p => critere.toLowerCase().includes(p))
   constats.push(chiffre || binaire
     ? constat('E3', PASS, ou, chiffre ? 'critère chiffré avec unité' : 'critère binaire observable')
     : constat('E3', FAIL, ou,
