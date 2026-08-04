@@ -63,6 +63,46 @@ Entrées prêtes pour le registre global : [oracles/registre-entrees.md](oracles
 Le self-test vérifie les **deux sens** : la fixture verte passe, la rouge échoue *et déclenche
 chacune de ses règles*. Un oracle dont une règle ne se déclenche jamais ne juge rien.
 
+## Invocation par un orchestrateur
+
+Un orchestrateur (conducteur, script de run, agent pilote) qui invoque cette forge doit
+connaître trois choses : quels artefacts attendre de chaque verbe, comment rejouer les oracles,
+et ce que signifie un arrêt sous le seuil de suffisance.
+
+**Les 4 verbes et leurs artefacts** — chaque verbe est indépendant, aucune séquence n'est
+imposée :
+
+| Verbe | Entrée | Sortie |
+|---|---|---|
+| `qualifie-l-entrant` | idée, CDC, produit à reprendre, à faire évoluer, produit tiers | `ENTRANT.md`, ou des questions et un arrêt |
+| `enumere-la-surface` | `ENTRANT.md` | `SURFACE.md` |
+| `redige-les-exigences` | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
+| `derive-les-vues` | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
+
+**Rejouer les 4 oracles + le self-test**, depuis la racine du dépôt :
+
+```bash
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 14 règles
+node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
+node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md>
+node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
+node oracles/oracle-claims.mjs      <chemin/EXIGENCES.json>
+```
+
+Sortie JSON sur stdout, exit 0 (PASS), 1 (FAIL — au moins un constat en échec, chacun localisé)
+ou 2 (ERREUR — l'oracle n'a pas pu juger : référentiel illisible ou argument manquant). Un
+orchestrateur doit distinguer 1 de 2 : le premier est un verdict, le second une incapacité à
+juger.
+
+**« Sous le seuil de suffisance » n'est pas un échec.** Quand `qualifie-l-entrant` (ou tout
+autre verbe) constate que l'entrant ne porte pas assez d'information pour produire un artefact
+opposable, la forge rend la main : elle pose des questions indicées `a/b/c`, chacune avec une
+option recommandée et un défaut applicable, puis s'arrête. Un orchestrateur qui reçoit cet état
+ne doit ni le traiter comme une erreur de pipeline ni relancer aveuglément — c'est un point de
+décision humaine légitime. S'il choisit d'appliquer les défauts pour ne pas bloquer un run
+automatisé, chaque défaut appliqué est marqué `hypothèse` dans le référentiel produit, jamais
+`fait constaté`.
+
 ## Les trois interfaces aval
 
 Aucune des trois forges n'a été modifiée pour recevoir ces artefacts. La Conception s'aligne
