@@ -52,6 +52,25 @@ function juger (ou, texte, statut) {
     `statut épistémique : ${nature ?? 'absent'}${source === '' ? ', source vide' : ''}`)
 }
 
+// R-C6 — un besoin n'a pas de `statut_epistemique` au sens des exigences (le schéma ne l'offre
+// pas) mais peut porter un champ `source` optionnel. Un chiffre dans `besoin.enonce` est admis
+// dès que `besoin.source` est non vide, ou que l'énoncé porte « à vérifier ».
+function jugerBesoin (ou, texte, source) {
+  const propre = nettoyer(texte ?? '')
+  if (!CHIFFRE.test(propre)) {
+    return constat('A1', PASS, ou, 'aucun chiffre porteur d\'affirmation')
+  }
+  if (MARQUEUR.test(texte)) {
+    return constat('A1', PASS, ou, 'chiffre marqué « à vérifier »')
+  }
+  const src = typeof source === 'string' ? source.trim() : ''
+  if (src !== '') {
+    return constat('A1', PASS, ou, `chiffre tracé à une source : ${src}`)
+  }
+  return constat('A1', FAIL, ou,
+    'chiffre avancé sans source ni mention « à vérifier » — besoin.source absent ou vide')
+}
+
 // A1 sur les énoncés d'exigence.
 for (const [i, e] of ref.exigences.entries()) {
   const ou = e?.id ? `exigences[${i}].enonce (${e.id})` : `exigences[${i}].enonce`
@@ -62,7 +81,7 @@ for (const [i, e] of ref.exigences.entries()) {
 if (Array.isArray(ref.besoins)) {
   for (const [i, b] of ref.besoins.entries()) {
     const ou = b?.id ? `besoins[${i}].enonce (${b.id})` : `besoins[${i}].enonce`
-    constats.push(juger(ou, b?.enonce, b?.statut_epistemique))
+    constats.push(jugerBesoin(ou, b?.enonce, b?.source))
   }
 } else {
   constats.push(constat('A1', SANS_OBJET, 'besoins[]', 'aucun besoin déclaré'))

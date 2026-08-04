@@ -11,7 +11,7 @@ trois vues aval en sont dérivées. Une modification se fait dans le JSON, jamai
 | `date_generation` | `AAAA-MM-JJ` | Date réelle, jamais codée en dur |
 | `entrant` | objet | `type`, `libelle`, `seuil_suffisance` — repris de `ENTRANT.md` |
 | `identifiants_retires` | tableau de chaînes | Les identifiants morts. **Jamais réaffectés** |
-| `besoins` | tableau | `id`, `enonce` |
+| `besoins` | tableau | `id`, `enonce`, `source` (facultatif) |
 | `surface` | tableau | `id`, `type`, `libelle` — repris de `SURFACE.md` |
 | `exigences` | tableau | Les 8 champs ci-dessous |
 
@@ -31,10 +31,16 @@ trois vues aval en sont dérivées. Une modification se fait dans le JSON, jamai
 \* `surface` peut être vide **à condition** que `hors_surface` porte une raison non vide.
 C'est le cas des exigences non fonctionnelles — rétention, sécurité, disponibilité.
 
-## Champ facultatif
+## Champs facultatifs
 
-`hors_surface` — chaîne. Requis dès que `surface` est vide. Une exigence sans lien de surface
-**et** sans raison est un trou silencieux : S3 la refuse.
+`hors_surface` — chaîne, sur une exigence. Requis dès que `surface` est vide. Une exigence sans
+lien de surface **et** sans raison est un trou silencieux : S3 la refuse.
+
+`source` — chaîne, sur un **besoin**. Un besoin n'a pas de `statut_epistemique` — ce
+formalisme est réservé aux exigences. Mais un `besoin.enonce` peut porter un chiffre (« réduire
+le délai de 30 % ») sans qu'aucun champ n'existe pour le sourcer : `source` comble ce trou.
+`oracle-claims` A1 l'accepte comme preuve suffisante, non vide, au même titre que la mention
+« à vérifier » dans l'énoncé. Un besoin sans chiffre n'a pas besoin de `source`.
 
 ## Les deux formes du statut épistémique
 
