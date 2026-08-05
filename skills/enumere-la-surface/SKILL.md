@@ -1,7 +1,7 @@
 ---
 name: enumere-la-surface
 description: Énumère mécaniquement la surface fonctionnelle d'un produit à concevoir — objets métier, rôles, parcours, points d'entrée, règles de gestion — depuis l'entrant qualifié, et produit un SURFACE.md où chaque élément porte un identifiant stable. Inverse le sens de la génération : on énumère d'abord ce qui existe, on rédige ensuite, pour que tout élément non couvert par une exigence soit un manque nommé et non une absence silencieuse. Use when / déclencher dès qu'il faut inventorier ce qu'un produit doit couvrir avant d'écrire des exigences, lister les objets métier, rôles ou parcours d'un CDC ou d'un dépôt existant, ou vérifier qu'une spécification n'oublie pas une partie du périmètre. Ne pas déclencher pour qualifier l'entrant lui-même (→ qualifie-l-entrant), pour rédiger les exigences (→ redige-les-exigences), ni pour énumérer la surface d'un produit déjà construit à des fins de test (→ Forge Tests, qui l'énumère depuis le code exécutable).
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Énumère la surface
@@ -34,9 +34,11 @@ d'identifiants stables qui survivront jusqu'au champ `risque` de Forge Tests.
 ```
 1. Entrée        → ENTRANT.md, section 3 (extractible obtenu)
 2. Typologie     → references/typologie-surface.md, 5 types
-3. Identifiants  → S-01, S-02… stables, jamais réaffectés
-4. Artefact      → SURFACE.md + le tableau `surface[]` du référentiel
-5. Contrôle      → node oracles/oracle-surface.mjs EXIGENCES.json
+3. Implicite     → references/typologie-surface.md, « Surface implicite SaaS » : chaque
+                   candidat retenu ou écarté explicitement (SURFACE.md section 3)
+4. Identifiants  → S-01, S-02… stables, jamais réaffectés
+5. Artefact      → SURFACE.md + le tableau `surface[]` du référentiel
+6. Contrôle      → node oracles/oracle-surface.mjs EXIGENCES.json
 ```
 
 ## Les cinq types d'élément
@@ -57,6 +59,14 @@ Il n'est jamais réaffecté — c'est la condition pour que la traçabilité sur
 **On énumère ce qui est dit, pas ce qui est probable.** Un objet métier absent de l'entrant
 n'entre pas dans la surface parce qu'il « existe toujours dans ce genre de produit ». S'il
 manque, c'est `ENTRANT.md` section 4 qui le porte, comme hors de portée.
+
+**Exception close : la surface implicite SaaS.** RC-3 (retour production) — un produit livré
+sans aide utilisateur ni onboarding, parce que personne ne les avait proposés et que le CDC ne
+les demandait pas. La règle ci-dessus reste vraie pour tout le reste ; une liste fermée et
+versionnée de candidats attendus par tout utilisateur final d'une application web est en plus
+proposée d'office en fin d'énumération, chacun retenu (→ exigence) ou écarté explicitement dans
+`SURFACE.md` section 3. Liste complète : `references/typologie-surface.md`, section « Surface
+implicite SaaS ».
 
 **Aucune exécution du produit analysé.** L'énumération se fait par lecture. On ne démarre
 aucun serveur, on ne lance aucun script du dépôt.

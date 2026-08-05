@@ -35,6 +35,37 @@ un entrant textuel, et celui qui produit le plus de trous en aval.
 Une règle **citée dans l'entrant**. Une règle déduite est une hypothèse : elle devient une
 exigence marquée `hypothèse`, pas un élément de surface.
 
+## Surface implicite SaaS — candidats proposés d'office
+
+RC-3 (retour production) : le premier produit livré n'avait ni aide utilisateur ni onboarding —
+absents du CDC, jamais proposés par personne, l'utilisateur les considère comme « la base de
+toute appli SaaS ». Loi transverse qui en découle : **l'oubli n'existe pas** — cette liste close
+est proposée d'office en fin d'énumération dès que l'entrant vise une application web/SaaS à
+utilisateur final. Chaque candidat est **retenu** (un `id` comme n'importe quel élément de
+surface, puis une exigence qui le couvre) ou **écarté explicitement**, raison consignée en
+section 3 de `SURFACE.md` (« Écartés »). Un candidat non mentionné dans SURFACE.md est un oubli,
+jamais un arbitrage.
+
+Ceci ne rouvre pas la règle « on énumère ce qui est dit, pas ce qui est probable » ci-dessus :
+c'est une liste **fermée et versionnée**, pas une invitation générale à ajouter ce qui « existe
+toujours dans ce genre de produit ». L'élargir est une décision, pas une commodité — comme pour
+la liste fermée des prédicats binaires de `redige-les-exigences`.
+
+Hors périmètre déclaré d'un coup : un entrant sans IHM utilisateur final (batch, job planifié,
+API interne, produit tiers analysé de l'extérieur) écarte le bloc entier avec une raison unique
+— « pas d'utilisateur final » ou équivalent — sans examiner chaque ligne séparément.
+
+| Candidat | Type suggéré | Origine |
+|---|---|---|
+| Aide utilisateur | `point-entree` (écran, lien ou contenu d'aide) | RC-3, retour littéral |
+| Onboarding / premier lancement | `parcours` | RC-3, retour littéral |
+| Compte utilisateur | `objet` + `parcours` (création, édition) | RC-3, retour littéral |
+| Favicon | `objet` (asset minimal d'identification) | RC-3, retour littéral |
+| États vides guidés | `parcours` (état d'une vue avant tout contenu) | RC-3, retour littéral |
+| Gestion des erreurs visible | `regle` (un échec produit un message observable, jamais un écran silencieux) | Généralisation — invariant d'attente d'un utilisateur final |
+| Mentions légales / pied de page | `point-entree` | Généralisation |
+| Responsive mobile | `regle` (contrainte d'affichage transversale) | Généralisation |
+
 ## Identifiants
 
 `S-01`, `S-02`… Numérotation continue, jamais réaffectée.

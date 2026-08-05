@@ -71,6 +71,25 @@ Cette dernière ligne est la moins intuitive et la plus importante : Forge Tests
 tests contre un identifiant. Changer ce que l'identifiant signifie sans le renommer casse la
 traçabilité en silence.
 
+## Exigences socle candidates
+
+Trois lois transverses constatées en production, proposées d'office lors de la rédaction de
+tout référentiel touchant un produit avec données ou éléments interactifs — jamais imposées,
+jamais absentes en silence. Même mécanique que la surface implicite SaaS d'`enumere-la-surface` :
+chaque candidate est **retenue** (une exigence normale, avec `id`, critère et `surface` ou
+`hors_surface`) ou **écartée explicitement**, raison consignée en section 7 de `EXIGENCES.md`
+(« Ce que le référentiel ne dit pas »). Absente des deux, c'est un oubli.
+
+| Candidate | Loi transverse | Exemple de critère |
+|---|---|---|
+| Données de démonstration invisibles en production | Un jeu de données de démo ne fuite jamais en production | En l'absence du drapeau d'environnement dédié (valeur par défaut : absent), aucune donnée de démonstration n'est affichée |
+| Données volatiles éditables, datées, sourcées | Catalogue, tarifs, taux : toute donnée qui change dans le temps vit en base, jamais en dur dans le code, avec sa date de mise à jour et sa source | Chaque enregistrement du catalogue porte un champ `mise_a_jour_le` et un champ `source` non vides |
+| Effet observable de tout élément interactif | Un contrôle sans effet observable est un défaut, jamais un détail | Chaque action déclenchée par un élément interactif produit un changement d'état visible ou un message |
+
+Hors périmètre déclaré d'un coup : un produit sans données de production, sans catalogue ni
+tarif volatil, ou sans élément interactif écarte la ligne correspondante avec cette seule raison
+— pas d'examen ligne à ligne nécessaire au-delà.
+
 ## Gabarit de `EXIGENCES.md`
 
 | Section | Contenu |
