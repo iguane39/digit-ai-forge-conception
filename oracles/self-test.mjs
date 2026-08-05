@@ -28,9 +28,13 @@ const ORACLES = [
     args: (dossier) => [join(dossier, 'EXIGENCES.json'), '--vue', join(dossier, 'CADRAGE-DESIGN.md')]
   },
   {
+    // RC-1 : la verte porte S-06, un élément de surface volontairement non couvert
+    // (5/6 = 83.3 %). --seuil 80 le maintient au-dessus du seuil pour prouver la branche
+    // « ratio >= seuil -> avertissement nomme (SANS_OBJET), verdict global PASS ». La rouge
+    // (1/3 = 33.3 %) reste tres en dessous : S1 y declenche toujours son FAIL par element.
     fichier: 'oracle-surface.mjs',
     regles: ['S1', 'S2', 'S3'],
-    args: (dossier) => [join(dossier, 'EXIGENCES.json')]
+    args: (dossier) => [join(dossier, 'EXIGENCES.json'), '--seuil', '80']
   },
   {
     fichier: 'oracle-claims.mjs',

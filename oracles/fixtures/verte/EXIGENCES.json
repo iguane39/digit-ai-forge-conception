@@ -21,7 +21,8 @@
     { "id": "S-02", "type": "objet", "libelle": "Solde de congés" },
     { "id": "S-03", "type": "role", "libelle": "Salarié" },
     { "id": "S-04", "type": "role", "libelle": "Responsable" },
-    { "id": "S-05", "type": "parcours", "libelle": "Déclaration d'une absence" }
+    { "id": "S-05", "type": "parcours", "libelle": "Déclaration d'une absence" },
+    { "id": "S-06", "type": "parcours", "libelle": "Export mensuel des absences (V2, non couvert au MVP) — RC-1 : prouve S1 en avertissement non bloquant quand le ratio reste au-dessus du seuil" }
   ],
   "exigences": [
     {
