@@ -39,6 +39,26 @@ et une section finale disant ce que la vue ne dit pas.
 (CDC, user stories) ». Le référentiel passe donc par un entrant existant. **Aucune extension
 du pivot n'est requise.**
 
+**Cas constaté (premier produit réel) — ton fourni par délégation.** Certains entrants ne
+nomment pas le ton, mais le délèguent à une référence externe : « reprendre le ton du site
+X », « même registre que la marque Y ». Ce n'est pas le cas *non dérivable* de la ligne
+« Ton attendu » ci-dessus — une source existe, elle demande seulement à être observée.
+
+Résolution : le ton se dérive par **observation datée** de la référence déléguée (3 mots
+concrets constatés à la lecture du site ou du support cité, jamais *moderne* ni *élégant*).
+La fiche le porte comme une **hypothèse**, au même schéma que `statut_epistemique` dans
+`EXIGENCES.json` :
+- `nature` : hypothèse (une lecture du ton par un tiers reste subjective, même sourcée) ;
+- `source` : la référence déléguée et la date d'observation — ex. « ton observé sur
+  https://exemple.com le 04/08/2026 : direct, technique, peu d'adjectifs » ;
+- `validation` : le mode de levée si le commanditaire doit confirmer avant livraison design.
+
+Ce champ **n'est plus** porté en `*(à demander)*` dans ce cas : une délégation nommée est une
+source, pas une absence. `*(à demander)*` reste réservé au cas où l'entrant ne dit rien du
+ton — ni mots, ni référence à observer. Aucune question n'est posée à l'humain pour trancher
+un ton observable : l'observation datée tient lieu de réponse, sujette à la même
+`validation` que toute autre hypothèse.
+
 ---
 
 ## 2. `MISSION.md` → SaaS Forge

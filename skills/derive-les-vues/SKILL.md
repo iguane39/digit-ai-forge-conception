@@ -59,6 +59,12 @@ Ils sont **demandés**, jamais remplis par défaut. La vue les porte en `*(à de
 dit explicitement dans sa section finale. C'est le point où la Conception rend la main —
 conformément à `ingestion.md` l.44-46, qui pose déjà cette règle côté Design.
 
+**Exception constatée pour `ton`** : si l'entrant délègue le ton à une référence nommée
+(« reprendre le ton du site X »), ce n'est plus un champ sans source — il se dérive par
+observation datée de cette référence, porté en **hypothèse** avec sa source (référence +
+date d'observation), jamais en `*(à demander)*`. Détail et gabarit dans
+`references/vues.md`, section CADRAGE-DESIGN.md.
+
 ## Ce qui n'est jamais fait
 
 Éditer une vue. Inventer un `ton`. Remplir un argument de `cadrer()` par un défaut silencieux.
