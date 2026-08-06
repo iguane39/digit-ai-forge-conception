@@ -66,6 +66,17 @@ API interne, produit tiers analysé de l'extérieur) écarte le bloc entier avec
 | Mentions légales / pied de page | `point-entree` | Généralisation |
 | Responsive mobile | `regle` (contrainte d'affichage transversale) | Généralisation |
 
+**Critères d'acceptation précisés** (2ᵉ inspection utilisateur du premier produit, lot 03) —
+« exister » ne suffit pas, la perception de l'utilisateur fait foi ; ces critères s'écrivent
+dans l'exigence dès que le candidat est retenu :
+- **Onboarding** (RC-4) : une expérience **dominante** de première connexion — panneau de
+  bienvenue en tête de page, progression visible (x/N étapes), badge persistant tant que non
+  complété, actions directes depuis le panneau, disparition à complétion. Une carte repliable
+  discrète « existe » mais n'est pas perçue comme un onboarding : exigence non tenue.
+- **Aide utilisateur** (RD-7) : **trois niveaux** — aide de page (rôle de l'écran, circuit,
+  pièges), encarts par section non évidente, aide par champ. Une page d'aide unique ne tient
+  pas l'exigence.
+
 ## Identifiants
 
 `S-01`, `S-02`… Numérotation continue, jamais réaffectée.
