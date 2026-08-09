@@ -1,7 +1,7 @@
 ---
 name: redige-les-exigences
 description: Rédige le référentiel d'exigences d'un produit — chaque exigence atomique, identifiée de façon stable, assortie d'un critère d'acceptation binaire ou chiffré, d'un palier MVP/V1/V2, d'un statut fait constaté ou hypothèse, et d'un lien vers l'élément de surface couvert — puis le fait juger par quatre oracles exécutés. Produit EXIGENCES.md et EXIGENCES.json, la source unique dont toutes les vues aval sont dérivées. Use when / déclencher dès qu'il faut transformer un besoin, un cadrage ou une surface fonctionnelle en spécification opposable, écrire des exigences testables, poser des critères d'acceptation, arbitrer un périmètre MVP, ou produire le PRD d'un produit à construire. Ne pas déclencher pour qualifier l'entrant (→ qualifie-l-entrant), énumérer la surface (→ enumere-la-surface), dériver les vues aval (→ derive-les-vues), ni pour produire epics, stories ou architecture d'implémentation (→ étape C de la SaaS Forge, moteur BMAD).
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Rédige les exigences
@@ -42,6 +42,7 @@ d'identifiant jamais réaffecté.
                    node oracles/oracle-surface.mjs EXIGENCES.json
                    node oracles/oracle-claims.mjs EXIGENCES.json
 6. Boucle        → 3 passes maximum, puis livraison avec les écarts nommés
+7. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs
 ```
 
 ## Les huit champs

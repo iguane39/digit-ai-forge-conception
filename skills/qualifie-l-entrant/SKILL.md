@@ -1,7 +1,7 @@
 ---
 name: qualifie-l-entrant
 description: Qualifie ce qui entre dans une conception produit — idée, cahier des charges, produit à reprendre, produit à faire évoluer, produit tiers à répliquer — en déterminant son type, le protocole d'extraction applicable, ce qui en est réellement extractible, ce qui reste hors de portée, et si le seuil de suffisance est atteint. Produit un ENTRANT.md, ou rend la main avec des questions indicées quand la matière ne suffit pas. Use when / déclencher dès que l'utilisateur arrive avec une matière produit à transformer en spécification (« voici le CDC », « on repart de ce produit existant », « je veux refaire l'équivalent de X », « j'ai une idée d'appli »), ou demande si ce qu'il a suffit pour lancer une conception. Ne pas déclencher pour clarifier une idée encore floue et non instrumentée (→ clarifie-une-idee, que ce skill appelle lui-même), pour énumérer la surface fonctionnelle (→ enumere-la-surface), ni pour rédiger des exigences (→ redige-les-exigences).
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Qualifie l'entrant
@@ -26,6 +26,7 @@ garde-fou juridique du cinquième.
 3. Seuil         → atteint ? sinon questions a/b/c et ARRÊT
 4. Artefact      → references/gabarit-entrant.md → ENTRANT.md
 5. Contrôle      → node oracles/oracle-claims.mjs (si des chiffres sont avancés)
+6. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs
 ```
 
 ## Les cinq entrants
@@ -60,6 +61,12 @@ liste indicée `a/b/c`, une question par ligne, chacune avec **option recommand�
 
 Un référentiel d'exigences extrapolé sous le seuil est un artefact faux qui se propage sur
 trois forges avant d'être vu. Le coût d'une question est toujours inférieur.
+
+**Marqueur machine (TF-0014, R-C3).** Ce rendu de main n'était distinguable d'un run qui a
+simplement produit peu que par lecture humaine. `ETAT.json` porte `statut: bloque_question`,
+`artefacts: []` et le tableau `questions` (un objet par question : `id`, `question`,
+`recommande`, `defaut`) — jamais les deux à la fois avec un artefact produit. `oracle-etat`
+(EM1-EM3) le vérifie ; convention complète : README, section « Invocation par un orchestrateur ».
 
 ## Ce qui n'est jamais fait
 

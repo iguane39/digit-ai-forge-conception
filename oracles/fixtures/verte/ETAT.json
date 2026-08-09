@@ -1,0 +1,19 @@
+{
+  "verbe": "qualifie-l-entrant",
+  "statut": "bloque_question",
+  "artefacts": [],
+  "questions": [
+    {
+      "id": "a",
+      "question": "Quel est le job principal de l'écran d'accueil ?",
+      "recommande": "consulter l'état de ses demandes, mentionné trois fois dans le CDC",
+      "defaut": "ce job, marqué [HYP] dans ENTRANT.md"
+    },
+    {
+      "id": "b",
+      "question": "Quelle est la cible utilisateur principale ?",
+      "recommande": "le salarié, seul rôle nommé explicitement dans l'entrant",
+      "defaut": "le salarié, marqué [HYP] dans ENTRANT.md"
+    }
+  ]
+}

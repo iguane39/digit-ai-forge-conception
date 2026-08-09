@@ -1,7 +1,7 @@
 ---
 name: derive-les-vues
 description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par l'empreinte de sa source pour qu'une vue périmée ou éditée à la main soit détectée. Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, ou régénérer des vues après modification du référentiel. Ne pas déclencher pour rédiger ou modifier les exigences elles-mêmes (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Dérive les vues
@@ -32,6 +32,7 @@ permet aux trois forges aval de continuer à fonctionner si la Conception dispar
 3. Empreinte     → node -e "…sha256 de EXIGENCES.json…"  (en-tête de chaque vue)
 4. Artefacts     → CADRAGE-DESIGN.md · MISSION.md · EXIGENCES.json exposé
 5. Contrôle      → node oracles/oracle-tracabilite.mjs EXIGENCES.json --vue CADRAGE-DESIGN.md
+6. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs
 ```
 
 ## Les trois vues

@@ -1,0 +1,9 @@
+{
+  "_defauts_plantes": ["EM1", "EM2", "EM3"],
+  "verbe": "verbe-inconnu",
+  "statut": "en_cours",
+  "artefacts": ["ENTRANT.md"],
+  "questions": [
+    { "id": "a", "question": "Quel est le job principal de l'écran d'accueil ?" }
+  ]
+}

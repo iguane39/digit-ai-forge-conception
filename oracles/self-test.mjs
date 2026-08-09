@@ -40,6 +40,12 @@ const ORACLES = [
     fichier: 'oracle-claims.mjs',
     regles: ['A1'],
     args: (dossier) => [join(dossier, 'EXIGENCES.json')]
+  },
+  {
+    // TF-0014 (R-C3) : distingue mécaniquement l'état « bloqué sous le seuil » de « produit ».
+    fichier: 'oracle-etat.mjs',
+    regles: ['EM1', 'EM2', 'EM3'],
+    args: (dossier) => [join(dossier, 'ETAT.json')]
   }
 ]
 
