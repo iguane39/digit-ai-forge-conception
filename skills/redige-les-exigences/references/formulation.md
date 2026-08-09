@@ -81,6 +81,36 @@ troisième :
 `oracle-claims` A1 n'inspecte que les **énoncés**, pas les critères : un critère chiffré est une
 cible qu'on fixe, pas une affirmation qu'on avance. Le garde-fou du critère, c'est T4.
 
+## Les formes conditionnelles (EARS) — E7 à E9
+
+Étude P-10 d'organization (EARS, ISO/IEC/IEEE 29148, INCOSE GtWR v4), rendue exécutable par
+TF-0015. Un `enonce` peut rester à la forme de base (« sujet, prédicat, complément ») ou ouvrir
+sur une condition, avec un mot-clé fixe :
+
+| Forme | Mot-clé | Exemple |
+|---|---|---|
+| Ubiquitaire | — | Le salarié enregistre une demande d'absence. |
+| État | **Tant que** | Tant que le solde est négatif, la demande n'est pas soumise. |
+| Événement | **Quand** | Quand la demande est validée, le solde est diminué. |
+| Option | **Lorsque** | Lorsque l'export mensuel est inclus, le fichier est généré le 1er. |
+| Indésirable | **Si** | Si le run de tests est vide, alors le rapport est rejeté. |
+
+**E7** — une exigence qui commence par un de ces mots-clés doit porter sa partie principale
+complète après la virgule. Une condition sans suite (« Si le délai dépasse le seuil, ») est une
+**condition orpheline** : rien ne dit ce qui se passe.
+
+**E8** — absolus/superlatifs (`toujours`, `jamais`, `tous`, `100 %`…) et pronoms personnels ou
+indéfinis (`il`, `elle`, `on`, `cela`…) sont refusés dans l'énoncé comme dans le critère : un
+pronom sans antécédent mécanique n'a pas de sujet vérifiable ; un absolu n'a pas de portée
+bornée. Distincte d'E4 : E4 attrape le ressenti (« robuste »), E8 attrape l'absence de sujet ou
+de borne.
+
+**E9** — caractéristique d'*ensemble*, jugée sur le référentiel entier, pas exigence par
+exigence : aucun couple d'exigences du même besoin, sur le même élément de surface, dont les
+critères ne diffèrent que par un couple de prédicats antonymes (`est autorisé` / `est
+interdit`…) sur un reste identique. Contrôle mécanique, pas sémantique — une contradiction
+formulée autrement passe E9 et reste `non_juge`.
+
 ## Contre-exemples fréquents
 
 | Formulation | Défaut | Règle |

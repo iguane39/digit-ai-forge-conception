@@ -1,10 +1,11 @@
 // oracle-exigences — testabilité de l'énoncé d'exigence.
 // Usage : node oracle-exigences.mjs <EXIGENCES.json>
-// CDC §7.1 — règles E1 à E6.
+// CDC §7.1 — règles E1 à E6. E7-E9 : étude P-10 d'organization (EARS · ISO/IEC/IEEE 29148 ·
+// INCOSE GtWR v4), TF-0015 — 3 contrôles proposés à l'état d'étude, ici rendus exécutables.
 
 import { charger, constat, emettre, erreur, PASS, FAIL, PALIERS, NATURES } from './_contrat.mjs'
 
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 
 // --- Checklist versionnée ---------------------------------------------------
 
@@ -82,6 +83,65 @@ const RE_NOIRE = new RegExp(`\\b(${LISTE_NOIRE.join('|')})\\b`, 'gi')
 // E6 — marqueurs d'énumération explicite. L'atomicité sémantique est `non_juge`.
 const MARQUEURS_MULTIPLES = [';', ' puis ', ' ainsi que ', ' et/ou ', ' et également ', ' ou bien ']
 
+// E7 — grammaire EARS transposée en français (étude P-10, §4). Toute exigence commençant par
+// un mot-clé de condition doit porter sa partie principale complète après la virgule : une
+// condition sans suite (« orpheline ») ne se vérifie pas. Les exigences sans mot-clé restent
+// dans la forme « ubiquitaire » (sujet, prédicat, complément) — recevable telle quelle.
+const MOTS_CONDITION = ['tant que', 'quand', 'lorsque', 'si']
+const RE_CONDITION = new RegExp(`^(${MOTS_CONDITION.join('|')})\\b`, 'i')
+
+function raisonOrpheline (enonce) {
+  const virgule = enonce.indexOf(',')
+  if (virgule === -1) return 'aucune virgule : la partie principale ne se distingue pas de la condition'
+  const reste = enonce.slice(virgule + 1).trim()
+  if (reste === '') return 'virgule suivie de rien : condition orpheline'
+  const mots = reste.split(/\s+/).filter(Boolean)
+  if (mots.length < 2) return `partie principale trop courte (${mots.length} mot) pour porter sujet et prédicat`
+  return null
+}
+
+// E8 — absolus/superlatifs (INCOSE R26) et pronoms personnels/indéfinis (INCOSE R24), étude
+// P-10 §3.3 M3/M4. Distincte d'E4 : E4 attrape le ressenti subjectif, E8 attrape l'absence de
+// sujet vérifiable (pronom sans antécédent mécanique) ou une portée non bornée (« toujours »,
+// « tous », « 100 % »).
+const LISTE_ABSOLUS = ['toujours', 'jamais', 'tous', 'toutes', 'systématiquement']
+const RE_ABSOLUS = new RegExp(`\\b(${LISTE_ABSOLUS.join('|')})\\b`, 'gi')
+const RE_POURCENT_TOTAL = /\b100\s?%/g
+const LISTE_PRONOMS = [
+  'il', 'elle', 'ils', 'elles', 'cela', 'ça', 'on', 'lui', 'eux',
+  'celui-ci', 'celle-ci', 'celui-là', 'celle-là'
+]
+const RE_PRONOMS = new RegExp(`\\b(${LISTE_PRONOMS.join('|')})\\b`, 'gi')
+
+// E9 — caractéristiques d'ensemble (ISO/IEC/IEEE 29148 : *complete*, *consistent*), étude P-10
+// §3.3 M2. Contrôle mécanique, pas sémantique : deux exigences du même besoin, partageant un
+// élément de surface, dont les critères ne diffèrent que par un couple de prédicats antonymes
+// de la liste fermée E3 sur un reste identique, sont réputées contradictoires. Le second volet
+// (couverture d'ensemble) est une alarme grossière sur le jeu complet — le contrôle de
+// référence, plus précis et paramétrable, reste `oracle-surface` S1/S2 ; le seuil ici reprend
+// le raisonnement RC-1 (avertissement au-dessus d'un seuil large, jamais silencieux).
+const PAIRES_ANTONYMES = [
+  ['est autorisé', 'est interdit'],
+  ['est autorisé', 'est bloqué'],
+  ['est accepté', 'est refusé'],
+  ['est accepté', 'est rejeté'],
+  ['est présent', 'est absent'],
+  ['est visible', 'est invisible'],
+  ['est créé', 'est supprimé'],
+  ['est vrai', 'est faux'],
+  ['est identique', 'est différent'],
+  ['aboutit', 'échoue'],
+  ['existe', "n'existe pas"],
+  ['est affiché', "n'est pas affiché"]
+]
+const SEUIL_E9 = 80
+
+function normaliserReste (texte, predicat) {
+  const echappe = predicat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const sansPredicat = texte.replace(new RegExp(echappe, 'i'), ' ')
+  return sansPredicat.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+}
+
 // --- Exécution --------------------------------------------------------------
 
 const cible = process.argv[2]
@@ -151,12 +211,90 @@ for (const [i, e] of exigences.entries()) {
     : constat('E6', FAIL, ou,
       `énoncé non atomique — marqueurs : ${multiples.map(m => JSON.stringify(m)).join(', ')}`))
 
+  // E7 — forme conditionnelle EARS (Tant que / Quand / Lorsque / Si) : partie principale non orpheline.
+  if (RE_CONDITION.test(enonce.trim())) {
+    const raison = raisonOrpheline(enonce.trim())
+    constats.push(raison === null
+      ? constat('E7', PASS, ou, 'forme conditionnelle reconnue, partie principale présente')
+      : constat('E7', FAIL, ou, `condition orpheline — ${raison}`))
+  } else {
+    constats.push(constat('E7', PASS, ou, 'forme ubiquitaire (pas de condition en tête)'))
+  }
+
+  // E8 — absolus/superlatifs et pronoms personnels/indéfinis, énoncé et critère.
+  const texteE8 = `${enonce} ${critere}`
+  const trouvesE8 = [...new Set([
+    ...[...texteE8.matchAll(RE_ABSOLUS)].map(m => m[0].toLowerCase()),
+    ...[...texteE8.matchAll(RE_POURCENT_TOTAL)].map(m => m[0].trim()),
+    ...[...texteE8.matchAll(RE_PRONOMS)].map(m => m[0].toLowerCase())
+  ])]
+  constats.push(trouvesE8.length === 0
+    ? constat('E8', PASS, ou, 'aucun absolu ni pronom indéfini')
+    : constat('E8', FAIL, ou, `absolus/pronoms non vérifiables : ${trouvesE8.join(', ')}`))
+
   // Contrôle de forme du statut épistémique (support de T4, non redondant : ici la nature seule).
   const nature = e?.statut_epistemique?.nature
   if (nature !== undefined && !NATURES.includes(nature)) {
     constats.push(constat('E1', FAIL, ou,
       `statut_epistemique.nature invalide : ${JSON.stringify(nature)} — attendu ${NATURES.join(' | ')}`))
   }
+}
+
+// --- E9 : caractéristiques d'ensemble ---------------------------------------
+
+// Volet 1 — aucun couple d'exigences contradictoires sur le même besoin/surface.
+const contradictionsVues = new Set()
+for (let i = 0; i < exigences.length; i++) {
+  const a = exigences[i]
+  const critereA = typeof a?.critere === 'string' ? a.critere : ''
+  for (let j = i + 1; j < exigences.length; j++) {
+    const b = exigences[j]
+    if (!a?.besoin || a.besoin !== b?.besoin) continue
+    const surfA = new Set(a?.surface ?? [])
+    const surfB = new Set(b?.surface ?? [])
+    if (![...surfA].some(s => surfB.has(s))) continue
+    const critereB = typeof b?.critere === 'string' ? b.critere : ''
+    for (const [pA, pB] of PAIRES_ANTONYMES) {
+      const aPorteA = critereA.toLowerCase().includes(pA)
+      const aPorteB = critereA.toLowerCase().includes(pB)
+      const bPorteA = critereB.toLowerCase().includes(pA)
+      const bPorteB = critereB.toLowerCase().includes(pB)
+      if (!((aPorteA && bPorteB) || (aPorteB && bPorteA))) continue
+      const predA = aPorteA ? pA : pB
+      const predB = bPorteA ? pA : pB
+      if (normaliserReste(critereA, predA) !== normaliserReste(critereB, predB)) continue
+      const cle = [a?.id, b?.id].sort().join('|')
+      if (contradictionsVues.has(cle)) continue
+      contradictionsVues.add(cle)
+      constats.push(constat('E9', FAIL,
+        `exigences[${i}] (${a?.id}) vs exigences[${j}] (${b?.id})`,
+        `critères contradictoires sur le même besoin/surface : « ${predA} » vs « ${predB} »`))
+    }
+  }
+}
+if (contradictionsVues.size === 0) {
+  constats.push(constat('E9', PASS, 'exigences[]',
+    'aucun couple contradictoire détecté sur les paires antonymes surveillées'))
+}
+
+// Volet 2 — chaque élément du périmètre porte au moins une exigence (alarme d'ensemble,
+// seuil large — le contrôle nominatif précis reste oracle-surface S1/S2).
+const surfaceRefE9 = Array.isArray(ref.surface) ? ref.surface : []
+if (surfaceRefE9.length === 0) {
+  constats.push(constat('E9', PASS, 'surface[]', 'aucune surface énumérée : rien à borner'))
+} else {
+  const connusE9 = new Set(surfaceRefE9.map(s => s?.id))
+  const couvertsE9 = new Set()
+  for (const e of exigences) for (const s of e?.surface ?? []) if (connusE9.has(s)) couvertsE9.add(s)
+  const ratioE9 = (couvertsE9.size / surfaceRefE9.length) * 100
+  const arrondiE9 = Math.round(ratioE9 * 10) / 10
+  const nonCouvertsE9 = surfaceRefE9.filter(s => !couvertsE9.has(s?.id)).map(s => s?.id)
+  constats.push(ratioE9 >= SEUIL_E9
+    ? constat('E9', PASS, 'surface[]',
+      `ensemble jugé complet : ${arrondiE9} % ≥ ${SEUIL_E9} %` +
+      (nonCouvertsE9.length ? ` (non couverts, cf. oracle-surface : ${nonCouvertsE9.join(', ')})` : ''))
+    : constat('E9', FAIL, 'surface[]',
+      `ensemble incomplet : ${arrondiE9} % < ${SEUIL_E9} % — non couverts : ${nonCouvertsE9.join(', ')}`))
 }
 
 emettre({
@@ -167,6 +305,10 @@ emettre({
   non_juge: [
     'La pertinence produit de l\'exigence — E4 attrape les mots subjectifs, pas le vide de sens.',
     'L\'atomicité sémantique — E6 détecte les marqueurs d\'énumération, pas deux comportements ' +
-      'fondus dans une seule phrase sans marqueur.'
+      'fondus dans une seule phrase sans marqueur.',
+    'La justesse d\'une condition EARS reconnue par E7 — la forme est vérifiée, pas que le ' +
+      'déclencheur décrit corresponde à un état réel du système.',
+    'La contradiction sémantique hors du lexique antonyme surveillé par E9 — deux exigences ' +
+      'peuvent se contredire sans jamais employer un couple de prédicats de la liste fermée.'
   ]
 })

@@ -19,7 +19,7 @@ const ROUGE = join(ICI, 'fixtures', 'rouge')
 const ORACLES = [
   {
     fichier: 'oracle-exigences.mjs',
-    regles: ['E1', 'E2', 'E3', 'E4', 'E5', 'E6'],
+    regles: ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'E9'],
     args: (dossier) => [join(dossier, 'EXIGENCES.json')]
   },
   {

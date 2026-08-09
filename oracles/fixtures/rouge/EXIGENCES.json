@@ -54,6 +54,50 @@
       "statut_epistemique": { "nature": "hypothèse" },
       "surface": ["S-77"],
       "cotation": { "impact": 2, "confiance": 2, "effort": 2 }
+    },
+    {
+      "_defauts_plantes": ["E7"],
+      "id": "R-701",
+      "besoin": "B-01",
+      "enonce": "Si le délai dépasse le seuil,",
+      "critere": "Le dossier est rejeté.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC section 4" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 3, "confiance": 3, "effort": 2 }
+    },
+    {
+      "_defauts_plantes": ["E8"],
+      "id": "R-702",
+      "besoin": "B-01",
+      "enonce": "Il archive toujours tous les dossiers du service.",
+      "critere": "Le dossier est enregistré comme archivé.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC section 5" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 3, "confiance": 3, "effort": 2 }
+    },
+    {
+      "_defauts_plantes": ["E9"],
+      "id": "R-703",
+      "besoin": "B-01",
+      "enonce": "L'agent consulte le dossier archivé.",
+      "critere": "L'accès au dossier archivé est autorisé.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC section 6" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 3, "confiance": 3, "effort": 2 }
+    },
+    {
+      "_defauts_plantes": ["E9"],
+      "id": "R-704",
+      "besoin": "B-01",
+      "enonce": "L'agent consulte un dossier clos.",
+      "critere": "L'accès au dossier archivé est interdit.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC section 6" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 3, "confiance": 3, "effort": 2 }
     }
   ]
 }
