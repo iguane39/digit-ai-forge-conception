@@ -8,16 +8,16 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 
 ---
 
-## `oracle-exigences` v1.0.0
+## `oracle-exigences` v1.1.0
 
 | | |
 |---|---|
 | **Domaine** | Testabilité d'un énoncé d'exigence |
 | **Artefact jugé** | `EXIGENCES.json` |
 | **Invocation** | `node oracles/oracle-exigences.mjs <EXIGENCES.json>` |
-| **Règles** | E1 champs obligatoires · E2 identifiant unique et non réaffecté · E3 critère chiffré ou binaire · E4 liste noire de termes subjectifs · E5 palier valide · E6 énoncé atomique |
+| **Règles** | E1 champs obligatoires · E2 identifiant unique et non réaffecté · E3 critère chiffré ou binaire · E4 liste noire de termes subjectifs · E5 palier valide · E6 énoncé atomique · E7 forme EARS non orpheline · E8 absolus/pronoms non vérifiables · E9 caractéristiques d'ensemble (contradiction, complétude) |
 | **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` |
-| **`non_juge`** | La pertinence produit de l'exigence · l'atomicité sémantique sans marqueur |
+| **`non_juge`** | La pertinence produit de l'exigence · l'atomicité sémantique sans marqueur · la justesse d'une condition EARS reconnue · la contradiction hors du lexique antonyme surveillé |
 
 ## `oracle-tracabilite` v1.0.0
 
@@ -52,6 +52,17 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 | **Fixtures** | idem |
 | **`non_juge`** | La véracité de la source · les affirmations non chiffrées |
 
+## `oracle-etat` v1.0.0
+
+| | |
+|---|---|
+| **Domaine** | Protocole machine de sortie des verbes — distinguer « bloqué sous le seuil » de « produit » (TF-0014, R-C3) |
+| **Artefact jugé** | `ETAT.json` |
+| **Invocation** | `node oracles/oracle-etat.mjs <ETAT.json>` |
+| **Règles** | EM1 statut dans l'ensemble fermé `produit`\|`bloque_question` · EM2 aucun signal contradictoire (artefacts et questions ne cohabitent jamais) · EM3 verbe émetteur reconnu |
+| **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` |
+| **`non_juge`** | La pertinence des questions posées · l'écriture effective du fichier par le verbe |
+
 ---
 
 ## Note de traçabilité
@@ -74,8 +85,9 @@ dépôt de référence sort du périmètre de cette forge.
 node oracles/self-test.mjs
 ```
 
-Vérifie les **deux sens** pour chacun des 4 oracles : la fixture verte passe (exit 0), la
+Vérifie les **deux sens** pour chacun des 5 oracles : la fixture verte passe (exit 0), la
 fixture rouge échoue (exit 1) **et déclenche chacune de ses règles**. Un oracle dont une règle
 ne se déclenche jamais sur la fixture rouge ne juge rien : le self-test le refuse.
 
-État au 04/08/2026 : **4 oracles, 14 règles, self-test vert.**
+État au 09/08/2026 : **5 oracles, 20 règles, self-test vert** (E7-E9 et `oracle-etat` ajoutés
+depuis le 04/08 — TF-0015, TF-0014).

@@ -46,15 +46,16 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 4 oracles, 14 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 5 oracles, 20 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
 |---|---|---|
-| `oracle-exigences` | E1–E6 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité |
+| `oracle-exigences` | E1–E9 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9) |
 | `oracle-tracabilite` | T1–T4 | orphelins des deux côtés, statut épistémique, vues régénérables |
 | `oracle-surface` | S1–S3 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio |
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
+| `oracle-etat` | EM1–EM3 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) |
 
 Node seul, aucune dépendance npm. JSON sur stdout, exit 0/1/2, `non_juge` déclaré.
 Entrées prêtes pour le registre global : [oracles/registre-entrees.md](oracles/registre-entrees.md)
@@ -79,14 +80,15 @@ imposée :
 | `redige-les-exigences` | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
 | `derive-les-vues` | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
 
-**Rejouer les 4 oracles + le self-test**, depuis la racine du dépôt :
+**Rejouer les 5 oracles + le self-test**, depuis la racine du dépôt :
 
 ```bash
-node oracles/self-test.mjs                                   # fixtures verte/rouge, 14 règles
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 20 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
 node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md>
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
 node oracles/oracle-claims.mjs      <chemin/EXIGENCES.json>
+node oracles/oracle-etat.mjs        <chemin/ETAT.json>
 ```
 
 Sortie JSON sur stdout, exit 0 (PASS), 1 (FAIL — au moins un constat en échec, chacun localisé)
@@ -102,6 +104,35 @@ ne doit ni le traiter comme une erreur de pipeline ni relancer aveuglément — 
 décision humaine légitime. S'il choisit d'appliquer les défauts pour ne pas bloquer un run
 automatisé, chaque défaut appliqué est marqué `hypothèse` dans le référentiel produit, jamais
 `fait constaté`.
+
+**Le marqueur machine `ETAT.json`** (TF-0014, R-C3). Jusqu'ici, l'état « bloqué sous le seuil »
+n'était visible qu'à la lecture humaine du disque — rien ne le distinguait mécaniquement d'un
+run qui a simplement produit peu. Chaque verbe qui se termine écrit, à côté de son artefact ou
+de ses questions, un `ETAT.json` :
+
+```json
+{
+  "verbe": "qualifie-l-entrant",
+  "statut": "bloque_question",
+  "artefacts": [],
+  "questions": [
+    { "id": "a", "question": "…", "recommande": "…", "defaut": "…" }
+  ]
+}
+```
+
+`statut` ∈ `produit` | `bloque_question` — ensemble fermé, rien d'autre n'est une sortie valide.
+Un `statut: produit` porte toujours au moins un artefact et jamais de question ouverte ; un
+`statut: bloque_question` porte toujours au moins une question (4 champs : `id`, `question`,
+`recommande`, `defaut`) et jamais d'artefact. Les deux signaux ne cohabitent jamais dans le
+même fichier — c'est précisément ce qu'`oracle-etat` (règles EM1–EM3) vérifie :
+
+```bash
+node oracles/oracle-etat.mjs <chemin/ETAT.json>
+```
+
+Un orchestrateur lit `ETAT.json` avant de lire quoi que ce soit d'autre sur le disque : c'est
+la seule information dont la lecture ne nécessite pas de deviner ce que le verbe a voulu dire.
 
 ## Les trois interfaces aval
 
@@ -150,7 +181,7 @@ puis livraison avec les écarts résiduels nommés.
 | | |
 |---|---|
 | Corpus | 11 pratiques — **8 `ok`, 3 `todo` non servies** (aucun accès réseau engagé) |
-| Oracles | 4, 14 règles, self-test **vert** — rouge : 6/6, 4/4, 3/3, 1/1 règles déclenchées |
+| Oracles | 5, 20 règles, self-test **vert** — rouge : 9/9, 4/4, 3/3, 1/1, 3/3 règles déclenchées (E7-E9 et `oracle-etat` ajoutés depuis, TF-0015/TF-0014) |
 | Verbes | 4 — runners `write-a-skill` : structure 6/6, description 5/5, checklist 6/6, sur chacun |
 | Bout en bout | 3 vues produites, `oracle-tracabilite` T3 vert sur les deux vues markdown |
 | Contrôle d'interface S-11 | **100 % (7/7)** — mais en mode **dégradé** : référentiel de tests écrit à la main, Forge Tests n'a pas tourné |
