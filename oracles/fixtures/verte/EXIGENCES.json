@@ -6,10 +6,18 @@
     "libelle": "Cahier des charges simple, 4 pages, fourni par le client",
     "seuil_suffisance": "atteint : 2 objets métier et 2 rôles identifiés"
   },
-  "identifiants_retires": ["E-003"],
+  "identifiants_retires": [
+    "E-003"
+  ],
   "besoins": [
-    { "id": "B-01", "enonce": "Un salarié doit pouvoir déclarer une absence sans passer par son responsable." },
-    { "id": "B-02", "enonce": "Un responsable doit savoir qui est absent à une date donnée." },
+    {
+      "id": "B-01",
+      "enonce": "Un salarié doit pouvoir déclarer une absence sans passer par son responsable."
+    },
+    {
+      "id": "B-02",
+      "enonce": "Un responsable doit savoir qui est absent à une date donnée."
+    },
     {
       "id": "B-03",
       "enonce": "L'entreprise doit respecter ses obligations de conservation des données pendant 60 mois.",
@@ -17,12 +25,36 @@
     }
   ],
   "surface": [
-    { "id": "S-01", "type": "objet", "libelle": "Demande d'absence" },
-    { "id": "S-02", "type": "objet", "libelle": "Solde de congés" },
-    { "id": "S-03", "type": "role", "libelle": "Salarié" },
-    { "id": "S-04", "type": "role", "libelle": "Responsable" },
-    { "id": "S-05", "type": "parcours", "libelle": "Déclaration d'une absence" },
-    { "id": "S-06", "type": "parcours", "libelle": "Export mensuel des absences (V2, non couvert au MVP) — RC-1 : prouve S1 en avertissement non bloquant quand le ratio reste au-dessus du seuil" }
+    {
+      "id": "S-01",
+      "type": "objet",
+      "libelle": "Demande d'absence"
+    },
+    {
+      "id": "S-02",
+      "type": "objet",
+      "libelle": "Solde de congés"
+    },
+    {
+      "id": "S-03",
+      "type": "role",
+      "libelle": "Salarié"
+    },
+    {
+      "id": "S-04",
+      "type": "role",
+      "libelle": "Responsable"
+    },
+    {
+      "id": "S-05",
+      "type": "parcours",
+      "libelle": "Déclaration d'une absence"
+    },
+    {
+      "id": "S-06",
+      "type": "parcours",
+      "libelle": "Export mensuel des absences (palier V2)"
+    }
   ],
   "exigences": [
     {
@@ -31,9 +63,19 @@
       "enonce": "Le salarié enregistre une demande d'absence depuis son espace personnel.",
       "critere": "La demande est enregistrée avec un identifiant propre et un statut initial.",
       "palier": "MVP",
-      "statut_epistemique": { "nature": "fait constaté", "source": "CDC client section 2.1" },
-      "surface": ["S-01", "S-03"],
-      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "CDC client section 2.1"
+      },
+      "surface": [
+        "S-01",
+        "S-03"
+      ],
+      "cotation": {
+        "impact": 5,
+        "confiance": 4,
+        "effort": 2
+      }
     },
     {
       "id": "E-002",
@@ -45,8 +87,14 @@
         "nature": "hypothèse",
         "validation": "à confirmer avec le service paie avant le palier V1"
       },
-      "surface": ["S-02"],
-      "cotation": { "impact": 4, "confiance": 2, "effort": 3 }
+      "surface": [
+        "S-02"
+      ],
+      "cotation": {
+        "impact": 4,
+        "confiance": 2,
+        "effort": 3
+      }
     },
     {
       "id": "E-004",
@@ -54,9 +102,19 @@
       "enonce": "Le responsable consulte la liste des absents pour une date choisie.",
       "critere": "La liste retourne uniquement les demandes au statut validé chevauchant la date choisie.",
       "palier": "MVP",
-      "statut_epistemique": { "nature": "fait constaté", "source": "Entretien responsable RH, compte rendu joint" },
-      "surface": ["S-04", "S-05"],
-      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "Entretien responsable RH, compte rendu joint"
+      },
+      "surface": [
+        "S-04",
+        "S-05"
+      ],
+      "cotation": {
+        "impact": 5,
+        "confiance": 4,
+        "effort": 2
+      }
     },
     {
       "id": "E-005",
@@ -68,8 +126,14 @@
         "nature": "hypothèse",
         "validation": "atelier de cadrage avec les responsables, non encore tenu"
       },
-      "surface": ["S-05"],
-      "cotation": { "impact": 3, "confiance": 2, "effort": 3 }
+      "surface": [
+        "S-05"
+      ],
+      "cotation": {
+        "impact": 3,
+        "confiance": 2,
+        "effort": 3
+      }
     },
     {
       "id": "E-006",
@@ -77,10 +141,17 @@
       "enonce": "Les données d'absence sont conservées pendant la durée légale applicable.",
       "critere": "Une demande dont la date de fin dépasse 60 mois est purgée.",
       "palier": "V1",
-      "statut_epistemique": { "nature": "fait constaté", "source": "Politique de conservation, version en vigueur" },
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "Politique de conservation, version en vigueur"
+      },
       "surface": [],
       "hors_surface": "exigence de rétention, sans élément de surface fonctionnelle associé",
-      "cotation": { "impact": 4, "confiance": 5, "effort": 1 }
+      "cotation": {
+        "impact": 4,
+        "confiance": 5,
+        "effort": 1
+      }
     },
     {
       "id": "E-007",
@@ -92,8 +163,33 @@
         "nature": "hypothèse",
         "validation": "à confirmer avec les responsables lors de l'atelier V1"
       },
-      "surface": ["S-05"],
-      "cotation": { "impact": 2, "confiance": 2, "effort": 2 }
+      "surface": [
+        "S-05"
+      ],
+      "cotation": {
+        "impact": 2,
+        "confiance": 2,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-008",
+      "besoin": "B-02",
+      "enonce": "Le responsable exporte le récapitulatif mensuel des absences de son équipe.",
+      "critere": "Chaque demande au statut validé du mois est présente dans l'export mensuel ; une demande non validée est absente.",
+      "palier": "V2",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "CDC client section 3.2"
+      },
+      "surface": [
+        "S-06"
+      ],
+      "cotation": {
+        "impact": 3,
+        "confiance": 4,
+        "effort": 2
+      }
     }
   ]
 }

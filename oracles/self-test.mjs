@@ -28,13 +28,13 @@ const ORACLES = [
     args: (dossier) => [join(dossier, 'EXIGENCES.json'), '--vue', join(dossier, 'CADRAGE-DESIGN.md')]
   },
   {
-    // RC-1 : la verte porte S-06, un élément de surface volontairement non couvert
-    // (5/6 = 83.3 %). --seuil 80 le maintient au-dessus du seuil pour prouver la branche
-    // « ratio >= seuil -> avertissement nomme (SANS_OBJET), verdict global PASS ». La rouge
-    // (1/3 = 33.3 %) reste tres en dessous : S1 y declenche toujours son FAIL par element.
+    // TF-0070 : la verte passe au seuil PAR DEFAUT (S-06 couvert par E-008, palier V2) —
+    // un operateur qui la joue via le registre central lit desormais le meme verdict que
+    // ce self-test. La branche « ratio >= seuil -> avertissement nomme » (RC-1) est prouvee
+    // a part, sur la fixture dediee seuil-rc1 (voir bloc apres la boucle).
     fichier: 'oracle-surface.mjs',
     regles: ['S1', 'S2', 'S3'],
-    args: (dossier) => [join(dossier, 'EXIGENCES.json'), '--seuil', '80']
+    args: (dossier) => [join(dossier, 'EXIGENCES.json')]
   },
   {
     fichier: 'oracle-claims.mjs',
@@ -104,6 +104,23 @@ for (const o of ORACLES) {
   lignes.unshift('') // separation, remise en ordre juste apres
   const bloc = lignes.splice(0)
   console.log(`${o.fichier}${bloc.join('\n')}`)
+}
+
+// --- branche RC-1 d'oracle-surface : au-dessus du seuil, S1 avertit sans bloquer ---
+// Fixture dediee seuil-rc1 (4/5 = 80 %, --seuil 80) : exit 0 exige, ET l'element non
+// couvert doit rester NOMME en SANS_OBJET — un avertissement fondu dans la masse ne
+// prouverait rien.
+{
+  const rc1 = lancer('oracle-surface.mjs',
+    [join(ICI, 'fixtures', 'seuil-rc1', 'EXIGENCES.json'), '--seuil', '80'])
+  const nomme = (rc1.rapport?.constats ?? [])
+    .some(c => c.regle === 'S1' && c.statut === 'SANS_OBJET' && String(c.ou).includes('S-05'))
+  if (rc1.code === 0 && nomme) {
+    console.log('oracle-surface.mjs (branche RC-1, fixture seuil-rc1)\n  [OK]   80 % >= seuil 80 : exit 0, S-05 nomme en SANS_OBJET')
+  } else {
+    echecs++
+    console.log(`oracle-surface.mjs (branche RC-1)\n  [FAIL] exit ${rc1.code} (attendu 0), S-05 nomme : ${nomme}`)
+  }
 }
 
 console.log('')

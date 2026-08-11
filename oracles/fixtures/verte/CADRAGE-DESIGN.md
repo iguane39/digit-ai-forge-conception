@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: ca1dfa5d7e813f558c56b28a7f8cad5fb0359e99c21254aa81d5fcc4185ed0ff -->
+<!-- source-sha256: 84012012a80b49031abb610e340a731bb8943754ffdcd769f6a42f2c6c68840e -->
 
 # Fiche de cadrage design — Suivi des demandes d'absence
 

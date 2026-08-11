@@ -1,0 +1,121 @@
+{
+  "projet": "Fixture RC-1 — branche au-dessus du seuil",
+  "date_generation": "2026-08-11",
+  "entrant": {
+    "type": "cdc",
+    "libelle": "fixture synthétique",
+    "seuil_suffisance": "atteint : fixture"
+  },
+  "identifiants_retires": [],
+  "besoins": [
+    {
+      "id": "B-01",
+      "enonce": "Un besoin de démonstration pour la branche seuil."
+    }
+  ],
+  "surface": [
+    {
+      "id": "S-01",
+      "type": "objet",
+      "libelle": "Objet un"
+    },
+    {
+      "id": "S-02",
+      "type": "objet",
+      "libelle": "Objet deux"
+    },
+    {
+      "id": "S-03",
+      "type": "role",
+      "libelle": "Rôle un"
+    },
+    {
+      "id": "S-04",
+      "type": "parcours",
+      "libelle": "Parcours un"
+    },
+    {
+      "id": "S-05",
+      "type": "parcours",
+      "libelle": "Parcours volontairement non couvert — RC-1 : au-dessus du seuil, S1 avertit sans bloquer"
+    }
+  ],
+  "exigences": [
+    {
+      "id": "E-001",
+      "besoin": "B-01",
+      "enonce": "L'élément S-01 est pris en charge par le produit.",
+      "critere": "Le comportement attendu de S-01 est observé sur le cas de démonstration.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture synthétique"
+      },
+      "surface": [
+        "S-01"
+      ],
+      "cotation": {
+        "impact": 3,
+        "confiance": 3,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-002",
+      "besoin": "B-01",
+      "enonce": "L'élément S-02 est pris en charge par le produit.",
+      "critere": "Le comportement attendu de S-02 est observé sur le cas de démonstration.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture synthétique"
+      },
+      "surface": [
+        "S-02"
+      ],
+      "cotation": {
+        "impact": 3,
+        "confiance": 3,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-003",
+      "besoin": "B-01",
+      "enonce": "L'élément S-03 est pris en charge par le produit.",
+      "critere": "Le comportement attendu de S-03 est observé sur le cas de démonstration.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture synthétique"
+      },
+      "surface": [
+        "S-03"
+      ],
+      "cotation": {
+        "impact": 3,
+        "confiance": 3,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-004",
+      "besoin": "B-01",
+      "enonce": "L'élément S-04 est pris en charge par le produit.",
+      "critere": "Le comportement attendu de S-04 est observé sur le cas de démonstration.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture synthétique"
+      },
+      "surface": [
+        "S-04"
+      ],
+      "cotation": {
+        "impact": 3,
+        "confiance": 3,
+        "effort": 2
+      }
+    }
+  ]
+}

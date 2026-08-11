@@ -2,12 +2,53 @@
   "_role": "Référentiel de tests écrit à la main, simulant ce que Forge Tests persisterait. Sert au contrôle d'interface S-11 en mode dégradé.",
   "projet": "Suivi des demandes d'absence",
   "tests": [
-    { "id": "T-001", "element": "S-01", "risque": "E-001", "adaptateur": "back-unitaire-python" },
-    { "id": "T-002", "element": "S-03", "risque": "E-001", "adaptateur": "front-e2e" },
-    { "id": "T-003", "element": "S-02", "risque": "E-002", "adaptateur": "back-unitaire-python" },
-    { "id": "T-004", "element": "S-04", "risque": "E-004", "adaptateur": "api-contrat-rest" },
-    { "id": "T-005", "element": "S-05", "risque": "E-004", "adaptateur": "front-e2e" },
-    { "id": "T-006", "element": "S-05", "risque": "E-005", "adaptateur": "back-unitaire-python" },
-    { "id": "T-007", "element": null, "risque": "E-006", "adaptateur": "data-migrations" }
+    {
+      "id": "T-001",
+      "element": "S-01",
+      "risque": "E-001",
+      "adaptateur": "back-unitaire-python"
+    },
+    {
+      "id": "T-002",
+      "element": "S-03",
+      "risque": "E-001",
+      "adaptateur": "front-e2e"
+    },
+    {
+      "id": "T-003",
+      "element": "S-02",
+      "risque": "E-002",
+      "adaptateur": "back-unitaire-python"
+    },
+    {
+      "id": "T-004",
+      "element": "S-04",
+      "risque": "E-004",
+      "adaptateur": "api-contrat-rest"
+    },
+    {
+      "id": "T-005",
+      "element": "S-05",
+      "risque": "E-004",
+      "adaptateur": "front-e2e"
+    },
+    {
+      "id": "T-006",
+      "element": "S-05",
+      "risque": "E-005",
+      "adaptateur": "back-unitaire-python"
+    },
+    {
+      "id": "T-007",
+      "element": null,
+      "risque": "E-006",
+      "adaptateur": "data-migrations"
+    },
+    {
+      "id": "T-008",
+      "element": "S-06",
+      "risque": "E-008",
+      "adaptateur": "batch-python"
+    }
   ]
 }
