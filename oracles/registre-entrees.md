@@ -63,6 +63,17 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 | **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` |
 | **`non_juge`** | La pertinence des questions posées · l'écriture effective du fichier par le verbe |
 
+## `oracle-ears` v1.0.0
+
+| | |
+|---|---|
+| **Domaine** | Scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale — TF-0101 |
+| **Artefact jugé** | `EXIGENCES.json` |
+| **Invocation** | `node oracles/oracle-ears.mjs <EXIGENCES.json>` |
+| **Règles** | EA1 classification stricte (échec seulement quand « Si » ne peut être tranché entre optional/unwanted, faute de marqueur de polarité identifiable ou en présence des deux) · EA2 ambiguïté lexicale (quantificateurs/atténuateurs INCOSE R7, liste fermée distincte de la liste noire E4) · EA3 cohérence du `patron_ears` déclaré (facultatif) avec le patron calculé |
+| **Fixtures** | `oracles/fixtures/ears-verte` · `oracles/fixtures/ears-rouge` (dédiées, pas les fixtures partagées) |
+| **`non_juge`** | La justesse du déclencheur reconnu · la désambiguïsation optional/unwanted reste une heuristique lexicale, pas sémantique · l'ambiguïté lexicale hors liste fermée |
+
 ---
 
 ## Note de traçabilité
@@ -85,9 +96,12 @@ dépôt de référence sort du périmètre de cette forge.
 node oracles/self-test.mjs
 ```
 
-Vérifie les **deux sens** pour chacun des 5 oracles : la fixture verte passe (exit 0), la
+Vérifie les **deux sens** pour chacun des 6 oracles : la fixture verte passe (exit 0), la
 fixture rouge échoue (exit 1) **et déclenche chacune de ses règles**. Un oracle dont une règle
 ne se déclenche jamais sur la fixture rouge ne juge rien : le self-test le refuse.
 
-État au 09/08/2026 : **5 oracles, 20 règles, self-test vert** (E7-E9 et `oracle-etat` ajoutés
-depuis le 04/08 — TF-0015, TF-0014).
+État au 12/08/2026 : **6 oracles, 23 règles** (`oracle-ears` ajouté — TF-0101). Self-test rouge
+au 12/08 pour une cause **étrangère à cet ajout** : `oracle-tracabilite` T3 échoue sur la
+fixture verte partagée par dérive d'encodage de fin de ligne (`core.autocrlf=true` sur ce poste
+Windows change le SHA-256 constaté de `EXIGENCES.json` entre le commit — LF — et le disque —
+CRLF au checkout). Constaté, prouvé, non corrigé : hors périmètre TF-0101, à traiter à part.

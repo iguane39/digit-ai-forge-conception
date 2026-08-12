@@ -1,0 +1,42 @@
+{
+  "projet": "FIXTURE VERTE oracle-ears — un exemple par patron strict, aucun défaut planté.",
+  "date_generation": "2026-08-12",
+  "exigences": [
+    {
+      "id": "EA-001",
+      "enonce": "Le système journalise chaque connexion réussie.",
+      "critere": "Une ligne de journal est créée par connexion réussie.",
+      "patron_ears": "ubiquitous"
+    },
+    {
+      "id": "EA-002",
+      "enonce": "Quand la demande est validée, le solde de congés est diminué.",
+      "critere": "Le solde affiché après validation est diminué du nombre de jours demandés.",
+      "patron_ears": "event-driven"
+    },
+    {
+      "id": "EA-003",
+      "enonce": "Lorsque le paiement est confirmé, la commande passe au statut expédiée.",
+      "critere": "Le statut de la commande est mis à jour dans un délai inférieur ou égal à 2 min.",
+      "patron_ears": "event-driven"
+    },
+    {
+      "id": "EA-004",
+      "enonce": "Tant que le solde est négatif, la demande n'est pas soumise.",
+      "critere": "Le bouton de soumission est bloqué tant que le solde est négatif.",
+      "patron_ears": "state-driven"
+    },
+    {
+      "id": "EA-005",
+      "enonce": "Si l'export mensuel est inclus dans l'offre, le fichier est généré le premier jour du mois.",
+      "critere": "L'export mensuel est présent dans l'espace de téléchargement du client.",
+      "patron_ears": "optional"
+    },
+    {
+      "id": "EA-006",
+      "enonce": "Si le run de tests est vide, alors le rapport est rejeté.",
+      "critere": "Le rapport est rejeté et aucun artefact de tests n'est publié.",
+      "patron_ears": "unwanted"
+    }
+  ]
+}

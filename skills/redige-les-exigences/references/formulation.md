@@ -90,10 +90,17 @@ sur une condition, avec un mot-clé fixe :
 | Forme | Mot-clé | Exemple |
 |---|---|---|
 | Ubiquitaire | — | Le salarié enregistre une demande d'absence. |
-| État | **Tant que** | Tant que le solde est négatif, la demande n'est pas soumise. |
-| Événement | **Quand** | Quand la demande est validée, le solde est diminué. |
-| Option | **Lorsque** | Lorsque l'export mensuel est inclus, le fichier est généré le 1er. |
-| Indésirable | **Si** | Si le run de tests est vide, alors le rapport est rejeté. |
+| État (state-driven) | **Tant que** | Tant que le solde est négatif, la demande n'est pas soumise. |
+| Événement (event-driven) | **Quand** / **Lorsque** | Quand la demande est validée, le solde est diminué. |
+| Option (optional) | **Si**, réponse à polarité **positive** | Si l'export mensuel est inclus dans l'offre, le fichier est généré le 1er. |
+| Indésirable (unwanted) | **Si**, réponse à polarité **négative** | Si le run de tests est vide, alors le rapport est rejeté. |
+
+*Correctif du 12/08/2026 (TF-0101)* : « Quand » et « Lorsque » sont des synonymes stricts en
+français — la version précédente de cette table assignait « Lorsque » au patron *Option*, ce qui
+aurait fait porter à deux synonymes deux patrons EARS différents. Les deux mots-clés désignent le
+même patron *event-driven*. Le français ne porte pas de mot-clé dédié à l'*optional* anglais
+(« Where <feature is included> ») : *Option* et *Indésirable* s'ouvrent tous les deux sur « Si »,
+distingués uniquement par la **polarité du critère** — voir `oracle-ears` ci-dessous.
 
 **E7** — une exigence qui commence par un de ces mots-clés doit porter sa partie principale
 complète après la virgule. Une condition sans suite (« Si le délai dépasse le seuil, ») est une
@@ -110,6 +117,24 @@ exigence : aucun couple d'exigences du même besoin, sur le même élément de s
 critères ne diffèrent que par un couple de prédicats antonymes (`est autorisé` / `est
 interdit`…) sur un reste identique. Contrôle mécanique, pas sémantique — une contradiction
 formulée autrement passe E9 et reste `non_juge`.
+
+## Le scoring EARS strict — EA1 à EA3 (TF-0101)
+
+`oracle-ears` va au-delà de la forme générique vérifiée par E7 : il **classe** chaque exigence
+dans l'un des 5 patrons stricts ci-dessus et détecte l'**ambiguïté lexicale**, sur le modèle des
+outils 2026 (Jama Connect Advisor, Polarion Copilot) — en local, déterministe, zéro API payante.
+
+**EA1** — classification. Le seul cas d'échec mécanique : une exigence à mot-clé « Si » dont le
+critère ne porte **ni** marqueur de polarité positive **ni** marqueur négatif reconnu (ou porte
+les deux à la fois) — le patron reste `ambigu`, jamais tranché au hasard.
+
+**EA2** — ambiguïté lexicale (INCOSE GtWR R7, « vague terms ») : liste fermée de quantificateurs
+et atténuateurs qui ne bornent rien de vérifiable — `généralement`, `plusieurs`, `certains`, `le
+cas échéant`, `dans les meilleurs délais`… Distincte de la liste noire E4 : E4 attrape le ressenti
+(« robuste »), EA2 attrape la portée floue.
+
+**EA3** — cohérence, si l'exigence porte un champ facultatif `patron_ears`, entre ce qui est
+**déclaré** et ce qui est **calculé**. Absent : `SANS_OBJET`, rien à confronter.
 
 ## Contre-exemples fréquents
 

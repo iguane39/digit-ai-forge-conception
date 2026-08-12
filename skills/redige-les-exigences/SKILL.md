@@ -41,6 +41,7 @@ d'identifiant jamais réaffecté.
                    node oracles/oracle-tracabilite.mjs EXIGENCES.json
                    node oracles/oracle-surface.mjs EXIGENCES.json
                    node oracles/oracle-claims.mjs EXIGENCES.json
+                   node oracles/oracle-ears.mjs EXIGENCES.json
 6. Boucle        → 3 passes maximum, puis livraison avec les écarts nommés
 7. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs
 ```

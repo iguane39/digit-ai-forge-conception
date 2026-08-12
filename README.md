@@ -21,7 +21,7 @@ prompt d'origine : [prompt de cadrage](<Digit-AI - Prompt Forge - Conception & P
 | **Énumérer la surface** | énumérer toute la surface fonctionnelle de mon produit | `skills\enumere-la-surface (méthode, mode degrade)` | prouvé (experimental) |
 | **Rédiger les exigences** | obtenir un référentiel d'exigences scellé et traçable | `skills\redige-les-exigences (méthode, mode degrade)` | prouvé (experimental) |
 | **Dériver les vues aval** | produire le cadrage consommable par le design et la mission | `skills\derive-les-vues (méthode, mode degrade — D-C2 soldée le 04/08)` | prouvé (experimental) |
-| **Valider les exigences (oracles)** | vérifier mécaniquement mon référentiel d'exigences | `node oracles\oracle-{exigences,tracabilite,surface,claims,etat}.mjs <artefact>` | prouvé (production) |
+| **Valider les exigences (oracles)** | vérifier mécaniquement mon référentiel d'exigences | `node oracles\oracle-{exigences,tracabilite,surface,claims,etat,ears}.mjs <artefact>` | prouvé (production) |
 
 Le catalogue consolidé des dix forges vit chez le pilot :
 [digit-ai-forge-pilot/catalogues/CATALOGUES.md](https://github.com/iguane39/digit-ai-forge-pilot/blob/main/catalogues/CATALOGUES.md).
@@ -63,7 +63,7 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 5 oracles, 20 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 6 oracles, 23 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
@@ -73,6 +73,7 @@ node oracles/self-test.mjs        # 5 oracles, 20 règles, fixtures verte et rou
 | `oracle-surface` | S1–S3 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio |
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
 | `oracle-etat` | EM1–EM3 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) |
+| `oracle-ears` | EA1–EA3 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) |
 
 Node seul, aucune dépendance npm. JSON sur stdout, exit 0/1/2, `non_juge` déclaré.
 Entrées prêtes pour le registre global : [oracles/registre-entrees.md](oracles/registre-entrees.md)
@@ -97,15 +98,16 @@ imposée :
 | `redige-les-exigences` | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
 | `derive-les-vues` | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
 
-**Rejouer les 5 oracles + le self-test**, depuis la racine du dépôt :
+**Rejouer les 6 oracles + le self-test**, depuis la racine du dépôt :
 
 ```bash
-node oracles/self-test.mjs                                   # fixtures verte/rouge, 20 règles
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 23 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
 node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md>
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
 node oracles/oracle-claims.mjs      <chemin/EXIGENCES.json>
 node oracles/oracle-etat.mjs        <chemin/ETAT.json>
+node oracles/oracle-ears.mjs        <chemin/EXIGENCES.json>
 ```
 
 Sortie JSON sur stdout, exit 0 (PASS), 1 (FAIL — au moins un constat en échec, chacun localisé)

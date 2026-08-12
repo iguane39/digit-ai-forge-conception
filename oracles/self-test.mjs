@@ -15,6 +15,8 @@ import { dirname, join } from 'node:path'
 const ICI = dirname(fileURLToPath(import.meta.url))
 const VERTE = join(ICI, 'fixtures', 'verte')
 const ROUGE = join(ICI, 'fixtures', 'rouge')
+const EARS_VERTE = join(ICI, 'fixtures', 'ears-verte', 'EXIGENCES.json')
+const EARS_ROUGE = join(ICI, 'fixtures', 'ears-rouge', 'EXIGENCES.json')
 
 const ORACLES = [
   {
@@ -46,6 +48,14 @@ const ORACLES = [
     fichier: 'oracle-etat.mjs',
     regles: ['EM1', 'EM2', 'EM3'],
     args: (dossier) => [join(dossier, 'ETAT.json')]
+  },
+  {
+    // TF-0101 (1/3) : scoring EARS par patron strict + ambiguïté lexicale. Fixtures dédiées
+    // (pas VERTE/ROUGE partagées) : dossier reçu en paramètre mais ignoré au profit du fichier
+    // propre à cet oracle, distingué par égalité de référence sur la constante VERTE/ROUGE.
+    fichier: 'oracle-ears.mjs',
+    regles: ['EA1', 'EA2', 'EA3'],
+    args: (dossier) => [dossier === VERTE ? EARS_VERTE : EARS_ROUGE]
   }
 ]
 
