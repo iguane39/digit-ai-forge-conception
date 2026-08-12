@@ -43,8 +43,9 @@ que personne d'autre ne fabrique**.
 
 ```
 corpus/            pratiques sourcées, statuts ok/todo — une entrée todo n'est pas servie
-oracles/           les 4 juges exécutés, leurs fixtures, le self-test
+oracles/           les 8 juges exécutés, leurs fixtures, le self-test
 skills/            les quatre verbes
+scripts/           delta.mjs — cycle propose/apply/archive, seul endroit qui mute un référentiel
 ```
 
 ## Les quatre verbes
@@ -63,7 +64,7 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 7 oracles, 26 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 8 oracles, 30 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
@@ -75,6 +76,7 @@ node oracles/self-test.mjs        # 7 oracles, 26 règles, fixtures verte et rou
 | `oracle-etat` | EM1–EM3 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) |
 | `oracle-ears` | EA1–EA3 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) |
 | `oracle-constitution` | C1–C3 | existence (exit 2 sinon) et format de `CONSTITUTION.md`, les invariants non négociables séparés d'`EXIGENCES.json` (TF-0101) |
+| `oracle-delta` | D1–D4 | format d'un delta d'évolution de référentiel et sa cohérence avec la cible (TF-0101) |
 
 Node seul, aucune dépendance npm. JSON sur stdout, exit 0/1/2, `non_juge` déclaré.
 Entrées prêtes pour le registre global : [oracles/registre-entrees.md](oracles/registre-entrees.md)
@@ -122,6 +124,38 @@ semver, C3 au moins un principe non vide et non placeholder). Ce que l'oracle ne
 pertinence des principes, et leur respect effectif par le produit livré — un contrôle de forme,
 pas un audit de conformité.
 
+## Le cycle delta — faire évoluer un référentiel existant (TF-0101)
+
+Les quatre verbes produisent un référentiel **de zéro**. Le run de version du pilot
+(`RUN-VERSION.md`) doit au contraire faire évoluer un `EXIGENCES.json` **déjà scellé** — cas que
+la forge n'outillait pas jusqu'ici : le socle se rattrapait à la main. Cycle repris d'OpenSpec
+(propose / apply / archive), adapté au format JSON de cette forge :
+
+| Étape | Qui | Effet |
+|---|---|---|
+| **propose** | humain ou skill | écrit un `DELTA.json` (`id`, `titre`, `motivation`, `statut: "propose"`, `operations[]`) |
+| **apply** | `node scripts/delta.mjs appliquer <DELTA.json> <EXIGENCES.json>` | rejoue `oracle-delta` (jamais contourné), applique les opérations, `statut -> "applique"` |
+| **archive** | `node scripts/delta.mjs archiver <DELTA.json> [--dossier deltas/archive]` | déplace le delta appliqué en archive, `statut -> "archive"` |
+
+Une opération est `{ type: "ajoute"|"modifie"|"retire", cible: "besoins"|"exigences"|"surface", id?, valeur? }`.
+Exemple travaillé : [oracles/fixtures/delta-verte/DELTA.json](oracles/fixtures/delta-verte/DELTA.json).
+
+**Le garde-fou tient dans une phrase** : `scripts/delta.mjs` n'écrit jamais sur un référentiel
+avant qu'`oracle-delta` ait rendu PASS sur ce delta précis, confronté à ce référentiel précis
+(`--referentiel`) — un delta rouge ne mute jamais rien, l'échec est visible avant l'écriture, pas
+après. Un `retire` sur `exigences` verse l'identifiant dans `identifiants_retires` : la règle
+« un identifiant ne se réaffecte jamais » (E2) s'applique aussi aux deltas. Une double
+application est refusée (`statut` déjà `"applique"`), de même qu'un archivage prématuré
+(`statut` encore `"propose"`).
+
+`oracle-delta` **juge le format**, il ne mute rien — c'est `scripts/delta.mjs`, un outil et non
+un oracle, qui écrit. Recette fonctionnelle dédiée (pas dans `oracles/self-test.mjs`, qui ne
+recette que des juges purs, sans effet de bord) :
+
+```bash
+node scripts/delta.self-test.mjs   # sur des copies en répertoire temporaire, jamais sur les fixtures
+```
+
 ## Invocation par un orchestrateur
 
 Un orchestrateur (conducteur, script de run, agent pilote) qui invoque cette forge doit
@@ -138,10 +172,10 @@ imposée :
 | `redige-les-exigences` | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
 | `derive-les-vues` | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
 
-**Rejouer les 7 oracles + le self-test**, depuis la racine du dépôt :
+**Rejouer les 8 oracles + le self-test**, depuis la racine du dépôt :
 
 ```bash
-node oracles/self-test.mjs                                   # fixtures verte/rouge, 26 règles
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 30 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
 node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md>
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
@@ -149,6 +183,7 @@ node oracles/oracle-claims.mjs      <chemin/EXIGENCES.json>
 node oracles/oracle-etat.mjs        <chemin/ETAT.json>
 node oracles/oracle-ears.mjs        <chemin/EXIGENCES.json>
 node oracles/oracle-constitution.mjs <chemin/CONSTITUTION.md>
+node oracles/oracle-delta.mjs       <chemin/DELTA.json> [--referentiel <chemin/EXIGENCES.json>]
 ```
 
 Sortie JSON sur stdout, exit 0 (PASS), 1 (FAIL — au moins un constat en échec, chacun localisé)

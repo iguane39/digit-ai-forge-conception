@@ -1,0 +1,35 @@
+{
+  "id": "DELTA-0001",
+  "titre": "Notification du responsable et retrait de l'annulation V1",
+  "motivation": "Le run de version 2026-08 ajoute une notification et retire l'annulation, jugée hors périmètre V1 par le comité produit du 10/08.",
+  "statut": "propose",
+  "operations": [
+    {
+      "type": "ajoute",
+      "cible": "exigences",
+      "valeur": {
+        "id": "E-002",
+        "besoin": "B-01",
+        "enonce": "Le responsable reçoit une notification à chaque nouvelle demande.",
+        "critere": "La notification est envoyée dans un délai inférieur ou égal à 5 min.",
+        "palier": "V1",
+        "statut_epistemique": { "nature": "hypothèse", "validation": "atelier non tenu" },
+        "surface": ["S-01"],
+        "cotation": { "impact": 3, "confiance": 2, "effort": 3 }
+      }
+    },
+    {
+      "type": "modifie",
+      "cible": "exigences",
+      "id": "E-001",
+      "valeur": {
+        "critere": "La demande est enregistrée avec un identifiant propre et un statut initial."
+      }
+    },
+    {
+      "type": "retire",
+      "cible": "exigences",
+      "id": "E-003"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "projet": "FIXTURE VERTE oracle-delta — référentiel cible minimal",
+  "date_generation": "2026-08-12",
+  "identifiants_retires": ["E-900"],
+  "besoins": [
+    { "id": "B-01", "enonce": "Un salarié doit pouvoir déclarer une absence." }
+  ],
+  "surface": [
+    { "id": "S-01", "type": "objet", "libelle": "Demande d'absence" }
+  ],
+  "exigences": [
+    {
+      "id": "E-001",
+      "besoin": "B-01",
+      "enonce": "Le salarié enregistre une demande d'absence.",
+      "critere": "La demande est enregistrée avec un statut initial.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC section 1" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+    },
+    {
+      "id": "E-003",
+      "besoin": "B-01",
+      "enonce": "Le salarié annule une demande d'absence non validée.",
+      "critere": "La demande annulée n'est plus visible dans la liste des demandes en cours.",
+      "palier": "V1",
+      "statut_epistemique": { "nature": "hypothèse", "validation": "à confirmer avec le métier" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 2, "confiance": 3, "effort": 2 }
+    }
+  ]
+}

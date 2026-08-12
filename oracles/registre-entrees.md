@@ -85,6 +85,22 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 | **Fixtures** | `oracles/fixtures/constitution-verte` · `oracles/fixtures/constitution-rouge` (dédiées) |
 | **`non_juge`** | La pertinence des principes déclarés · la cohérence avec le contenu réel d'`EXIGENCES.json` · le respect effectif des principes par le produit livré |
 
+## `oracle-delta` v1.0.0
+
+| | |
+|---|---|
+| **Domaine** | Format d'un delta d'évolution de référentiel (cycle propose/apply/archive façon OpenSpec) et sa cohérence avec la cible — TF-0101 |
+| **Artefact jugé** | `DELTA.json`, confronté à `EXIGENCES.json` si `--referentiel` est fourni |
+| **Invocation** | `node oracles/oracle-delta.mjs <DELTA.json> [--referentiel <EXIGENCES.json>]` |
+| **Règles** | D1 champs obligatoires + `operations` non vide · D2 `statut` dans l'ensemble fermé `propose`\|`applique`\|`archive` · D3 chaque opération bien formée (`type`, `cible`, argument requis selon le type) · D4 (si `--referentiel`) `ajoute` ne réutilise pas un id vivant ou mort, `modifie`/`retire` désignent un id existant |
+| **Fixtures** | `oracles/fixtures/delta-verte` · `oracles/fixtures/delta-rouge` (dédiées, avec référentiel cible) |
+| **`non_juge`** | La pertinence de la `motivation` · le contenu métier d'une opération, jugé après application par les oracles habituels · l'ordre d'application de plusieurs deltas concurrents |
+
+Le cycle complet (`scripts/delta.mjs`, mutation) n'est **pas** un oracle : il invoque
+`oracle-delta` comme gate avant toute écriture. Sa recette fonctionnelle propre,
+`scripts/delta.self-test.mjs`, n'entre pas dans ce registre — elle ne juge pas un artefact
+livrable, elle teste un outil.
+
 ---
 
 ## Note de traçabilité
@@ -107,12 +123,12 @@ dépôt de référence sort du périmètre de cette forge.
 node oracles/self-test.mjs
 ```
 
-Vérifie les **deux sens** pour chacun des 7 oracles : la fixture verte passe (exit 0), la
+Vérifie les **deux sens** pour chacun des 8 oracles : la fixture verte passe (exit 0), la
 fixture rouge échoue (exit 1) **et déclenche chacune de ses règles**. Un oracle dont une règle
 ne se déclenche jamais sur la fixture rouge ne juge rien : le self-test le refuse.
 
-État au 12/08/2026 : **7 oracles, 26 règles** (`oracle-ears` et `oracle-constitution` ajoutés —
-TF-0101). Self-test rouge
+État au 12/08/2026 : **8 oracles, 30 règles** (`oracle-ears`, `oracle-constitution` et
+`oracle-delta` ajoutés — TF-0101). Self-test rouge
 au 12/08 pour une cause **étrangère à cet ajout** : `oracle-tracabilite` T3 échoue sur la
 fixture verte partagée par dérive d'encodage de fin de ligne (`core.autocrlf=true` sur ce poste
 Windows change le SHA-256 constaté de `EXIGENCES.json` entre le commit — LF — et le disque —

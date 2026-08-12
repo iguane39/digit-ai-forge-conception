@@ -19,6 +19,8 @@ const EARS_VERTE = join(ICI, 'fixtures', 'ears-verte', 'EXIGENCES.json')
 const EARS_ROUGE = join(ICI, 'fixtures', 'ears-rouge', 'EXIGENCES.json')
 const CONSTIT_VERTE = join(ICI, 'fixtures', 'constitution-verte', 'CONSTITUTION.md')
 const CONSTIT_ROUGE = join(ICI, 'fixtures', 'constitution-rouge', 'CONSTITUTION.md')
+const DELTA_VERTE = join(ICI, 'fixtures', 'delta-verte')
+const DELTA_ROUGE = join(ICI, 'fixtures', 'delta-rouge')
 
 const ORACLES = [
   {
@@ -65,6 +67,16 @@ const ORACLES = [
     fichier: 'oracle-constitution.mjs',
     regles: ['C1', 'C2', 'C3'],
     args: (dossier) => [dossier === VERTE ? CONSTIT_VERTE : CONSTIT_ROUGE]
+  },
+  {
+    // TF-0101 (3/3) : format d'un delta de référentiel (cycle propose/apply/archive façon
+    // OpenSpec), confronté à un référentiel cible via --referentiel. Fixtures dédiées.
+    fichier: 'oracle-delta.mjs',
+    regles: ['D1', 'D2', 'D3', 'D4'],
+    args: (dossier) => {
+      const d = dossier === VERTE ? DELTA_VERTE : DELTA_ROUGE
+      return [join(d, 'DELTA.json'), '--referentiel', join(d, 'EXIGENCES.json')]
+    }
   }
 ]
 

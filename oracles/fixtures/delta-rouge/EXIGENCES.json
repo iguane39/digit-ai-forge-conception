@@ -1,0 +1,23 @@
+{
+  "projet": "FIXTURE ROUGE oracle-delta — référentiel cible minimal",
+  "date_generation": "2026-08-12",
+  "identifiants_retires": ["E-900"],
+  "besoins": [
+    { "id": "B-01", "enonce": "Un salarié doit pouvoir déclarer une absence." }
+  ],
+  "surface": [
+    { "id": "S-01", "type": "objet", "libelle": "Demande d'absence" }
+  ],
+  "exigences": [
+    {
+      "id": "E-001",
+      "besoin": "B-01",
+      "enonce": "Le salarié enregistre une demande d'absence.",
+      "critere": "La demande est enregistrée avec un statut initial.",
+      "palier": "MVP",
+      "statut_epistemique": { "nature": "fait constaté", "source": "CDC section 1" },
+      "surface": ["S-01"],
+      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+    }
+  ]
+}

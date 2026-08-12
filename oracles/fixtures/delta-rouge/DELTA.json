@@ -1,0 +1,42 @@
+{
+  "_defauts_plantes": {
+    "D1": "motivation vide",
+    "D2": "statut hors ensemble ferme (en_attente)",
+    "D3": "operations[0] ajoute sans valeur.id ; operations[1] type inconnu (supprime)",
+    "D4": "operations[2] modifie un id absent (E-999) ; operations[3] ajoute reutilise E-001"
+  },
+  "id": "DELTA-0900",
+  "titre": "FIXTURE ROUGE — un défaut planté par règle. Ne jamais servir de modèle.",
+  "motivation": "",
+  "statut": "en_attente",
+  "operations": [
+    {
+      "type": "ajoute",
+      "cible": "exigences",
+      "valeur": {
+        "enonce": "Exigence ajoutée sans identifiant.",
+        "critere": "Elle existe."
+      }
+    },
+    {
+      "type": "supprime",
+      "cible": "exigences",
+      "id": "E-001"
+    },
+    {
+      "type": "modifie",
+      "cible": "exigences",
+      "id": "E-999",
+      "valeur": { "palier": "V2" }
+    },
+    {
+      "type": "ajoute",
+      "cible": "exigences",
+      "valeur": {
+        "id": "E-001",
+        "enonce": "Doublon d'identifiant.",
+        "critere": "Existe déjà."
+      }
+    }
+  ]
+}
