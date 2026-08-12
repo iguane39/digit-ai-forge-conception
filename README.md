@@ -9,6 +9,23 @@ ni code, ni test, ni déploiement.
 Cadrage complet : [CDC](<Digit-AI - CDC Forge - Conception & PRD - 20260804a.md>) ·
 prompt d'origine : [prompt de cadrage](<Digit-AI - Prompt Forge - Conception & PRD Cadrage - 20260804a.md>)
 
+## Catalogue de services
+
+> Section proposée par la campagne « catalogues » du pilot (2026-08-12) — générée depuis
+> la source unique `catalogues/catalogue.jsonl` du pilot (v1.0.0, challengée état de
+> l'art le 12/08/2026). **prouvé** = preuve exécutée ; *déclaré* = méthode documentée seulement.
+
+| Service | Intention (« je veux… ») | Point d'entrée | Statut |
+|---|---|---|---|
+| **Qualifier l'entrant** | qualifier mon idée, CDC ou produit existant en entrant exploitable | `skills\qualifie-l-entrant (méthode, mode degrade)` | prouvé (experimental) |
+| **Énumérer la surface** | énumérer toute la surface fonctionnelle de mon produit | `skills\enumere-la-surface (méthode, mode degrade)` | prouvé (experimental) |
+| **Rédiger les exigences** | obtenir un référentiel d'exigences scellé et traçable | `skills\redige-les-exigences (méthode, mode degrade)` | prouvé (experimental) |
+| **Dériver les vues aval** | produire le cadrage consommable par le design et la mission | `skills\derive-les-vues (méthode, mode degrade — D-C2 soldée le 04/08)` | prouvé (experimental) |
+| **Valider les exigences (oracles)** | vérifier mécaniquement mon référentiel d'exigences | `node oracles\oracle-{exigences,tracabilite,surface,claims,etat}.mjs <artefact>` | prouvé (production) |
+
+Le catalogue consolidé des dix forges vit chez le pilot :
+[digit-ai-forge-pilot/catalogues/CATALOGUES.md](https://github.com/iguane39/digit-ai-forge-pilot/blob/main/catalogues/CATALOGUES.md).
+
 ## Le problème
 
 Forge Tests exige que **chaque test porte l'identifiant de l'exigence qu'il couvre** — champ
