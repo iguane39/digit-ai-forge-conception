@@ -17,6 +17,8 @@ const VERTE = join(ICI, 'fixtures', 'verte')
 const ROUGE = join(ICI, 'fixtures', 'rouge')
 const EARS_VERTE = join(ICI, 'fixtures', 'ears-verte', 'EXIGENCES.json')
 const EARS_ROUGE = join(ICI, 'fixtures', 'ears-rouge', 'EXIGENCES.json')
+const CONSTIT_VERTE = join(ICI, 'fixtures', 'constitution-verte', 'CONSTITUTION.md')
+const CONSTIT_ROUGE = join(ICI, 'fixtures', 'constitution-rouge', 'CONSTITUTION.md')
 
 const ORACLES = [
   {
@@ -56,6 +58,13 @@ const ORACLES = [
     fichier: 'oracle-ears.mjs',
     regles: ['EA1', 'EA2', 'EA3'],
     args: (dossier) => [dossier === VERTE ? EARS_VERTE : EARS_ROUGE]
+  },
+  {
+    // TF-0101 (2/3) : contrôle d'existence (exit 2 s'il est absent, comme tout autre oracle de
+    // cette forge) et de format de CONSTITUTION.md. Fixtures dédiées, comme oracle-ears.
+    fichier: 'oracle-constitution.mjs',
+    regles: ['C1', 'C2', 'C3'],
+    args: (dossier) => [dossier === VERTE ? CONSTIT_VERTE : CONSTIT_ROUGE]
   }
 ]
 

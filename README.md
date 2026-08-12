@@ -63,7 +63,7 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 6 oracles, 23 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 7 oracles, 26 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
@@ -74,6 +74,7 @@ node oracles/self-test.mjs        # 6 oracles, 23 règles, fixtures verte et rou
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
 | `oracle-etat` | EM1–EM3 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) |
 | `oracle-ears` | EA1–EA3 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) |
+| `oracle-constitution` | C1–C3 | existence (exit 2 sinon) et format de `CONSTITUTION.md`, les invariants non négociables séparés d'`EXIGENCES.json` (TF-0101) |
 
 Node seul, aucune dépendance npm. JSON sur stdout, exit 0/1/2, `non_juge` déclaré.
 Entrées prêtes pour le registre global : [oracles/registre-entrees.md](oracles/registre-entrees.md)
@@ -81,6 +82,45 @@ Entrées prêtes pour le registre global : [oracles/registre-entrees.md](oracles
 
 Le self-test vérifie les **deux sens** : la fixture verte passe, la rouge échoue *et déclenche
 chacune de ses règles*. Un oracle dont une règle ne se déclenche jamais ne juge rien.
+
+## La constitution du projet (TF-0101)
+
+`EXIGENCES.json` change à chaque itération de palier. Certains invariants ne doivent, eux,
+**jamais** changer avec le produit : conformité réglementaire non négociable, principes
+d'architecture qui engagent toutes les forges avales, garde-fous transverses du type des « lois
+qui traversent tout » ci-dessus. Sans support séparé, ces invariants finissent dilués dans les
+énoncés d'exigence, où une reformulation de palier peut les faire disparaître sans que rien ne
+le signale — l'équivalent du trou que comble `constitution.md` dans GitHub Spec Kit.
+
+`CONSTITUTION.md`, à la racine du projet cadré, à côté d'`EXIGENCES.json` (jamais dedans) :
+
+```markdown
+---
+projet: <nom>
+version: 1.0.0
+date_ratification: AAAA-MM-JJ
+---
+
+# Constitution — <projet>
+
+## Principes non négociables
+
+1. <invariant, une phrase, un fait vérifiable — pas un souhait>
+```
+
+`version` suit le semver **de la constitution elle-même**, pas celui du produit : elle ne bouge
+que par ratification explicite, jamais par cycle de palier. Format complet, exemple travaillé :
+[oracles/fixtures/constitution-verte/CONSTITUTION.md](oracles/fixtures/constitution-verte/CONSTITUTION.md).
+
+```bash
+node oracles/oracle-constitution.mjs <chemin/CONSTITUTION.md>
+```
+
+Contrôle **d'existence** (le fichier absent sort en 2 — ERREUR, comme tout artefact manquant
+dans cette forge, jamais en FAIL) et **de format** (C1 frontmatter bien formé, C2 `version`
+semver, C3 au moins un principe non vide et non placeholder). Ce que l'oracle ne juge pas : la
+pertinence des principes, et leur respect effectif par le produit livré — un contrôle de forme,
+pas un audit de conformité.
 
 ## Invocation par un orchestrateur
 
@@ -98,16 +138,17 @@ imposée :
 | `redige-les-exigences` | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
 | `derive-les-vues` | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
 
-**Rejouer les 6 oracles + le self-test**, depuis la racine du dépôt :
+**Rejouer les 7 oracles + le self-test**, depuis la racine du dépôt :
 
 ```bash
-node oracles/self-test.mjs                                   # fixtures verte/rouge, 23 règles
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 26 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
 node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md>
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
 node oracles/oracle-claims.mjs      <chemin/EXIGENCES.json>
 node oracles/oracle-etat.mjs        <chemin/ETAT.json>
 node oracles/oracle-ears.mjs        <chemin/EXIGENCES.json>
+node oracles/oracle-constitution.mjs <chemin/CONSTITUTION.md>
 ```
 
 Sortie JSON sur stdout, exit 0 (PASS), 1 (FAIL — au moins un constat en échec, chacun localisé)

@@ -74,6 +74,17 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 | **Fixtures** | `oracles/fixtures/ears-verte` · `oracles/fixtures/ears-rouge` (dédiées, pas les fixtures partagées) |
 | **`non_juge`** | La justesse du déclencheur reconnu · la désambiguïsation optional/unwanted reste une heuristique lexicale, pas sémantique · l'ambiguïté lexicale hors liste fermée |
 
+## `oracle-constitution` v1.0.0
+
+| | |
+|---|---|
+| **Domaine** | Existence et format de `CONSTITUTION.md` — les invariants non négociables du projet, séparés d'`EXIGENCES.json` (TF-0101) |
+| **Artefact jugé** | `CONSTITUTION.md` |
+| **Invocation** | `node oracles/oracle-constitution.mjs <CONSTITUTION.md>` |
+| **Règles** | C1 frontmatter bien formé (`--- clé: valeur ... ---`) · C2 `version` semver strict X.Y.Z · C3 au moins un principe non vide et non placeholder sous « Principes non négociables » |
+| **Fixtures** | `oracles/fixtures/constitution-verte` · `oracles/fixtures/constitution-rouge` (dédiées) |
+| **`non_juge`** | La pertinence des principes déclarés · la cohérence avec le contenu réel d'`EXIGENCES.json` · le respect effectif des principes par le produit livré |
+
 ---
 
 ## Note de traçabilité
@@ -96,11 +107,12 @@ dépôt de référence sort du périmètre de cette forge.
 node oracles/self-test.mjs
 ```
 
-Vérifie les **deux sens** pour chacun des 6 oracles : la fixture verte passe (exit 0), la
+Vérifie les **deux sens** pour chacun des 7 oracles : la fixture verte passe (exit 0), la
 fixture rouge échoue (exit 1) **et déclenche chacune de ses règles**. Un oracle dont une règle
 ne se déclenche jamais sur la fixture rouge ne juge rien : le self-test le refuse.
 
-État au 12/08/2026 : **6 oracles, 23 règles** (`oracle-ears` ajouté — TF-0101). Self-test rouge
+État au 12/08/2026 : **7 oracles, 26 règles** (`oracle-ears` et `oracle-constitution` ajoutés —
+TF-0101). Self-test rouge
 au 12/08 pour une cause **étrangère à cet ajout** : `oracle-tracabilite` T3 échoue sur la
 fixture verte partagée par dérive d'encodage de fin de ligne (`core.autocrlf=true` sur ce poste
 Windows change le SHA-256 constaté de `EXIGENCES.json` entre le commit — LF — et le disque —
