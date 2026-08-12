@@ -12,9 +12,12 @@ Les deux premières lignes, avant tout contenu :
 > `<!-- source: EXIGENCES.json -->`
 > `<!-- source-sha256: <64 caractères hexadécimaux> -->`
 
-L'empreinte est celle des **octets** de `EXIGENCES.json`. Elle se recalcule à chaque
-régénération. `oracle-tracabilite` T3 la compare ; une vue sans en-tête est un échec au même
-titre qu'une vue périmée.
+L'empreinte est celle des **octets** de `EXIGENCES.json`, fins de ligne **normalisées LF**
+(CRLF→LF) avant hachage — TF-0114 : sous Windows, `core.autocrlf` convertit le fichier en
+CRLF au checkout, alors qu'un poste Linux/macOS le voit en LF ; sans cette normalisation,
+un contenu identique au caractère près produirait deux empreintes différentes selon l'OS.
+Elle se recalcule à chaque régénération. `oracle-tracabilite` T3 la compare avec la même
+normalisation ; une vue sans en-tête est un échec au même titre qu'une vue périmée.
 
 ---
 

@@ -11,6 +11,9 @@
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
+import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { createHash } from 'node:crypto'
 
 const ICI = dirname(fileURLToPath(import.meta.url))
 const VERTE = join(ICI, 'fixtures', 'verte')
@@ -151,6 +154,66 @@ for (const o of ORACLES) {
   } else {
     echecs++
     console.log(`oracle-surface.mjs (branche RC-1)\n  [FAIL] exit ${rc1.code} (attendu 0), S-05 nomme : ${nomme}`)
+  }
+}
+
+// --- branche TF-0114 : T3 ignore un CRLF/LF a contenu identique, mais juge toujours un
+// contenu reellement different. Fixture ephemere (comme scripts/delta.self-test.mjs) :
+// prouve la normalisation sans dependre du core.autocrlf du poste qui execute ce test.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0114-'))
+  try {
+    const objetFixture = {
+      projet: 'Fixture TF-0114 (CRLF/LF)',
+      besoins: [{ id: 'B-01', enonce: 'Besoin factice pour le self-test T3.' }],
+      exigences: [{
+        id: 'E-001',
+        besoin: 'B-01',
+        enonce: 'Exigence factice pour le self-test T3.',
+        critere: 'Critere non vide.',
+        statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-0114' }
+      }]
+    }
+    const contenuLF = JSON.stringify(objetFixture, null, 2) + '\n'
+    const contenuCRLF = contenuLF.replace(/\n/g, '\r\n') // meme contenu, autres octets
+
+    const exigencesLF = join(tmp, 'EXIGENCES-lf.json')
+    const exigencesCRLF = join(tmp, 'EXIGENCES-crlf.json')
+    writeFileSync(exigencesLF, contenuLF)
+    writeFileSync(exigencesCRLF, contenuCRLF)
+
+    // empreinte calculee comme l'oracle desormais la calcule : sur le contenu normalise LF
+    const empreinte = createHash('sha256').update(contenuLF, 'utf8').digest('hex')
+    const vueAlignee = join(tmp, 'VUE-alignee.md')
+    writeFileSync(vueAlignee,
+      `<!-- source: EXIGENCES.json -->\n<!-- source-sha256: ${empreinte} -->\n\n# Vue fixture TF-0114\n`)
+
+    // empreinte volontairement fausse : un contenu REELLEMENT different, pas une variante d'EOL
+    const vueDivergente = join(tmp, 'VUE-divergente.md')
+    writeFileSync(vueDivergente,
+      `<!-- source: EXIGENCES.json -->\n<!-- source-sha256: ${'0'.repeat(64)} -->\n\n# Vue fixture TF-0114\n`)
+
+    const surLF = lancer('oracle-tracabilite.mjs', [exigencesLF, '--vue', vueAlignee])
+    const surCRLF = lancer('oracle-tracabilite.mjs', [exigencesCRLF, '--vue', vueAlignee])
+    const surDivergent = lancer('oracle-tracabilite.mjs', [exigencesLF, '--vue', vueDivergente])
+
+    const t3 = (r, statut) => (r.rapport?.constats ?? []).some(c => c.regle === 'T3' && c.statut === statut)
+    const ok = surLF.code === 0 && t3(surLF, 'PASS') &&
+      surCRLF.code === 0 && t3(surCRLF, 'PASS') &&
+      surDivergent.code === 1 && t3(surDivergent, 'FAIL')
+
+    if (ok) {
+      console.log('oracle-tracabilite.mjs (branche TF-0114, fixture CRLF/LF ephemere)\n' +
+        '  [OK]   LF exit 0 et CRLF (meme contenu) exit 0 -- meme empreinte, T3 ne voit pas de difference\n' +
+        '  [OK]   contenu reellement different -- T3 FAIL (la regle juge toujours)')
+    } else {
+      echecs++
+      console.log('oracle-tracabilite.mjs (branche TF-0114)\n' +
+        `  [FAIL] LF exit ${surLF.code} (attendu 0) | CRLF exit ${surCRLF.code} (attendu 0) | ` +
+        `divergent exit ${surDivergent.code} (attendu 1)`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
   }
 }
 

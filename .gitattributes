@@ -1,0 +1,8 @@
+# TF-0114 — un artefact identique au caractère près doit produire la même empreinte
+# SHA-256 quel que soit l'OS de checkout. Sans cette règle, core.autocrlf=true convertit
+# les fixtures et les vues à empreinte embarquée en CRLF sous Windows, alors que le
+# SHA-256 est calculé et embarqué en LF : oracle-tracabilite T3 (self-test) devient
+# structurellement rouge pour une raison étrangère au contenu. `eol=lf` force Git à
+# stocker et restituer ces fichiers en LF sur tout poste, en complément (double ceinture)
+# de la normalisation faite par l'oracle lui-même.
+oracles/fixtures/** text eol=lf

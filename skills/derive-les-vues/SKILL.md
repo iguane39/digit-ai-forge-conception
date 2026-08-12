@@ -29,7 +29,7 @@ permet aux trois forges aval de continuer à fonctionner si la Conception dispar
 ```
 1. Entrée        → EXIGENCES.json
 2. Contrats      → references/vues.md
-3. Empreinte     → node -e "…sha256 de EXIGENCES.json…"  (en-tête de chaque vue)
+3. Empreinte     → node -e "…sha256 de EXIGENCES.json normalisé LF (CRLF→LF)…"  (en-tête de chaque vue)
 4. Artefacts     → CADRAGE-DESIGN.md · MISSION.md · EXIGENCES.json exposé
 5. Contrôle      → node oracles/oracle-tracabilite.mjs EXIGENCES.json --vue CADRAGE-DESIGN.md
 6. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs

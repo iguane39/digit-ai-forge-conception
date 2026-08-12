@@ -9,6 +9,13 @@ import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, NATURES } fr
 const VERSION = '1.0.0'
 const EN_TETE_SOURCE = /<!--\s*source-sha256:\s*([0-9a-f]{64})\s*-->/i
 
+// TF-0114 : l'empreinte juge un CONTENU, jamais l'encodage de fin de ligne du poste qui a
+// fait le checkout. Sous Windows, core.autocrlf=true convertit LF -> CRLF à l'extraction ;
+// sans cette normalisation, un artefact identique au caractère près change de SHA-256 selon
+// l'OS. Même normalisation à appliquer partout où ce dépôt calcule ou embarque un
+// source-sha256 (voir skills/derive-les-vues).
+const normaliserFinsDeLigne = (texte) => texte.replace(/\r\n/g, '\n')
+
 const cible = process.argv[2]
 const vues = []
 for (let i = 3; i < process.argv.length; i++) {
@@ -64,7 +71,9 @@ for (const [i, e] of ref.exigences.entries()) {
 
 // --- T3 : les vues sont régénérables depuis la source ----------------------
 
-const sha = createHash('sha256').update(readFileSync(cible)).digest('hex')
+const sha = createHash('sha256')
+  .update(normaliserFinsDeLigne(readFileSync(cible, 'utf8')), 'utf8')
+  .digest('hex')
 if (vues.length === 0) {
   constats.push(constat('T3', SANS_OBJET, 'aucune vue fournie',
     'aucun argument --vue : la régénérabilité n\'est pas jugée, elle n\'est pas non plus supposée'))
