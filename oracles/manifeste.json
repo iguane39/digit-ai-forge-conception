@@ -1,0 +1,15 @@
+{
+  "manifeste": "forge-conception",
+  "version": "1.0.0",
+  "date": "2026-08-14",
+  "description": "Méthode des 4 verbes : chaque verbe est un skill, chaque livrable est jugé par oracles (D-C1 du contrat pilot, soldée).",
+  "point_entree_oracles": "node oracles/run-oracles-conception.mjs <EXIGENCES.json> [--json-only]",
+  "verbes": [
+    { "verbe": "qualifier l'entrant", "skill": "skills/qualifie-l-entrant", "produit": "ENTRANT.md" },
+    { "verbe": "énumérer la surface", "skill": "skills/enumere-la-surface", "produit": "SURFACE.md", "oracle": "oracle-surface.mjs" },
+    { "verbe": "rédiger les exigences", "skill": "skills/redige-les-exigences", "produit": "EXIGENCES.json scellé", "oracles": ["oracle-exigences.mjs", "oracle-ears.mjs", "oracle-tracabilite.mjs"] },
+    { "verbe": "dériver les vues", "skill": "skills/derive-les-vues", "produit": "vues docs/projet", "oracle": "oracle-delta.mjs" }
+  ],
+  "oracles_transverses": ["oracle-claims.mjs", "oracle-constitution.mjs", "oracle-etat.mjs", "controle-s11.mjs"],
+  "preuves": "oracles/self-test.mjs (fixtures du dossier fixtures/)"
+}
