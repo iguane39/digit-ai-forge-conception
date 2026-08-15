@@ -11,7 +11,7 @@
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 
@@ -214,6 +214,64 @@ for (const o of ORACLES) {
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-0255 : le runner agrege route CONSTITUTION.md/DELTA.json/ETAT.json vers leurs
+// VRAIS voisins (pas EXIGENCES.json) -- juste apres le seul verbe "rediger les exigences", ces
+// trois fichiers n'existent pas encore et doivent sortir NON_JUGE (motif : voisin absent),
+// jamais FAIL. Fixture ephemere : dossier ne contenant QUE EXIGENCES.json, comme un run reel
+// qui vient de terminer ce seul verbe. --seulement exclut oracle-ears (fixtures dediees, non
+// partagees avec VERTE/ROUGE -- cf. commentaire plus haut) pour ne mesurer que le defaut vise.
+{
+  const SEULEMENT = 'exigences,tracabilite,surface,claims,constitution,delta,etat'
+  const RUNNER = join(ICI, 'run-oracles-conception.mjs')
+  const lancerRunner = (exigences) => {
+    const r = spawnSync(process.execPath,
+      [RUNNER, exigences, `--seulement=${SEULEMENT}`],
+      { encoding: 'utf8', windowsHide: true })
+    let rapport = null
+    try { rapport = JSON.parse(r.stdout) } catch { /* laisse a null */ }
+    return { code: r.status, rapport, brut: r.stdout + r.stderr }
+  }
+  const verdictDe = (rapport, nom) => rapport?.oracles?.find(o => o.oracle === nom)?.verdict
+
+  const tmpVert = mkdtempSync(join(tmpdir(), 'forge-conception-tf0255-vert-'))
+  const tmpRouge = mkdtempSync(join(tmpdir(), 'forge-conception-tf0255-rouge-'))
+  try {
+    // Seul EXIGENCES.json est depose -- CONSTITUTION.md, DELTA.json, ETAT.json n'existent pas.
+    writeFileSync(join(tmpVert, 'EXIGENCES.json'),
+      readFileSync(join(VERTE, 'EXIGENCES.json'), 'utf8'))
+    writeFileSync(join(tmpRouge, 'EXIGENCES.json'),
+      readFileSync(join(ROUGE, 'EXIGENCES.json'), 'utf8'))
+
+    // VERT attendu : les oracles applicables a EXIGENCES.json sont tous PASS -> agrege PASS
+    // (exit 0), et les 3 transverses sont NON_JUGE motive (voisin absent), jamais FAIL.
+    const v = lancerRunner(join(tmpVert, 'EXIGENCES.json'))
+    const vertOk = v.code === 0 && v.rapport?.verdict === 'PASS' &&
+      ['oracle-constitution', 'oracle-delta', 'oracle-etat'].every(n => verdictDe(v.rapport, n) === 'NON_JUGE')
+
+    // ROUGE attendu : un vrai defaut d'un oracle applicable (fixture ROUGE partagee) reste
+    // un FAIL agrege -- les transverses NON_JUGE ne masquent jamais un echec reel.
+    const r = lancerRunner(join(tmpRouge, 'EXIGENCES.json'))
+    const rougeOk = r.code === 1 && r.rapport?.verdict === 'FAIL' &&
+      ['oracle-constitution', 'oracle-delta', 'oracle-etat'].every(n => verdictDe(r.rapport, n) === 'NON_JUGE')
+
+    if (vertOk && rougeOk) {
+      console.log('run-oracles-conception.mjs (branche TF-0255, fixtures ephemeres)\n' +
+        '  [OK]   vert  -- voisins absents : NON_JUGE motive, applicables PASS -> agrege PASS (exit 0)\n' +
+        '  [OK]   rouge -- voisins absents : NON_JUGE motive, un applicable FAIL -> agrege FAIL (exit 1)')
+    } else {
+      echecs++
+      console.log('run-oracles-conception.mjs (branche TF-0255)\n' +
+        `  [FAIL] vert exit ${v.code} verdict ${v.rapport?.verdict} (attendu 0/PASS) | ` +
+        `rouge exit ${r.code} verdict ${r.rapport?.verdict} (attendu 1/FAIL)`)
+      if (!vertOk) console.log(`         verte brute : ${v.brut.slice(0, 300)}`)
+      if (!rougeOk) console.log(`         rouge brute : ${r.brut.slice(0, 300)}`)
+    }
+  } finally {
+    rmSync(tmpVert, { recursive: true, force: true })
+    rmSync(tmpRouge, { recursive: true, force: true })
   }
 }
 

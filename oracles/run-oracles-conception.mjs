@@ -38,11 +38,29 @@ const oracles = readdirSync(ICI)
   .filter((f) => !seulement || seulement.some((s) => f.includes(s)))
   .sort();
 
+// TF-0255 : trois oracles transverses (constitution, delta, etat) ne jugent PAS EXIGENCES.json —
+// ils jugent un fichier voisin, à côté d'EXIGENCES.json (README §« Constitution projet »,
+// « Cycle delta », « marqueur machine ETAT.json »), produit par un AUTRE verbe que celui qui
+// vient de tourner. Leur passer aveuglément `cible` (EXIGENCES.json) faisait lire son contenu
+// comme si c'était le leur : le fichier EXISTE, mais au mauvais format → FAIL réel, jamais
+// l'ERREUR (exit 2) que ces oracles rendent normalement pour un artefact absent. Résultat
+// structurel : juste après le seul verbe « rédiger les exigences » (CONSTITUTION.md, DELTA.json,
+// ETAT.json n'existent pas encore), l'agrégé sortait FAIL alors que les 5 oracles applicables à
+// EXIGENCES.json étaient PASS. Router chacun vers son VRAI voisin restitue le exit 2 (ERREUR)
+// prévu par _contrat.mjs quand ce voisin n'existe pas encore — le voisin absent, jamais jugé.
+const VOISIN_PAR_ORACLE = {
+  "oracle-constitution.mjs": "CONSTITUTION.md",
+  "oracle-delta.mjs": "DELTA.json",
+  "oracle-etat.mjs": "ETAT.json",
+};
+const cibleDe = (oracle) =>
+  VOISIN_PAR_ORACLE[oracle] ? join(dirname(cible), VOISIN_PAR_ORACLE[oracle]) : cible;
+
 const resultats = [];
 let unFail = false;
 let unPass = false;
 for (const oracle of oracles) {
-  const r = spawnSync(process.execPath, [join(ICI, oracle), cible], { encoding: "utf8" });
+  const r = spawnSync(process.execPath, [join(ICI, oracle), cibleDe(oracle)], { encoding: "utf8" });
   let corps = null;
   try { corps = JSON.parse(r.stdout); } catch { /* sortie non-JSON : déclarée telle quelle */ }
   const verdict = r.status === 0 ? "PASS" : r.status === 1 ? "FAIL" : "NON_JUGE";
