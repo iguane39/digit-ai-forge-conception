@@ -69,6 +69,19 @@ proposée d'office en fin d'énumération, chacun retenu (→ exigence) ou écar
 `SURFACE.md` section 3. Liste complète : `references/typologie-surface.md`, section « Surface
 implicite SaaS ».
 
+**Deux natures d'élément rendent huit exigences DUES — dès l'énumération (TF-0376).** Un
+`point-entree` ou un `parcours` dont l'entrant dit qu'il est **asynchrone** (conversion, import,
+consolidation, file, job de nuit) porte quatre questions ouvertes : comment l'interface apprend
+la fin, quel est l'état terminal d'un échec, quel est le délai maximal, comment on reprend. Un
+élément qui repose sur une **authentification** (SSO, OIDC, SAML) en porte quatre autres : durée
+de la session applicative, renouvellement silencieux, détection d'expiration, restauration du
+contexte. Le noter ICI, au moment où l'élément est énuméré, est le premier endroit où l'oubli
+peut être vu — `oracle-ears` EA4/EA5 le constatera de toute façon à l'étape suivante, mais alors
+la surface sera déjà figée. Mesure : cinq des douze lacunes de spécification du cahier Approval
+tenaient à ces deux sujets seuls, dont un « bug critique » et une perte de brouillon — et le
+développeur avait implémenté exactement ce qui était écrit. Détail des huit questions :
+`redige-les-exigences/references/formulation.md`, section EA4/EA5.
+
 **Aucune exécution du produit analysé.** L'énumération se fait par lecture. On ne démarre
 aucun serveur, on ne lance aucun script du dépôt.
 

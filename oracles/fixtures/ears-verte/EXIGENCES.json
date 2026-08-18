@@ -37,6 +37,24 @@
       "enonce": "Si le run de tests est vide, alors le rapport est rejeté.",
       "critere": "Le rapport est rejeté et aucun artefact de tests n'est publié.",
       "patron_ears": "unwanted"
+    },
+    {
+      "id": "EA-007",
+      "_regles_jouees": [
+        "EA4 (sens PASS)"
+      ],
+      "enonce": "Quand la conversion asynchrone du fichier se termine, la liste est rafraîchie et le fichier passe à l'état « Prêt ».",
+      "critere": "Le fichier passe à « Prêt » dans un délai maximal de 60 secondes sans action de l'utilisateur ; au-delà, il passe à l'état terminal « Échec de conversion » et une reprise est proposée.",
+      "patron_ears": "event-driven"
+    },
+    {
+      "id": "EA-008",
+      "_regles_jouees": [
+        "EA5 (sens PASS)"
+      ],
+      "enonce": "Tant que l'authentification OIDC est valide, l'utilisateur accède à son espace sans se reconnecter.",
+      "critere": "La session applicative a une durée de 60 minutes, est renouvelée silencieusement tant que l'onglet est actif ; à l'expiration détectée, le brouillon en cours est conservé et le contexte est restauré après reconnexion.",
+      "patron_ears": "state-driven"
     }
   ]
 }

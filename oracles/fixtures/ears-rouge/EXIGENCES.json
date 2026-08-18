@@ -3,36 +3,64 @@
   "date_generation": "2026-08-12",
   "exigences": [
     {
-      "_defauts_plantes": ["EA1"],
+      "_defauts_plantes": [
+        "EA1"
+      ],
       "id": "EA-901",
       "enonce": "Si l'option additionnelle est choisie par le client, le tarif est ajusté.",
       "critere": "Le tarif affiché correspond à la grille en vigueur."
     },
     {
-      "_defauts_plantes": ["EA1"],
+      "_defauts_plantes": [
+        "EA1"
+      ],
       "id": "EA-902",
       "enonce": "Si le paiement dépasse le seuil de fraude, alors la commande est bloquée sauf si le client est vérifié.",
       "critere": "La commande est bloquée et le client vérifié est accepté."
     },
     {
-      "_defauts_plantes": ["EA2"],
+      "_defauts_plantes": [
+        "EA2"
+      ],
       "id": "EA-903",
       "enonce": "Le système notifie généralement plusieurs responsables lors d'une nouvelle demande.",
       "critere": "La notification est envoyée dans les meilleurs délais aux responsables concernés."
     },
     {
-      "_defauts_plantes": ["EA3"],
+      "_defauts_plantes": [
+        "EA3"
+      ],
       "id": "EA-904",
       "enonce": "Quand la demande est annulée, le solde est recrédité.",
       "critere": "Le solde affiché après annulation retrouve sa valeur antérieure à la demande.",
       "patron_ears": "state-driven"
     },
     {
-      "_defauts_plantes": ["EA3"],
+      "_defauts_plantes": [
+        "EA3"
+      ],
       "id": "EA-905",
       "enonce": "Le système archive les journaux au-delà de 12 mois.",
       "critere": "Un journal dont la date dépasse 12 mois est archivé.",
       "patron_ears": "patron-inexistant"
+    },
+    {
+      "_defauts_plantes": [
+        "EA4"
+      ],
+      "id": "EA-906",
+      "enonce": "La conversion et la consolidation sont asynchrones.",
+      "critere": "Le fichier déposé est converti puis consolidé.",
+      "_fait": "énoncé du paragraphe 08 du cahier Approval, mot pour mot — il s'arrêtait là. Résultat en recette : « Conversion en cours » affiché alors que la conversion était finie, jusqu'à une action utilisateur sans rapport. Qualifié « bug critique » par la recette elle-même."
+    },
+    {
+      "_defauts_plantes": [
+        "EA5"
+      ],
+      "id": "EA-907",
+      "enonce": "L'accès à l'application se fait par SSO via Microsoft Entra ID / OIDC.",
+      "critere": "Un utilisateur du annuaire accède à l'application après authentification.",
+      "_fait": "énoncé des paragraphes 11 et 13 du cahier Approval — il s'arrêtait là. Résultat : « Une erreur est survenue » puis reconnexion exigée après F5, avec perte du brouillon."
     }
   ]
 }
