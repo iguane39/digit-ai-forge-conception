@@ -1,0 +1,34 @@
+{
+  "projet": "FIXTURE — cible d un delta de retour d usage en prose (TF-0374).",
+  "date_generation": "2026-08-18",
+  "besoins": [
+    {
+      "id": "B-08",
+      "enonce": "Deposer plusieurs fichiers en une fois."
+    }
+  ],
+  "identifiants_retires": [],
+  "exigences": [
+    {
+      "id": "E-035",
+      "besoin": "B-08",
+      "enonce": "L edition est refusee apres la premiere decision.",
+      "critere": "Une tentative d edition apres decision est refusee.",
+      "palier": "V1",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "cahier §05"
+      },
+      "surface": [
+        "S-08"
+      ]
+    }
+  ],
+  "surface": [
+    {
+      "id": "S-08",
+      "type": "parcours",
+      "libelle": "Depot de fichiers"
+    }
+  ]
+}

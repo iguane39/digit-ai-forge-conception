@@ -1,0 +1,82 @@
+{
+  "_regles_jouees": {
+    "D5": "sens PASS — origine declaree ET chaque operation portant sa section et sa cause racine, les quatre valeurs de l ensemble ferme etant representees"
+  },
+  "id": "DELTA-PROSE-0001",
+  "titre": "Lot de corrections issu d une recette humaine — 49 rubriques instruites",
+  "motivation": "Retour d usage arrive en PROSE (1271 lignes, 49 rubriques). Chaque rubrique porte sa section de referentiel et sa cause racine, protocole `qualifie-l-entrant` §« Delta en PROSE » (TF-0374).",
+  "statut": "propose",
+  "origine": "retour-usage-prose",
+  "operations": [
+    {
+      "type": "ajoute",
+      "cible": "exigences",
+      "section": "§08",
+      "cause_racine": "ecart-au-texte",
+      "valeur": {
+        "id": "E-016",
+        "besoin": "B-08",
+        "enonce": "Le depot multiple par glisser-deposer est accepte.",
+        "critere": "Un depot de 3 fichiers par glisser-deposer cree 3 lignes.",
+        "palier": "V1",
+        "statut_epistemique": {
+          "nature": "fait constaté",
+          "source": "cahier §08"
+        },
+        "surface": [
+          "S-08"
+        ],
+        "cotation": {
+          "impact": 3,
+          "confiance": 3,
+          "effort": 2
+        }
+      }
+    },
+    {
+      "type": "retire",
+      "cible": "exigences",
+      "id": "E-035",
+      "section": "aucune",
+      "cause_racine": "sur-livraison",
+      "_fait": "trois blocs d accueil qu aucune section ne demandait : il faut payer leur retrait"
+    },
+    {
+      "type": "ajoute",
+      "cible": "exigences",
+      "section": "§08",
+      "cause_racine": "lacune-de-specification",
+      "valeur": {
+        "id": "E-020",
+        "besoin": "B-08",
+        "enonce": "La fin d une conversion asynchrone est notifiee a l interface.",
+        "critere": "Le fichier passe a « Pret » dans un delai maximal de 60 s sans action; au-dela, etat terminal « Echec » et reprise proposee.",
+        "palier": "V1",
+        "statut_epistemique": {
+          "nature": "hypothèse",
+          "validation": "arbitrage produit du 18/08"
+        },
+        "surface": [
+          "S-08"
+        ],
+        "cotation": {
+          "impact": 3,
+          "confiance": 2,
+          "effort": 2
+        }
+      },
+      "_fait": "le cahier disait « conversion et consolidation asynchrones » et s arretait la (EA4)"
+    },
+    {
+      "type": "modifie",
+      "cible": "exigences",
+      "id": "E-035",
+      "section": "§05",
+      "cause_racine": "evolution-de-doctrine",
+      "valeur": {
+        "critere": "L edition reste possible apres la premiere decision."
+      },
+      "_fait": "le cahier disait l INVERSE : c est l avis qui change, pas le code qui a devie. La classer en ecart ferait bloquer un sprint sur un changement d avis"
+    }
+  ]
+}

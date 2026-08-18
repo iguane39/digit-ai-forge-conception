@@ -129,6 +129,58 @@ if (!cheminReferentiel) {
   }
 }
 
+// D5 — origine « retour d'usage en prose » : chaque opération porte sa SECTION et sa CAUSE
+// RACINE (TF-0374, 18/08). Le protocole `qualifie-l-entrant/references/entrants.md` §« Delta
+// en PROSE » les prescrit ; sans cette règle, il les prescrirait et rien ne les vérifierait —
+// c'est-à-dire qu'il ne les prescrirait pas (R-35).
+//
+// La règle s'arme de DEUX façons, et la seconde est la plus utile : `origine` déclarée, ou
+// n'importe quelle opération portant DÉJÀ l'un des deux champs. Ce second déclenchement
+// attrape l'adoption PARTIELLE — trois rubriques classées, quarante-six muettes — qui est pire
+// que rien : elle donne l'apparence d'un delta instruit. Aucun des deux : SANS_OBJET, un delta
+// ordinaire n'a pas à porter ces champs.
+//
+// L'ensemble des causes est FERMÉ à quatre. La quatrième est sa raison d'être : une évolution
+// de doctrine RESSEMBLE à un écart (elle se présente comme « absent du produit »), et la
+// classer en écart ferait bloquer un sprint sur un changement d'avis. Mesure sur Approval le
+// 18/08 : 24 des 49 rubriques étaient des écarts au texte ou des sur-livraisons, 12 des lacunes
+// de spécification, et 12 des évolutions de doctrine — soit un quart du lot que rien ne doit
+// transformer en défaut.
+const CAUSES_RACINES = ['ecart-au-texte', 'sur-livraison', 'lacune-de-specification',
+  'evolution-de-doctrine']
+const ORIGINE_PROSE = 'retour-usage-prose'
+
+const origineDeclaree = delta?.origine === ORIGINE_PROSE
+const dejaClasse = operations.some(op => op?.cause_racine !== undefined || op?.section !== undefined)
+if (!origineDeclaree && !dejaClasse) {
+  constats.push(constat('D5', SANS_OBJET, 'delta',
+    `ni \`origine: "${ORIGINE_PROSE}"\` ni aucune opération classée — un delta ordinaire n a pas ` +
+    'à porter `section` ni `cause_racine`'))
+} else {
+  const motif = origineDeclaree
+    ? `origine "${ORIGINE_PROSE}" déclarée`
+    : 'au moins une opération porte `section` ou `cause_racine` — le lot est donc instruit, et ' +
+      'une instruction PARTIELLE est pire que pas d instruction : elle a l apparence d un delta jugé'
+  for (const [i, op] of operations.entries()) {
+    const ouReel = `operations[${i}]`
+    const manquants = ['section', 'cause_racine'].filter(c => !String(op?.[c] ?? '').trim())
+    if (manquants.length) {
+      constats.push(constat('D5', FAIL, ouReel,
+        `${manquants.join(' et ')} absent(s) alors que ${motif}. \`section\` : la référence du ` +
+        'référentiel, ou `aucune` — qui est une réponse, pas un blanc. `cause_racine` : ' +
+        CAUSES_RACINES.join(' | ')))
+    } else if (!CAUSES_RACINES.includes(op.cause_racine)) {
+      constats.push(constat('D5', FAIL, ouReel,
+        `cause_racine hors ensemble fermé : ${JSON.stringify(op.cause_racine)} — attendu ` +
+        `${CAUSES_RACINES.join(' | ')}. La quatrième existe pour que ce qui change est un AVIS ` +
+        'ne soit pas compté comme un défaut du code'))
+    } else {
+      constats.push(constat('D5', PASS, ouReel,
+        `section "${op.section}", cause racine "${op.cause_racine}"`))
+    }
+  }
+}
+
 emettre({
   oracle: 'oracle-delta',
   version: VERSION,
@@ -136,6 +188,13 @@ emettre({
   constats,
   non_juge: [
     'La pertinence de la `motivation` — D1 vérifie qu\'elle est renseignée, jamais qu\'elle est fondée.',
+    'D5 vérifie que chaque opération PORTE sa section et sa cause racine, jamais que le ' +
+      "classement est juste : une rubrique rangée en `evolution-de-doctrine` pour éviter qu'elle " +
+      'bloque passe la règle. Le classement se relit, il ne se calcule pas — et `cat-dev-03` le ' +
+      'confronte en aval au code réel.',
+    "D5 ne s'arme pas sur un lot ENTIÈREMENT muet qui ne déclare pas son origine : rien ne " +
+      "distingue alors un retour d'usage d'un delta ordinaire. C'est la limite du déclenchement " +
+      "par déclaration, et elle se corrige en déclarant `origine`, pas en devinant.",
     'Le contenu métier d\'une opération "modifie" ou "ajoute" — jugé, une fois appliqué, par les ' +
       'oracles habituels (oracle-exigences, oracle-surface…) sur le référentiel résultant.',
     'L\'ordre d\'application de plusieurs deltas concurrents — chaque delta est jugé seul.'

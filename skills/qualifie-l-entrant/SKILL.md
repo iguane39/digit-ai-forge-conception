@@ -43,6 +43,14 @@ Protocoles, extractibles et hors-de-portée : `references/entrants.md`.
 
 ## Les trois règles dures
 
+**Un delta en PROSE n'est pas un delta formulé.** Le seuil de « produit à faire évoluer »
+exige « delta formulé en ≥ 1 exigence candidate » : c'est ce qu'il faut ATTEINDRE, pas ce qu'il
+faut supposer. Un retour d'usage — lot d'anomalies de recette, retour de production — arrive en
+prose et n'atteint donc pas encore le seuil de la catégorie à laquelle il appartient. Le
+protocole en quatre pas, dont la **cause racine en ensemble fermé** qui décide ce que le delta
+coûtera : `references/entrants.md` §« Delta en PROSE ». Mesure de son absence : 1271 lignes
+croisées à la main le 18/08, aucun oracle jouable (TF-0374).
+
 **Un seul entrant suffit — ils ne se cumulent pas.** S'il y en a plusieurs, le plus riche
 l'emporte, les autres servent de contrôle, et l'entrant retenu est nommé dans `ENTRANT.md`.
 
