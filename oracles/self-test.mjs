@@ -61,7 +61,11 @@ const ORACLES = [
     // (pas VERTE/ROUGE partagées) : dossier reçu en paramètre mais ignoré au profit du fichier
     // propre à cet oracle, distingué par égalité de référence sur la constante VERTE/ROUGE.
     fichier: 'oracle-ears.mjs',
-    regles: ['EA1', 'EA2', 'EA3'],
+    // TF-0376 (18/08) : EA4/EA5 — deux SUJETS que le rédacteur oublie, pas deux règles de
+    // forme. Les fixtures portent les DEUX sens : la verte répond aux quatre questions de
+    // chaque sujet (sans quoi EA4/EA5 n'y rendraient que des SANS_OBJET et la branche PASS ne
+    // serait jouée par rien), la rouge porte les énoncés du cahier Approval mot pour mot.
+    regles: ['EA1', 'EA2', 'EA3', 'EA4', 'EA5'],
     args: (dossier) => [dossier === VERTE ? EARS_VERTE : EARS_ROUGE]
   },
   {

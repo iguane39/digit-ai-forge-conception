@@ -76,7 +76,7 @@ node oracles/self-test.mjs        # 8 oracles, 30 règles, fixtures verte et rou
 | `oracle-surface` | S1–S3 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio |
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
 | `oracle-etat` | EM1–EM3 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) |
-| `oracle-ears` | EA1–EA3 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) |
+| `oracle-ears` | EA1–EA5 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) ; **EA4/EA5** : les deux sujets qu un cahier laisse vides sans que rien ne le signale — traitement asynchrone et cycle de vie de session, quatre réponses dues chacun (TF-0376) |
 | `oracle-constitution` | C1–C3 | existence (exit 2 sinon) et format de `CONSTITUTION.md`, les invariants non négociables séparés d'`EXIGENCES.json` (TF-0101) |
 | `oracle-delta` | D1–D4 | format d'un delta d'évolution de référentiel et sa cohérence avec la cible (TF-0101) |
 

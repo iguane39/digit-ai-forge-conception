@@ -60,6 +60,62 @@ const AMBIGUS_RE = AMBIGUS.map(terme => {
   return { terme, re: new RegExp(multiMots ? echappe : `\\b${echappe}\\b`, 'i') }
 })
 
+// EA4 / EA5 — TF-0376 (18/08, retour d'usage Approval2). Ce ne sont pas des règles de forme :
+// ce sont deux SUJETS que le rédacteur oublie systématiquement, et qui concentrent les
+// anomalies les plus chères. Mesure : sur les 12 lacunes de spécification du cahier Approval,
+// CINQ tiennent à ces deux sujets seulement — dont la rubrique qualifiée « bug critique » par
+// la recette elle-même (un fichier affiché « Conversion en cours » alors que la conversion
+// était finie, jusqu'à une action utilisateur sans rapport) et la perte du brouillon à
+// l'expiration de session.
+//
+// Ces cinq anomalies ne viennent PAS d'une erreur de développement : le développeur a
+// implémenté exactement ce qui était écrit. Le cahier disait « conversion et consolidation
+// asynchrones » et s'arrêtait là ; il disait « SSO via Microsoft Entra ID / OIDC » et
+// s'arrêtait là. C'est la SPÉCIFICATION qui était incomplète, et rien ne le disait.
+//
+// Le contrat est le même que pour une exigence sans critère testable : dès que le vocabulaire
+// est là, les quatre réponses sont DUES. Absent, il n'y a rien à exiger — SANS_OBJET, jamais
+// un PASS de complaisance (un PASS dirait « vérifié », alors que rien ne l'a été).
+const DECLENCHEURS_ASYNC = [
+  'asynchrone', 'asynchrones', 'en arrière-plan', 'arrière-plan', 'tâche de fond',
+  "file d'attente", 'file de traitement', 'différé', 'différée', 'webhook', 'worker',
+  'traitement par lot', 'polling', 'scrutation'
+]
+const DECLENCHEURS_AUTH = [
+  'authentification', 'authentifie', 'authentifié', 'sso', 'oidc', 'saml', 'entra id',
+  'openid', 'jeton de session', 'jeton d\'accès', 'refresh token', 'oauth'
+]
+
+//: Les quatre réponses dues dès qu'un traitement asynchrone est mentionné. L'ordre est celui
+//: du coût constaté : sans (a), l'interface ment ; sans (b), un traitement bloqué est
+//: indistinguable d'un traitement lent ; sans (c), « bloqué » n'a pas de définition ; sans
+//: (d), l'utilisateur n'a aucun geste de sortie.
+const REPONSES_ASYNC = [
+  { cle: 'notification de fin', motifs: ['notifi', 'averti', 'informé', 'rafraîchi', 'rafraichi', 'mis à jour', 'mise à jour', 'événement', 'evenement', 'signal', 'passe à'] },
+  { cle: "état terminal d'échec", motifs: ['échec', 'echec', 'échou', 'echou', 'erreur', 'état terminal', 'abandon', 'expiré', 'expire'] },
+  { cle: 'délai maximal', motifs: ['délai', 'delai', 'au plus', 'maximum', 'maximal', 'au-delà de', 'secondes', 'minutes'] },
+  { cle: 'reprise', motifs: ['repris', 'reprend', 'rejou', 'relanc', 'nouvelle tentative', 'réessay', 'reessay'] }
+]
+
+//: Les quatre réponses dues dès qu'une authentification est mentionnée.
+const REPONSES_AUTH = [
+  { cle: 'durée de session applicative', motifs: ['durée', 'duree', 'validité', 'validite', 'expire', 'expiration', 'minutes', 'heures'] },
+  { cle: 'renouvellement silencieux', motifs: ['renouvel', 'rafraîchi', 'rafraichi', 'refresh', 'silencieux', 'prolong'] },
+  { cle: "détection d'expiration", motifs: ['détect', 'detect', 'expiré', 'expire', '401', 'invalide', 'révoqu', 'revoqu'] },
+  { cle: 'restauration du contexte', motifs: ['restaur', 'contexte', 'brouillon', 'reprend', 'conserv', 'retour à la page'] }
+]
+
+const pliSansAccent = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+const mentionne = (texte, termes) => termes.some(t => pliSansAccent(texte).includes(pliSansAccent(t)))
+
+/**
+ * Les réponses MANQUANTES parmi celles dues. Nommées, jamais comptées : c'est la réponse
+ * absente qui se rédige, pas un total.
+ */
+function reponsesManquantes (texte, dues) {
+  return dues.filter(r => !mentionne(texte, r.motifs)).map(r => r.cle)
+}
+
 function detecterAmbigus (texte) {
   return AMBIGUS_RE.filter(({ re }) => re.test(texte)).map(({ terme }) => terme)
 }
@@ -132,6 +188,33 @@ for (const [i, e] of exigences.entries()) {
   } else {
     constats.push(constat('EA3', PASS, ou, `déclaré et calculé cohérents : "${declare}"`))
   }
+
+  // EA4 — traitement asynchrone : les quatre réponses dues (TF-0376).
+  const texte = `${enonce} ${critere}`
+  if (!mentionne(texte, DECLENCHEURS_ASYNC)) {
+    constats.push(constat('EA4', SANS_OBJET, ou, 'aucun traitement asynchrone mentionné — rien à exiger'))
+  } else {
+    const manque = reponsesManquantes(texte, REPONSES_ASYNC)
+    constats.push(manque.length === 0
+      ? constat('EA4', PASS, ou, 'traitement asynchrone : les quatre réponses sont présentes')
+      : constat('EA4', FAIL, ou,
+        `traitement asynchrone déclaré, réponse(s) DUE(S) et absente(s) : ${manque.join(', ')} — ` +
+        "une exigence qui annonce un traitement asynchrone sans dire comment sa fin s'observe est " +
+        'incomplète au même titre qu\'une exigence sans critère testable'))
+  }
+
+  // EA5 — authentification : le cycle de vie de la session (TF-0376).
+  if (!mentionne(texte, DECLENCHEURS_AUTH)) {
+    constats.push(constat('EA5', SANS_OBJET, ou, 'aucune authentification mentionnée — rien à exiger'))
+  } else {
+    const manque = reponsesManquantes(texte, REPONSES_AUTH)
+    constats.push(manque.length === 0
+      ? constat('EA5', PASS, ou, 'authentification : le cycle de vie de la session est spécifié')
+      : constat('EA5', FAIL, ou,
+        `authentification déclarée, réponse(s) DUE(S) et absente(s) : ${manque.join(', ')} — ` +
+        "« SSO via OIDC » ne dit rien de la durée applicative ni de ce que devient le travail " +
+        'en cours quand la session expire'))
+  }
 }
 
 emettre({
@@ -146,6 +229,16 @@ emettre({
       'lecture sémantique : un critère au vocabulaire hors des deux listes fermées reste `ambigu` ' +
       'et se corrige en reformulant, jamais en élargissant les listes au cas par cas.',
     'L\'ambiguïté lexicale hors de la liste fermée EA2 — un terme flou absent de la liste passe ' +
-      'sans faire échouer la règle.'
+      'sans faire échouer la règle.',
+    'EA4/EA5 lisent un VOCABULAIRE, pas un sens : une exigence qui décrit un traitement ' +
+      "asynchrone sans employer aucun des mots de la liste passe en SANS_OBJET. C'est la limite " +
+      "symétrique d'EA2, et elle se corrige en rédigeant, pas en élargissant la liste au cas par cas.",
+    'EA4/EA5 constatent la PRÉSENCE des quatre réponses, jamais leur justesse : « dans un délai ' +
+      "maximal » satisfait la règle sans dire quel délai. Le chiffre est jugé par E3 (critère " +
+      "testable), pas ici — les deux contrôles sont jumeaux, aucun ne remplace l'autre.",
+    "EA4/EA5 jugent l'exigence PRISE SEULE. Un projet qui répond aux quatre questions dans une " +
+      "exigence transverse (« toute session expire après 30 min ») fera échouer chaque exigence " +
+      "d'authentification particulière : le rattachement d'une réponse portée ailleurs n'est pas " +
+      'mécanisé, et le déclarer vaut mieux que de le supposer.'
   ]
 })

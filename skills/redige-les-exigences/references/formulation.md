@@ -136,6 +136,49 @@ cas échéant`, `dans les meilleurs délais`… Distincte de la liste noire E4 :
 **EA3** — cohérence, si l'exigence porte un champ facultatif `patron_ears`, entre ce qui est
 **déclaré** et ce qui est **calculé**. Absent : `SANS_OBJET`, rien à confronter.
 
+## Les deux sujets toujours oubliés — EA4 et EA5 (TF-0376)
+
+EA1-EA3 jugent la **forme**. EA4 et EA5 jugent deux **sujets**, et ce n'est pas la même chose :
+ce sont deux thèmes qu'un cahier laisse vides sans que rien ne le signale, et ils concentrent
+les anomalies les plus chères.
+
+**Mesure qui les a fait naître** (recette Approval, 18/08/2026) : sur les **12 lacunes de
+spécification** relevées dans le cahier, **cinq** tiennent à ces deux sujets seulement. Dont
+celle que la recette a elle-même qualifiée de « bug critique » — un fichier affiché
+« Conversion en cours » alors que la conversion était terminée, qui ne passait à « Prêt »
+qu'après une action utilisateur sans rapport — et la perte du brouillon à l'expiration de
+session.
+
+**Ces cinq anomalies ne viennent pas d'une erreur de développement.** Le développeur a
+implémenté exactement ce qui était écrit. Le cahier disait « conversion et consolidation
+asynchrones » et s'arrêtait là ; il disait « SSO via Microsoft Entra ID / OIDC » et s'arrêtait
+là. C'est la spécification qui était incomplète, et rien ne le disait.
+
+**EA4 — dès qu'une exigence mentionne un traitement asynchrone**, quatre réponses sont dues :
+
+| # | Réponse due | Ce qui casse sans elle |
+|---|---|---|
+| a | comment l'interface apprend la fin du traitement | l'interface **ment** : elle affiche un état périmé |
+| b | l'état terminal d'un traitement échoué | un traitement bloqué est indistinguable d'un traitement lent |
+| c | le délai maximal | « bloqué » n'a aucune définition, donc aucun test |
+| d | la reprise | l'utilisateur n'a **aucun geste de sortie** |
+
+**EA5 — dès qu'une exigence mentionne une authentification**, quatre autres :
+
+| # | Réponse due | Ce qui casse sans elle |
+|---|---|---|
+| a | la durée de la session **applicative** | la durée du fournisseur d'identité n'est pas celle de l'application |
+| b | le renouvellement silencieux | l'utilisateur est déconnecté en pleine saisie |
+| c | la détection d'expiration | l'application affiche « une erreur est survenue » au lieu de la vraie cause |
+| d | la restauration du contexte | le travail en cours est **perdu** |
+
+Le contrat est celui d'E3 : **le vocabulaire présent rend les réponses dues**. Vocabulaire
+absent → `SANS_OBJET`, jamais un PASS de complaisance. Les deux règles nomment **quelle**
+réponse manque, jamais un total.
+
+Ces deux sujets reviennent dans **toute** application de ce type : c'est un durcissement de la
+forge, pas un service nouveau.
+
 ## Contre-exemples fréquents
 
 | Formulation | Défaut | Règle |
@@ -145,3 +188,5 @@ cas échéant`, `dans les meilleurs délais`… Distincte de la liste noire E4 :
 | « L'écran affiche la liste ; l'utilisateur peut filtrer » | Deux exigences | E6 |
 | « Le produit est conforme au RGPD » | Non testable en l'état — à décomposer en obligations vérifiables | E3 |
 | « Améliorer les performances de 30 % » | Par rapport à quoi ? Base de comparaison absente | E3, et T4 sur la source du 30 % |
+| « La conversion et la consolidation sont asynchrones » | Rien sur la fin observable, l'échec, le délai, la reprise | EA4 |
+| « L'accès se fait par SSO via Entra ID / OIDC » | Rien sur la durée applicative, le renouvellement, l'expiration, le contexte | EA5 |
