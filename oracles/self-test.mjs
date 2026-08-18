@@ -79,7 +79,7 @@ const ORACLES = [
     // TF-0101 (3/3) : format d'un delta de référentiel (cycle propose/apply/archive façon
     // OpenSpec), confronté à un référentiel cible via --referentiel. Fixtures dédiées.
     fichier: 'oracle-delta.mjs',
-    regles: ['D1', 'D2', 'D3', 'D4'],
+    regles: ['D1', 'D2', 'D3', 'D4', 'D5'],
     args: (dossier) => {
       const d = dossier === VERTE ? DELTA_VERTE : DELTA_ROUGE
       return [join(d, 'DELTA.json'), '--referentiel', join(d, 'EXIGENCES.json')]
@@ -97,6 +97,8 @@ function lancer (fichier, args) {
   try { rapport = JSON.parse(r.stdout) } catch { /* laisse a null */ }
   return { code: r.status, rapport, brut: r.stdout + r.stderr }
 }
+
+const NL = String.fromCharCode(10)
 
 let echecs = 0
 const lignes = []
@@ -142,6 +144,32 @@ for (const o of ORACLES) {
   lignes.unshift('') // separation, remise en ordre juste apres
   const bloc = lignes.splice(0)
   console.log(`${o.fichier}${bloc.join('\n')}`)
+}
+
+// --- branche D5 d'oracle-delta : un lot de retour d'usage ENTIÈREMENT instruit (TF-0374) ---
+// La fixture verte partagée est un delta ORDINAIRE : D5 y vaut SANS_OBJET, ce qui est juste et
+// déjà couvert. Le sens PASS de D5 a donc besoin de son propre banc — sans lui, la règle ne
+// serait jouée qu'à l'échec, et un D5 qui échouerait TOUJOURS passerait ce self-test. C'est le
+// défaut trouvé trois fois le 18/08 (R-11 bis, I2 du pilot, et ici) : un contrôle neuf, vert,
+// joué par personne. On exige aussi que les QUATRE causes racines soient représentées : la
+// quatrième (`evolution-de-doctrine`) est la raison d'être de l'ensemble fermé.
+{
+  const d = join(ICI, 'fixtures', 'delta-prose-verte')
+  const prose = lancer('oracle-delta.mjs',
+    [join(d, 'DELTA.json'), '--referentiel', join(d, 'EXIGENCES.json')])
+  const d5 = (prose.rapport?.constats ?? []).filter(c => c.regle === 'D5')
+  const causes = new Set(
+    (JSON.parse(readFileSync(join(d, 'DELTA.json'), 'utf8')).operations ?? [])
+      .map(o => o.cause_racine))
+  const tousPass = d5.length > 0 && d5.every(c => c.statut === 'PASS')
+  if (prose.code === 0 && tousPass && causes.size === 4) {
+    console.log(`oracle-delta.mjs (branche D5, fixture delta-prose-verte)${NL}  [OK]   exit 0, ` +
+      `${d5.length} constats D5 PASS, les 4 causes racines représentées`)
+  } else {
+    echecs++
+    console.log(`oracle-delta.mjs (branche D5)${NL}  [FAIL] exit ${prose.code} (attendu 0), ` +
+      `D5 tous PASS : ${tousPass}, causes distinctes : ${causes.size} (attendu 4)`)
+  }
 }
 
 // --- branche RC-1 d'oracle-surface : au-dessus du seuil, S1 avertit sans bloquer ---
