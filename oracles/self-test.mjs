@@ -24,6 +24,10 @@ const CONSTIT_VERTE = join(ICI, 'fixtures', 'constitution-verte', 'CONSTITUTION.
 const CONSTIT_ROUGE = join(ICI, 'fixtures', 'constitution-rouge', 'CONSTITUTION.md')
 const DELTA_VERTE = join(ICI, 'fixtures', 'delta-verte')
 const DELTA_ROUGE = join(ICI, 'fixtures', 'delta-rouge')
+const RETROM_VERTE = join(ICI, 'fixtures', 'retro-modele-verte', 'RETRO-MODELE.md')
+const RETROM_ROUGE = join(ICI, 'fixtures', 'retro-modele-rouge', 'RETRO-MODELE.md')
+const VUESP_VERTE = join(ICI, 'fixtures', 'vues-profil-verte')
+const VUESP_ROUGE = join(ICI, 'fixtures', 'vues-profil-rouge')
 
 const ORACLES = [
   {
@@ -83,6 +87,24 @@ const ORACLES = [
     args: (dossier) => {
       const d = dossier === VERTE ? DELTA_VERTE : DELTA_ROUGE
       return [join(d, 'DELTA.json'), '--referentiel', join(d, 'EXIGENCES.json')]
+    }
+  },
+  {
+    // GO du 19/08 (etude 20260819a du pilot) : mode retro-modele du verbe 1 — un modele
+    // d'un projet existant sans ancres ni confrontation rejouee est une paraphrase.
+    // Fixtures dediees, comme oracle-ears.
+    fichier: 'oracle-retro-modele.mjs',
+    regles: ['RM1', 'RM2', 'RM3', 'RM4', 'RM5'],
+    args: (dossier) => [dossier === VERTE ? RETROM_VERTE : RETROM_ROUGE]
+  },
+  {
+    // GO du 19/08 (etude 20260819b du pilot) : vues par profil derivees du retro-modele —
+    // scellees par empreinte (peremption), chaque affirmation ancree [RM-xxx]. Fixtures dediees.
+    fichier: 'oracle-vues-profil.mjs',
+    regles: ['VP1', 'VP2', 'VP3', 'VP4'],
+    args: (dossier) => {
+      const d = dossier === VERTE ? VUESP_VERTE : VUESP_ROUGE
+      return [join(d, 'VUE-PO.md'), '--modele', join(d, 'RETRO-MODELE.md')]
     }
   }
 ]
