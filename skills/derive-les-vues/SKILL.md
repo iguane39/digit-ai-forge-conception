@@ -1,7 +1,7 @@
 ---
 name: derive-les-vues
-description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par l'empreinte de sa source pour qu'une vue périmée ou éditée à la main soit détectée. Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, ou régénérer des vues après modification du référentiel. Ne pas déclencher pour rédiger ou modifier les exigences elles-mêmes (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
-version: 1.1.0
+description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par l'empreinte de sa source pour qu'une vue périmée ou éditée à la main soit détectée. Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, régénérer des vues après modification du référentiel, ou décliner un rétro-modèle en documentations par audience (vues par profil PO / CSM / utilisateur, scellées par empreinte). Ne pas déclencher pour rédiger ou modifier les exigences elles-mêmes (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
+version: 1.2.0
 ---
 
 # Dérive les vues
@@ -45,6 +45,16 @@ permet aux trois forges aval de continuer à fonctionner si la Conception dispar
 
 Aucune des trois forges n'a été modifiée pour recevoir ces vues. C'est le test de
 non-couplage : la Conception s'aligne sur des contrats existants, elle n'en impose aucun.
+
+## Vues par profil (GO du 19/08, étude 20260819b du pilot)
+
+Deuxième famille de vues, même règle fondatrice : source unique = le `RETRO-MODELE.md`
+d'un projet existant (mode rétro-modèle de `qualifie-l-entrant`), trois profils pilotes
+en jeu fermé — `po` · `csm` · `utilisateur` — chaque vue scellée par l'empreinte SHA-256
+de sa source (péremption détectée) et chaque affirmation ancrée `[RM-xxx]`. Jugées par
+`node oracles/oracle-vues-profil.mjs <VUE.md> --modele <RETRO-MODELE.md>` (VP1-VP4).
+Protocole et gabarits : `references/vues-par-profil.md`. Un profil s'ajoute par delta de
+ce référentiel, jamais par improvisation.
 
 ## Les champs non dérivables
 
