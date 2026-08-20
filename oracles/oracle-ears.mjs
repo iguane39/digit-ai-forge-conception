@@ -102,7 +102,18 @@ const REPONSES_AUTH = [
   { cle: 'durée de session applicative', motifs: ['durée', 'duree', 'validité', 'validite', 'expire', 'expiration', 'minutes', 'heures'] },
   { cle: 'renouvellement silencieux', motifs: ['renouvel', 'rafraîchi', 'rafraichi', 'refresh', 'silencieux', 'prolong'] },
   { cle: "détection d'expiration", motifs: ['détect', 'detect', 'expiré', 'expire', '401', 'invalide', 'révoqu', 'revoqu'] },
-  { cle: 'restauration du contexte', motifs: ['restaur', 'contexte', 'brouillon', 'reprend', 'conserv', 'retour à la page'] }
+  { cle: 'restauration du contexte', motifs: ['restaur', 'contexte', 'brouillon', 'reprend', 'conserv', 'retour à la page'] },
+  // TF-0397 (lot nhood-cockpit-ia, 20/08) — la PORTÉE du geste délégué, cinquième réponse due.
+  // Déléguer un geste à un fournisseur d'identité, c'est choisir OÙ IL S'ARRÊTE — et le défaut
+  // d'un fournisseur est toujours le plus large : l'omission vaut adoption. Mesuré : la spec de
+  // bascule EasyAuth n'avait nulle part décidé où s'arrête la déconnexion ; le produit a appelé
+  // /.auth/logout, qui purge la session App Service PUIS enchaîne sur la déconnexion d'Entra —
+  // sortir du Cockpit fermait la session Microsoft du navigateur, Outlook et Teams compris.
+  // Trois niveaux nommés à trancher : session applicative seule · session du fournisseur sur
+  // cet appareil · comptes fédérés. Une ligne de spec au moment de la bascule aurait suffi.
+  { cle: 'portée des gestes délégués (déconnexion : session applicative, fournisseur ou fédérée)',
+    motifs: ['session applicative', 'application seule', 'session du fournisseur', 'comptes fédérés',
+             'comptes federes', 'portée', 'portee', 'single logout', 'front-channel'] }
 ]
 
 const pliSansAccent = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
