@@ -171,6 +171,7 @@ là. C'est la spécification qui était incomplète, et rien ne le disait.
 | b | le renouvellement silencieux | l'utilisateur est déconnecté en pleine saisie |
 | c | la détection d'expiration | l'application affiche « une erreur est survenue » au lieu de la vraie cause |
 | d | la restauration du contexte | le travail en cours est **perdu** |
+| e | la **portée** de chaque geste délégué (déconnexion : session applicative seule · session du fournisseur sur cet appareil · comptes fédérés) | le comportement **le plus large** est hérité en silence — mesuré le 20/08 : sortir d'une application fermait la session Microsoft du navigateur, Outlook et Teams compris (TF-0397) |
 
 Le contrat est celui d'E3 : **le vocabulaire présent rend les réponses dues**. Vocabulaire
 absent → `SANS_OBJET`, jamais un PASS de complaisance. Les deux règles nomment **quelle**
