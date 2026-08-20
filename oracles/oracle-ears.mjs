@@ -79,7 +79,7 @@ const AMBIGUS_RE = AMBIGUS.map(terme => {
 const DECLENCHEURS_ASYNC = [
   'asynchrone', 'asynchrones', 'en arrière-plan', 'arrière-plan', 'tâche de fond',
   "file d'attente", 'file de traitement', 'différé', 'différée', 'webhook', 'worker',
-  'traitement par lot', 'polling', 'scrutation'
+  'traitement par lot', 'polling', 'scrutation', 'webhooks', 'workers'
 ]
 const DECLENCHEURS_AUTH = [
   'authentification', 'authentifie', 'authentifié', 'sso', 'oidc', 'saml', 'entra id',
@@ -106,14 +106,45 @@ const REPONSES_AUTH = [
 ]
 
 const pliSansAccent = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-const mentionne = (texte, termes) => termes.some(t => pliSansAccent(texte).includes(pliSansAccent(t)))
+// TF-0387 (constaté le 18/08 sur EX-044 de factory.digit-ai.fr) — mon `includes()` détectait
+// « sso » À L'INTÉRIEUR de « ressource », et EA5 exigeait alors quatre réponses sur le cycle de
+// session d'une exigence qui ne mentionne aucune authentification. L'exigence réelle a été
+// REFORMULÉE POUR CONTOURNER le faux positif — un contrôle bruyant ne se corrige pas, il se
+// fait contourner (R-33 bis). Les termes courts (sso, saml, oidc) étaient les plus exposés.
+// Correctif : la même construction à FRONTIÈRES DE MOT que les AMBIGUS d'EA2 — un terme simple
+// est encadré de , un terme multi-mots est cherché tel quel, et le texte comme le terme sont
+// pliés sans accent AVANT la construction ( ne connaît pas « é »).
+const _RE_TERMES = new Map()
+const _reTerme = (t) => {
+  if (!_RE_TERMES.has(t)) {
+    const plie = pliSansAccent(t)
+    const echappe = plie.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    _RE_TERMES.set(t, new RegExp(/\s/.test(plie) ? echappe : `\\b${echappe}\\b`, 'i'))
+  }
+  return _RE_TERMES.get(t)
+}
+// Deux régimes, et les confondre casse l'un ou l'autre (mesuré sur la fixture verte en
+// corrigeant TF-0387) : un DÉCLENCHEUR est un mot entier (« sso » ne doit pas se voir dans
+// « ressource ») ; un RADICAL de réponse est un préfixe ancré en début de mot (« repris »
+// doit voir « reprise », « détect » doit voir « détectée » — jamais le milieu d'un mot).
+const _RE_STEMS = new Map()
+const _reStem = (t) => {
+  if (!_RE_STEMS.has(t)) {
+    const plie = pliSansAccent(t)
+    const echappe = plie.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    _RE_STEMS.set(t, new RegExp(`\\b${echappe}`, 'i'))
+  }
+  return _RE_STEMS.get(t)
+}
+const mentionne = (texte, termes) => { const plie = pliSansAccent(texte); return termes.some(t => _reTerme(t).test(plie)) }
+const mentionneRadical = (texte, radicaux) => { const plie = pliSansAccent(texte); return radicaux.some(t => _reStem(t).test(plie)) }
 
 /**
  * Les réponses MANQUANTES parmi celles dues. Nommées, jamais comptées : c'est la réponse
  * absente qui se rédige, pas un total.
  */
 function reponsesManquantes (texte, dues) {
-  return dues.filter(r => !mentionne(texte, r.motifs)).map(r => r.cle)
+  return dues.filter(r => !mentionneRadical(texte, r.motifs)).map(r => r.cle)
 }
 
 function detecterAmbigus (texte) {
