@@ -65,6 +65,8 @@ API interne, produit tiers analysé de l'extérieur) écarte le bloc entier avec
 | Gestion des erreurs visible | `regle` (un échec produit un message observable, jamais un écran silencieux) | Généralisation — invariant d'attente d'un utilisateur final |
 | Mentions légales / pied de page | `point-entree` | Généralisation |
 | Responsive mobile | `regle` (contrainte d'affichage transversale) | Généralisation |
+| Accessibilité RGAA — site public français | `regle` (RGAA 4.1/WCAG AA : obligation légale, pas un objectif) + `point-entree` (déclaration d'accessibilité publiée avec son taux) | RF-6, lot SCC-FR 20260820a — retour littéral |
+| Livrables légaux d'accessibilité (si site public FR) | `objet` ×4 : schéma pluriannuel, plan d'action annuel, mécanisme de signalement, voie de recours | RF-6 — aucune forge ne les produisait, aucun CDC ne les demandait |
 
 **Critères d'acceptation précisés** (2ᵉ inspection utilisateur du premier produit, lot 03) —
 « exister » ne suffit pas, la perception de l'utilisateur fait foi ; ces critères s'écrivent
