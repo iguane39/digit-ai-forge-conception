@@ -61,6 +61,12 @@
       "enonce": "L'accès à l'application se fait par SSO via Microsoft Entra ID / OIDC.",
       "critere": "Un utilisateur du annuaire accède à l'application après authentification.",
       "_fait": "énoncé des paragraphes 11 et 13 du cahier Approval — il s'arrêtait là. Résultat : « Une erreur est survenue » puis reconnexion exigée après F5, avec perte du brouillon."
+    },
+    {
+      "id": "EA-908",
+      "enonce": "Le système n'accepte que les formats PDF, DOCX et XLSX, et refuse tout document au-delà de 100 Mo, au-delà de 10 documents par demande, ou dont l'analyse antivirus est positive.",
+      "critere": "Un document hors format, hors taille ou hors plafond est refusé par le service.",
+      "patron_ears": "unwanted"
     }
   ]
 }

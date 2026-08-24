@@ -69,7 +69,10 @@ const ORACLES = [
     // forme. Les fixtures portent les DEUX sens : la verte répond aux quatre questions de
     // chaque sujet (sans quoi EA4/EA5 n'y rendraient que des SANS_OBJET et la branche PASS ne
     // serait jouée par rien), la rouge porte les énoncés du cahier Approval mot pour mot.
-    regles: ['EA1', 'EA2', 'EA3', 'EA4', 'EA5'],
+    // TF-0570 (24/08) : EA6 — MÊME PATRON, appliqué aux REFUS. La verte porte la
+    // contrepartie observable d'un rejet (message, geste, cause distinguée) ; la rouge porte
+    // les quatre refus du cahier Approval §09 mot pour mot, muets sur ce que l'écran montre.
+    regles: ['EA1', 'EA2', 'EA3', 'EA4', 'EA5', 'EA6'],
     args: (dossier) => [dossier === VERTE ? EARS_VERTE : EARS_ROUGE]
   },
   {

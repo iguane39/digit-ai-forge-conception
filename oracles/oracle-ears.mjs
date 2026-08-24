@@ -116,6 +116,49 @@ const REPONSES_AUTH = [
              'comptes federes', 'portée', 'portee', 'single logout', 'front-channel'] }
 ]
 
+// EA6 — TF-0570 (24/08, retour d'usage Produit-01, deuxieme campagne). MEME PATRON QUE EA4/EA5,
+// applique aux REFUS. Le fait : le cahier Approval §09 enumere les formats acceptes, la borne de
+// 100 Mo, le plafond de 10 documents et le total de 1 Go — QUATRE REFUS SPECIFIES. Il ne dit
+// nulle part ce que l'application affiche quand l'un survient, ni quel geste elle indique. Le
+// developpeur a implemente exactement ce qui etait ecrit : les quatre refus existent cote
+// serveur, avec leurs libelles anglais destines aux journaux, et rien ne demandait de les rendre
+// lisibles. SEPT causes distinctes arrivaient a l'ecran sous une seule phrase — « Une erreur est
+// survenue. Reessayez. » — et DANS SIX CAS SUR SEPT l'instruction affichee etait FAUSSE : elle
+// demande de rejouer exactement le geste qui ne peut pas aboutir.
+//
+// COUT MESURE : 5 cles de message x 7 langues a rediger apres coup, un correctif transverse en
+// trois couches (service, route, client), et DEUX ANOMALIES ANTERIEURES MAL CLASSEES parce que
+// leur symptome etait indiscernable de six autres.
+//
+// La regle generique : *une contrainte enoncee sans sa contrepartie observable est une exigence
+// incomplete* — c'est mot pour mot le contrat d'EA4 sur le declencheur asynchrone, et le refus
+// est le second cas ou le rédacteur s'arrete a mi-chemin.
+const DECLENCHEURS_REFUS = [
+  'refus', 'refuse', 'refusé', 'rejet', 'rejeté', 'rejette', 'interdit', 'interdite',
+  'non autorisé', 'non autorisée', 'formats acceptés', 'format accepté', 'extensions autorisées',
+  'taille maximale', 'taille maximum', 'plafond', 'plafonné', 'quota',
+  'ne doit pas dépasser', 'antivirus', 'liste blanche', 'liste noire', 'invalide',
+  'non conforme'
+  // NE PAS Y REMETTRE « au-delà de », « au plus », « limite de », « nombre maximal » : le
+  // premier jeu de déclencheurs les portait, et EA6 a accusé « le système archive les journaux
+  // au-delà de 12 mois » — une BORNE DE QUANTITÉ, pas un refus. Un déclencheur qui attrape une
+  // borne attrape la moitié des exigences chiffrées, et une règle bruyante se fait contourner
+  // au lieu de se corriger (R-33 bis). Un refus se nomme : refuser, rejeter, interdire, plafonner.
+]
+
+//: Les trois reponses dues des qu'un refus est specifie. L'ordre est celui du cout constate :
+//: sans (a), le refus existe et personne ne le comprend ; sans (b), l'utilisateur rejoue le
+//: geste impossible ; sans (c), sept causes se confondent en une et deux anomalies distinctes
+//: se classent comme une seule.
+const REPONSES_REFUS = [
+  { cle: "message vu par l'utilisateur",
+    motifs: ['message', 'affich', 'libell', 'texte', 'notifi', 'informé', 'informe', 'indique', 'signale', 'traduit', 'traduction'] },
+  { cle: "geste indiqué (ce que l'utilisateur peut faire)",
+    motifs: ['geste', 'action', 'peut ', 'invite', 'propose', 'convertir', 'réduire', 'reduire', 'supprim', 'remplac', 'contacter', 'réessay', 'reessay', 'corrig'] },
+  { cle: 'cause distinguée des autres refus',
+    motifs: ['cause', 'motif', 'distinct', 'spécifique', 'specifique', 'propre à', 'propre a', 'code', 'par refus', 'chaque refus', 'selon le', 'clé de message', 'cle de message'] }
+]
+
 const pliSansAccent = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 // TF-0387 (constaté le 18/08 sur EX-044 de factory.digit-ai.fr) — mon `includes()` détectait
 // « sso » À L'INTÉRIEUR de « ressource », et EA5 exigeait alors quatre réponses sur le cycle de
@@ -257,6 +300,19 @@ for (const [i, e] of exigences.entries()) {
         "« SSO via OIDC » ne dit rien de la durée applicative ni de ce que devient le travail " +
         'en cours quand la session expire'))
   }
+
+  // EA6 — refus spécifié : la contrepartie observable est due (TF-0570).
+  if (!mentionne(texte, DECLENCHEURS_REFUS)) {
+    constats.push(constat('EA6', SANS_OBJET, ou, 'aucun refus spécifié — rien à exiger'))
+  } else {
+    const manque = reponsesManquantes(texte, REPONSES_REFUS)
+    constats.push(manque.length === 0
+      ? constat('EA6', PASS, ou, 'refus spécifié : le message, le geste et la distinction de cause sont dits')
+      : constat('EA6', FAIL, ou,
+        `refus spécifié, réponse(s) DUE(S) et absente(s) : ${manque.join(', ')} — ` +
+        'un refus dit côté serveur et muet côté écran produit une phrase générique pour toutes ' +
+        "ses causes, et l'instruction qu'elle porte est fausse pour presque toutes"))
+  }
 }
 
 emettre({
@@ -278,6 +334,13 @@ emettre({
     'EA4/EA5 constatent la PRÉSENCE des quatre réponses, jamais leur justesse : « dans un délai ' +
       "maximal » satisfait la règle sans dire quel délai. Le chiffre est jugé par E3 (critère " +
       "testable), pas ici — les deux contrôles sont jumeaux, aucun ne remplace l'autre.",
+    'EA6 lit un VOCABULAIRE DE REFUS, pas une intention : une exigence qui borne implicitement ' +
+      "(« l'import accepte les PDF ») sans employer aucun mot de refus passe en SANS_OBJET. " +
+      'La borne implicite est le cas que la règle ne voit pas, et se corrige en rédigeant le refus.',
+    'EA6 constate la PRÉSENCE du message, du geste et de la distinction de cause, jamais leur ' +
+      "justesse : « un message est affiché » satisfait la règle sans dire lequel, et « réessayer » " +
+      'la satisfait aussi alors que c’est précisément l’instruction fausse qui a fait naître la ' +
+      "règle. Le texte du message relève de la revue humaine, pas d'un oracle lexical.",
     "EA4/EA5 jugent l'exigence PRISE SEULE. Un projet qui répond aux quatre questions dans une " +
       "exigence transverse (« toute session expire après 30 min ») fera échouer chaque exigence " +
       "d'authentification particulière : le rattachement d'une réponse portée ailleurs n'est pas " +

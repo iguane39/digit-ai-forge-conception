@@ -35,7 +35,7 @@
     {
       "id": "EA-006",
       "enonce": "Si le run de tests est vide, alors le rapport est rejeté.",
-      "critere": "Le rapport est rejeté et aucun artefact de tests n'est publié.",
+      "critere": "Le rapport est rejeté, aucun artefact de tests n'est publié, et l'opérateur voit le message « aucun test collecté » porté par une clé de message propre à cette cause — distincte de celle d'un run en échec — avec le geste indiqué : relancer après avoir ajouté au moins un test.",
       "patron_ears": "unwanted"
     },
     {
