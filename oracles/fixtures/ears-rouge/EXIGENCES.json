@@ -67,6 +67,12 @@
       "enonce": "Le système n'accepte que les formats PDF, DOCX et XLSX, et refuse tout document au-delà de 100 Mo, au-delà de 10 documents par demande, ou dont l'analyse antivirus est positive.",
       "critere": "Un document hors format, hors taille ou hors plafond est refusé par le service.",
       "patron_ears": "unwanted"
+    },
+    {
+      "id": "EA-909",
+      "enonce": "Le service tiers d'analyse antivirus indique si un document est propre ou infecté.",
+      "critere": "Un document infecté est refusé.",
+      "patron_ears": "event-driven"
     }
   ]
 }

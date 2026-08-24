@@ -55,6 +55,12 @@
       "enonce": "Tant que l'authentification OIDC est valide, l'utilisateur accède à son espace sans se reconnecter.",
       "critere": "La session applicative a une durée de 60 minutes, est renouvelée silencieusement tant que l'onglet est actif ; à l'expiration détectée, le brouillon en cours est conservé et le contexte est restauré après reconnexion. La déconnexion a une portée limitée à la session applicative seule — jamais la session du fournisseur.",
       "patron_ears": "state-driven"
+    },
+    {
+      "id": "EA-009",
+      "enonce": "Quand un document est deposé, alors le service tiers d'analyse antivirus est sollicité avant tout stockage.",
+      "critere": "Un document infecté est refusé définitivement, avec le message qui dit cette cause propre et le geste indiqué : remplacer le document. Si le service est injoignable, le dépôt n'est PAS refusé : le brouillon est conservé et l'utilisateur voit qu'il peut réessayer — une indisponibilité ne se confond jamais avec un refus.",
+      "patron_ears": "event-driven"
     }
   ]
 }

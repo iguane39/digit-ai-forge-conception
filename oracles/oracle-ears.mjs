@@ -159,6 +159,40 @@ const REPONSES_REFUS = [
     motifs: ['cause', 'motif', 'distinct', 'spécifique', 'specifique', 'propre à', 'propre a', 'code', 'par refus', 'chaque refus', 'selon le', 'clé de message', 'cle de message'] }
 ]
 
+// EA7 — TF-0576 (24/08, retour d'usage Produit-01). TROISIEME INSTANCE DU MEME PATRON, apres EA4
+// (declencheur asynchrone sans clause de reponse observable) et EA6 (refus sans contrepartie
+// observable) : *une contrainte enoncee sans sa contrepartie observable est une exigence
+// incomplete*. Ici la contrainte est une DEPENDANCE EXTERNE, et la contrepartie manquante est son
+// mode d'INDISPONIBILITE.
+//
+// LE FAIT. `AntivirusPort.is_clean(content) -> bool` declarait exactement deux issues : propre, ou
+// infecte. La troisieme — L'ANALYSE N'A PAS EU LIEU — n'existait pas au contrat. L'adaptateur
+// n'avait donc nulle part ou la mettre : `socket.gaierror` remontait NUE jusqu'a l'ASGI. Or les
+// deux cas sont OPPOSES : un fichier infecte est un refus definitif, il ne faut pas insister ; un
+// scanner injoignable est une panne transitoire, et reessayer est le bon geste. Un booleen ne peut
+// pas porter cette difference. Le meme trou existait sur CINQ ports du meme produit — stockage,
+// file, secrets, annuaire : tous declaraient leur signature heureuse, aucun son mode de panne.
+//
+// DEUX REPONSES SONT DUES, et la seconde est celle qu'on oublie : le mode d'indisponibilite lui-meme,
+// DISTINCT du refus ; et le SORT DU GESTE UTILISATEUR quand il survient — rejouable, differe, ou
+// perdu. Sans la seconde, l'interface choisit a la place de la specification, et elle choisit mal.
+const DECLENCHEURS_DEPENDANCE = [
+  'dépendance externe', 'service tiers', 'adaptateur', 'socket', 'api externe', 'api tierce',
+  'stockage objet', 'stockage blob', "file d'attente", 'file de messages', 'antivirus',
+  'annuaire', 'coffre-fort', 'coffre de secrets', 'passerelle de paiement', 'smtp',
+  'fournisseur externe', 'appel réseau', 'client http'
+]
+
+//: Les deux reponses dues des qu'une dependance externe est mentionnee.
+const REPONSES_DEPENDANCE = [
+  { cle: "mode d'indisponibilité, distinct du refus",
+    motifs: ['indisponib', 'injoignab', 'inaccessib', 'panne', 'timeout', 'délai dépassé', 'delai depasse',
+             'hors service', 'dégradé', 'degrade', 'échec technique', 'echec technique', 'erreur technique'] },
+  { cle: 'sort du geste utilisateur quand elle survient',
+    motifs: ['rejou', 'réessay', 'reessay', 'nouvelle tentative', 'différ', 'differ', 'file de reprise',
+             'perdu', 'conserv', 'brouillon', 'abandon', 'repris'] }
+]
+
 const pliSansAccent = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 // TF-0387 (constaté le 18/08 sur EX-044 de factory.digit-ai.fr) — mon `includes()` détectait
 // « sso » À L'INTÉRIEUR de « ressource », et EA5 exigeait alors quatre réponses sur le cycle de
@@ -313,6 +347,20 @@ for (const [i, e] of exigences.entries()) {
         'un refus dit côté serveur et muet côté écran produit une phrase générique pour toutes ' +
         "ses causes, et l'instruction qu'elle porte est fausse pour presque toutes"))
   }
+
+  // EA7 — dépendance externe : le mode d'indisponibilité et le sort du geste (TF-0576).
+  if (!mentionne(texte, DECLENCHEURS_DEPENDANCE)) {
+    constats.push(constat('EA7', SANS_OBJET, ou, 'aucune dépendance externe mentionnée — rien à exiger'))
+  } else {
+    const manque = reponsesManquantes(texte, REPONSES_DEPENDANCE)
+    constats.push(manque.length === 0
+      ? constat('EA7', PASS, ou, "dépendance externe : son indisponibilité et le sort du geste sont dits")
+      : constat('EA7', FAIL, ou,
+        `dépendance externe déclarée, réponse(s) DUE(S) et absente(s) : ${manque.join(', ')} — ` +
+        'un contrat qui ne connaît que son cas heureux ne laisse à son adaptateur aucun endroit ' +
+        "pour dire « je n'ai pas pu » : la panne remonte nue, et un refus définitif devient " +
+        'indiscernable d\'une panne transitoire'))
+  }
 }
 
 emettre({
@@ -334,6 +382,11 @@ emettre({
     'EA4/EA5 constatent la PRÉSENCE des quatre réponses, jamais leur justesse : « dans un délai ' +
       "maximal » satisfait la règle sans dire quel délai. Le chiffre est jugé par E3 (critère " +
       "testable), pas ici — les deux contrôles sont jumeaux, aucun ne remplace l'autre.",
+    'EA7 lit une DÉPENDANCE NOMMÉE, pas une architecture : une exigence qui décrit un appel ' +
+      "d'infrastructure sans employer aucun des termes de la liste passe en SANS_OBJET. La forme " +
+      'la plus sûre du contrôle serait STRUCTURELLE — un port dont un adaptateur ouvre une socket ' +
+      "ou un client HTTP — mais elle demande de lire le CODE, ce qu'un oracle de conception ne " +
+      'voit pas : ce versant est mécanisable côté development, et il y est déclaré plutôt que promis ici.',
     'EA6 lit un VOCABULAIRE DE REFUS, pas une intention : une exigence qui borne implicitement ' +
       "(« l'import accepte les PDF ») sans employer aucun mot de refus passe en SANS_OBJET. " +
       'La borne implicite est le cas que la règle ne voit pas, et se corrige en rédigeant le refus.',

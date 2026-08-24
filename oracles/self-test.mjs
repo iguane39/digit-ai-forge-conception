@@ -72,7 +72,10 @@ const ORACLES = [
     // TF-0570 (24/08) : EA6 — MÊME PATRON, appliqué aux REFUS. La verte porte la
     // contrepartie observable d'un rejet (message, geste, cause distinguée) ; la rouge porte
     // les quatre refus du cahier Approval §09 mot pour mot, muets sur ce que l'écran montre.
-    regles: ['EA1', 'EA2', 'EA3', 'EA4', 'EA5', 'EA6'],
+    // TF-0576 (24/08) : EA7 — troisieme instance du meme patron, appliquee a une DEPENDANCE
+    // EXTERNE. La verte declare l'indisponibilite ET le sort du geste ; la rouge porte le contrat
+    // a deux issues qui n'avait nulle part ou ranger « l'analyse n'a pas eu lieu ».
+    regles: ['EA1', 'EA2', 'EA3', 'EA4', 'EA5', 'EA6', 'EA7'],
     args: (dossier) => [dossier === VERTE ? EARS_VERTE : EARS_ROUGE]
   },
   {
