@@ -50,16 +50,28 @@
     {
       "id": "EA-008",
       "_regles_jouees": [
-        "EA5 (sens PASS)"
+        "EA5 (sens PASS)",
+        "EA8 (sens PASS)"
       ],
       "enonce": "Tant que l'authentification OIDC est valide, l'utilisateur accède à son espace sans se reconnecter.",
-      "critere": "La session applicative a une durée de 60 minutes, est renouvelée silencieusement tant que l'onglet est actif ; à l'expiration détectée, le brouillon en cours est conservé et le contexte est restauré après reconnexion. La déconnexion a une portée limitée à la session applicative seule — jamais la session du fournisseur.",
-      "patron_ears": "state-driven"
+      "critere": "La session applicative a une duree de 60 minutes, est renouvelee silencieusement tant que l'onglet est actif ; a l'expiration detectee, le brouillon en cours est conserve et le contexte est restaure apres reconnexion. La deconnexion a une portee limitee a la session applicative seule — jamais la session du fournisseur. Hors du fournisseur reel, un emetteur local sert de substitut et rend disponibles cinq identites de test, une par profil ; la bascule se fait par le reglage AUTH_MODE, et deux gardes fail-closed l'encadrent : le mode local ne demarre pas sans emetteur prive, le mode cible ne demarre pas sans audience unique — jamais sur le nom de l'environnement.",
+      "patron_ears": "state-driven",
+      "_fait": "TF-0577 : l'enonce nomme OIDC, donc EA8 se reveille sur lui aussi. Le critere porte desormais les QUATRE reponses de la delegation en plus des CINQ du cycle de vie — sans quoi la branche PASS d'EA8 ne serait jouee par personne, et la verte ferait echouer une exigence CONFORME."
     },
     {
       "id": "EA-009",
       "enonce": "Quand un document est deposé, alors le service tiers d'analyse antivirus est sollicité avant tout stockage.",
       "critere": "Un document infecté est refusé définitivement, avec le message qui dit cette cause propre et le geste indiqué : remplacer le document. Si le service est injoignable, le dépôt n'est PAS refusé : le brouillon est conservé et l'utilisateur voit qu'il peut réessayer — une indisponibilité ne se confond jamais avec un refus.",
+      "patron_ears": "event-driven"
+    },
+    {
+      "_regles_jouees": [
+        "EA9 (sens PASS)"
+      ],
+      "_fait": "TF-0588 : sans cette exigence, la branche PASS d'EA9 n'est jouee par personne — aucune autre exigence du jeu ne mentionne une strategie de tests. Elle dit a quoi ressemble une demande de strategie COMPLETE, ce que la forge ne savait pas ecrire avant ce lot. REDACTION CONTRAINTE, et la contrainte se declare : le mot « refus » reveille EA6, qui exige alors le message et le geste d'un refus UTILISATEUR — or il s'agit ici de TESTER des refus, pas d'en specifier un. La fixture emploie donc « parcours en echec fonctionnel », l'une des formulations que EA9 accepte ; l'interaction elle-meme est declaree au non_juge de l'oracle plutot que corrigee en elargissant EA6.",
+      "id": "EA-010",
+      "enonce": "Quand la strategie de tests du produit est demandee, alors chaque perimetre executable est couvert ou exclu explicitement.",
+      "critere": "Les perimetres enumeres sont le backend, le front et les taches de fond ; chacun est declare implemente et execute avec sa mesure (taux atteint), ou hors perimetre avec son motif — un plan n'est pas un test. Les parcours en echec fonctionnel sont couverts distinctement de ceux qui aboutissent. L'accessibilite est mesuree, et les chemins d'erreur d'infrastructure (indisponibilite, panne transitoire) sont joues.",
       "patron_ears": "event-driven"
     }
   ]

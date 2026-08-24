@@ -193,6 +193,125 @@ const REPONSES_DEPENDANCE = [
              'perdu', 'conserv', 'brouillon', 'abandon', 'repris'] }
 ]
 
+// EA8 — TF-0577 (24/08, retour d'usage Produit-01, PR 3685). QUATRIÈME INSTANCE DU MÊME PATRON,
+// après EA4 (déclencheur asynchrone), EA6 (refus spécifié) et EA7 (dépendance externe) : *une
+// contrainte énoncée sans sa contrepartie observable est une exigence incomplète*. Ici la
+// contrainte est l'identité DÉLÉGUÉE, et la contrepartie manquante est celle-ci : COMMENT
+// TESTE-T-ON CE QUE CE CHOIX REND INTESTABLE ?
+//
+// LE FAIT. Un produit qui délègue son authentification à un fournisseur d'entreprise hérite d'une
+// contrainte que rien dans les forges n'anticipait : on ne peut pas tester de bout en bout ce
+// qu'on ne peut pas authentifier, et on ne peut pas authentifier N identités distinctes sans N
+// comptes réels chez le fournisseur. Or les tests qui comptent le plus sont ceux qui TRAVERSENT
+// PLUSIEURS IDENTITÉS — le passage de main séquentiel, le refus qui prime en parallèle, la copie
+// en lecture seule, l'administrateur qui annule sans décider à la place d'un approbateur.
+//
+// PERSONNE N'AYANT POSÉ LE PRINCIPE, CHAQUE PRODUIT L'INVENTE. Produit-01 l'a inventé de la façon
+// la plus tentante et la plus fausse : en FABRIQUANT les sessions — une clé écrite à la main dans
+// le stockage du navigateur, la redirection sautée. Coût mesuré : contrôle d'audience de la
+// bibliothèque cliente SAUTÉ pour les 5 profils · un `client_id` FAUX survivant NEUF JOURS · trois
+// fichiers portant trois valeurs du même identifiant, deux fausses · les 5 workflows inter-profils
+// échouant au PREMIER passage réel en intégration continue après n'avoir jamais été verts · une
+// demi-journée de diagnostic. Le cahier disait « SSO via Microsoft Entra ID / OIDC » et s'arrêtait
+// là — comme il disait « conversion asynchrone » (EA4) et « formats acceptés » (EA6).
+//
+// POURQUOI UNE RÈGLE À PART, ET PAS UNE SIXIÈME RÉPONSE D'EA5. EA5 juge le CYCLE DE VIE de la
+// session — durée, renouvellement, détection d'expiration, restauration du contexte, portée du
+// geste délégué. La TESTABILITÉ est un autre sujet, et EA5 porte déjà cinq réponses. Surtout, le
+// DÉCLENCHEUR n'est pas le même : « authentification » et « jeton de session » désignent aussi une
+// authentification LOCALE, qui n'a besoin d'aucun substitut. EA8 ne se réveille que si la
+// DÉLÉGATION est nommée — un fournisseur tiers, un protocole de fédération.
+const DECLENCHEURS_DELEGATION = [
+  'sso', 'oidc', 'saml', 'entra id', 'entra', 'azure ad', 'openid connect', 'openid',
+  "fournisseur d'identité", "fournisseur d'identite", 'identité déléguée', 'identite deleguee',
+  'google workspace', 'okta', 'auth0', 'keycloak', 'adfs', 'easyauth', 'idp', 'fédération',
+  'federation', "annuaire d'entreprise"
+]
+
+//: Les quatre réponses dues dès qu'une identité déléguée est nommée. L'ordre est celui du coût
+//: constaté : sans (a) le produit invente son substitut, et il l'invente mal ; sans (b) le
+//: substitut existe et ne sert à rien, faute d'identités à jouer ; sans (c) personne ne sait
+//: comment on passe du substitut au fournisseur réel, et les deux chemins divergent en silence ;
+//: sans (d) le substitut est atteignable en cible — et ce n'est pas une commodité, c'est une FAILLE.
+const REPONSES_DELEGATION = [
+  { cle: "mode de substitution local (comment on s'authentifie sans le fournisseur)",
+    motifs: ['substitut', 'simul', 'mode local', 'emetteur local', 'émetteur local', 'idp local',
+             'fournisseur local', 'bouchon', 'doublure', 'authentification locale', 'auth_mode',
+             'interrupteur'] },
+  { cle: 'identités de test que le substitut rend disponibles',
+    motifs: ['identites de test', 'identités de test', 'profils de test', 'comptes de test',
+             "jeu d'identites", "jeu d'identités", 'par identite', 'par identité', 'par profil',
+             'multi-profils', 'multi profils', 'plusieurs identites', 'plusieurs identités'] },
+  { cle: 'mécanisme de bascule entre substitut et fournisseur réel',
+    motifs: ['bascule', 'commut', 'reglage', 'réglage', 'drapeau', "variable d'environnement",
+             'auth_mode', 'selon le mode', 'mode cible', 'mode reel', 'mode réel'] },
+  // (d) n'est PAS une précaution de rédaction. Un mode d'authentification simulé atteignable sur un
+  // environnement servi est une faille. Et le garde doit porter sur un FAIT VÉRIFIABLE, jamais sur
+  // le NOM de l'environnement : `environment == "dev"` ne discrimine rien — un Dev cloud porte
+  // exactement cette valeur avec un fournisseur RÉEL. L'implémentation de référence (PR 3685) pose
+  // deux gardes fail-closed : le mode local exige un émetteur privé, le mode cible une audience unique.
+  { cle: "ce qui EMPÊCHE le substitut d'être atteignable en cible (garde fail-closed sur un FAIT, pas sur un nom d'environnement)",
+    motifs: ['fail-closed', 'fail closed', 'refuse au demarrage', 'refuse au démarrage',
+             'refus au demarrage', 'refus au démarrage', 'garde', 'interdit en production',
+             'interdit en cible', 'inatteignable', 'jamais atteignable', 'emetteur prive',
+             'émetteur privé', 'audience unique', 'ne demarre pas', 'ne démarre pas'] }
+]
+
+// EA9 — TF-0588 (24/08, retour d'usage Produit-01, lot 20260824d). CINQUIÈME INSTANCE DU MÊME
+// PATRON, après EA4 (déclencheur asynchrone), EA6 (refus spécifié), EA7 (dépendance externe) et
+// EA8 (identité déléguée) : *une contrainte énoncée sans sa contrepartie observable est une
+// exigence incomplète*. Ici l'intention est « une stratégie de tests », et la contrepartie
+// manquante est : SUR QUELS PÉRIMÈTRES, ET À QUOI RECONNAÎT-ON QU'ELLE EST FAITE ?
+//
+// LE FAIT, et il est embarrassant parce que rien n'était faux. Une stratégie de tests a été
+// demandée, construite, validée. Elle a produit un backend réellement testé — 423 tests, 87,9 %
+// — et un front PLANIFIÉ : 137 tests hérités, deux écrans à 1,88 % et 12,5 %, aucun parcours de
+// refus, et un seuil vert au-dessus de tout cela. Toutes les portes étaient vertes, la stratégie
+// était donc réputée EXÉCUTÉE. Il manquait la moitié du produit, et AUCUNE porte ni aucun rapport
+// ne pouvait le dire. Le propriétaire l'a demandé lui-même : « j'avais demandé la construction et
+// l'EXÉCUTION COMPLÈTE de la stratégie de tests, pourquoi les tests front n'ont pas été
+// implémentés ? » — et la réponse était : parce que rien, dans la demande comme dans le rendu, ne
+// disait qu'ils manquaient.
+//
+// LE DÉFAUT QUI EN EST SORTI a été signalé par un utilisateur AVEC UNE CAPTURE D'ÉCRAN, jamais
+// par la chaîne : tout échec d'ajout de document affichait « Une erreur est survenue. Réessayez »,
+// conseil FAUX dans six cas sur sept. Il était structurellement hors d'atteinte de la suite, parce
+// que la recette couvrait EXCLUSIVEMENT les parcours qui aboutissent — zéro parcours de refus.
+//
+// DEUX ÉTATS SEULEMENT PAR PÉRIMÈTRE, et c'est tout l'enseignement du lot : *implémenté et
+// exécuté* (avec sa mesure), ou *exclu* (avec son motif). Il n'existe pas de troisième état —
+// UN PLAN N'EST PAS UN TEST. La liste des périmètres est tirée de ce qui manquait réellement, et
+// le versant REFUS y est obligatoire et non recommandé : c'est là que les utilisateurs se
+// bloquent, et c'est le seul périmètre qui était à ZÉRO pendant que tout le reste était vert.
+const DECLENCHEURS_STRATEGIE_TESTS = [
+  'stratégie de tests', 'strategie de tests', 'plan de tests', 'plan de test',
+  'couverture de tests', 'taux de couverture', 'campagne de tests', 'recette',
+  'suite de tests', 'politique de tests'
+]
+
+//: Les quatre réponses dues dès qu'une stratégie de tests est demandée. L'ordre est celui du coût
+//: constaté : sans (a) la moitié du produit peut rester non testée sans que rien ne le dise ;
+//: sans (b) chaque périmètre est réputé fait dès qu'un document existe ; sans (c) la recette ne
+//: couvre que les parcours qui aboutissent, et c'est là que les utilisateurs se bloquent ; sans
+//: (d) un chiffre vert ne dit rien de ce qu'il n'a pas mesuré.
+const REPONSES_STRATEGIE_TESTS = [
+  { cle: 'les PÉRIMÈTRES énumérés (chaque couche exécutable : service, interface, tâches de fond)',
+    motifs: ['périmètre', 'perimetre', 'par couche', 'backend', 'back-end', 'front', 'interface',
+             'worker', 'tâche de fond', 'tache de fond', 'chaque couche', 'côté serveur',
+             'cote serveur'] },
+  { cle: "l'ÉTAT de chaque périmètre — implémenté et exécuté (avec sa mesure), ou exclu (avec son motif) ; un PLAN n'est pas un test",
+    motifs: ['implémenté et exécuté', 'implemente et execute', 'exécuté', 'execute', 'exclu',
+             'hors périmètre', 'hors perimetre', 'avec sa mesure', 'mesure à l\'appui',
+             'taux atteint', 'seuil atteint'] },
+  { cle: 'les parcours de REFUS, distinctement de ceux qui aboutissent',
+    motifs: ['refus', 'rejet', 'cas d\'erreur', 'cas d erreur', 'chemin d\'erreur',
+             'chemin d erreur', 'parcours en échec', 'parcours en echec', 'échec fonctionnel',
+             'echec fonctionnel', 'cas négatif', 'cas negatif'] },
+  { cle: "l'ACCESSIBILITÉ et les chemins d'erreur d'INFRASTRUCTURE (indisponibilité, panne transitoire)",
+    motifs: ['accessibilité', 'accessibilite', 'rgaa', 'wcag', 'a11y', 'indisponib', 'panne',
+             'transitoire', 'erreur technique', 'infrastructure'] }
+]
+
 const pliSansAccent = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 // TF-0387 (constaté le 18/08 sur EX-044 de factory.digit-ai.fr) — mon `includes()` détectait
 // « sso » À L'INTÉRIEUR de « ressource », et EA5 exigeait alors quatre réponses sur le cycle de
@@ -200,8 +319,8 @@ const pliSansAccent = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').
 // REFORMULÉE POUR CONTOURNER le faux positif — un contrôle bruyant ne se corrige pas, il se
 // fait contourner (R-33 bis). Les termes courts (sso, saml, oidc) étaient les plus exposés.
 // Correctif : la même construction à FRONTIÈRES DE MOT que les AMBIGUS d'EA2 — un terme simple
-// est encadré de , un terme multi-mots est cherché tel quel, et le texte comme le terme sont
-// pliés sans accent AVANT la construction ( ne connaît pas « é »).
+// est encadré de \b, un terme multi-mots est cherché tel quel, et le texte comme le terme sont
+// pliés sans accent AVANT la construction (\b ne connaît pas « é »).
 const _RE_TERMES = new Map()
 const _reTerme = (t) => {
   if (!_RE_TERMES.has(t)) {
@@ -361,6 +480,36 @@ for (const [i, e] of exigences.entries()) {
         "pour dire « je n'ai pas pu » : la panne remonte nue, et un refus définitif devient " +
         'indiscernable d\'une panne transitoire'))
   }
+
+  // EA8 — identité déléguée : le substitut local, ses identités, sa bascule, son garde (TF-0577).
+  if (!mentionne(texte, DECLENCHEURS_DELEGATION)) {
+    constats.push(constat('EA8', SANS_OBJET, ou, "aucune identité déléguée nommée — une authentification LOCALE n'a besoin d'aucun substitut"))
+  } else {
+    const manque = reponsesManquantes(texte, REPONSES_DELEGATION)
+    constats.push(manque.length === 0
+      ? constat('EA8', PASS, ou, 'identité déléguée : le substitut local, ses identités de test, sa bascule et son garde sont dits')
+      : constat('EA8', FAIL, ou,
+        `identité déléguée nommée, réponse(s) DUE(S) et absente(s) : ${manque.join(', ')} — ` +
+        "on ne peut pas tester de bout en bout ce qu'on ne peut pas authentifier, et on ne peut " +
+        'pas authentifier N identités sans N comptes réels chez le fournisseur. Sans ces réponses, ' +
+        "le produit INVENTE son substitut — et la façon la plus tentante de l'inventer, fabriquer " +
+        "la session dans le stockage du navigateur, saute le seul contrôle qui aurait vu l'erreur"))
+  }
+
+  // EA9 — stratégie de tests : les périmètres, leur état, les refus, l'accessibilité (TF-0588).
+  if (!mentionne(texte, DECLENCHEURS_STRATEGIE_TESTS)) {
+    constats.push(constat('EA9', SANS_OBJET, ou, "aucune stratégie de tests demandée — rien à énumérer"))
+  } else {
+    const manque = reponsesManquantes(texte, REPONSES_STRATEGIE_TESTS)
+    constats.push(manque.length === 0
+      ? constat('EA9', PASS, ou, 'stratégie de tests : les périmètres, leur état, les refus et les chemins techniques sont dits')
+      : constat('EA9', FAIL, ou,
+        `stratégie de tests demandée, réponse(s) DUE(S) et absente(s) : ${manque.join(', ')} — ` +
+        "une stratégie sans périmètres énumérés est réputée honorée quand un DOCUMENT existe, pas " +
+        "quand les tests existent et s'exécutent : un plan n'est pas un test. Mesuré : la moitié " +
+        "d'un produit non testée sous des portes toutes vertes, et le défaut trouvé par un " +
+        "utilisateur avec une capture d'écran"))
+  }
 }
 
 emettre({
@@ -394,6 +543,27 @@ emettre({
       "justesse : « un message est affiché » satisfait la règle sans dire lequel, et « réessayer » " +
       'la satisfait aussi alors que c’est précisément l’instruction fausse qui a fait naître la ' +
       "règle. Le texte du message relève de la revue humaine, pas d'un oracle lexical.",
+    'EA8 lit une DÉLÉGATION NOMMÉE, pas une architecture d\'identité : une exigence qui confie ' +
+      "l'authentification à un tiers sans employer aucun des termes de la liste passe en " +
+      "SANS_OBJET — même limite qu'EA7, et elle se corrige en NOMMANT le fournisseur.",
+    'EA8 constate la PRÉSENCE des quatre réponses, jamais leur JUSTESSE, et la quatrième est ' +
+      "celle où l'écart compte le plus : « le mode local est interdit en production » satisfait " +
+      "la règle alors que c'est précisément la forme FAUSSE du garde. Un garde qui s'appuie sur " +
+      "le NOM de l'environnement ne discrimine rien — un Dev cloud porte la valeur `dev` avec un " +
+      'fournisseur RÉEL. Le garde juste porte sur un FAIT vérifiable (un émetteur privé, une ' +
+      "audience unique), et cette différence relève de la revue humaine et du versant " +
+      "development, pas d'un oracle lexical.",
+    'EA9 lit un VOCABULAIRE DE DEMANDE, pas une intention : une exigence qui commande des tests ' +
+      "sans employer aucun des termes de la liste passe en SANS_OBJET — meme limite qu'EA7 et EA8.",
+    "EA9 et EA6 se REVEILLENT sur le meme mot, et l'interaction est declaree plutot que " +
+      "corrigee : la reponse (c) d'EA9 demande que les parcours de REFUS soient testes, et le " +
+      "mot « refus » est un declencheur d'EA6, qui exige alors le message et le geste d'un refus " +
+      "UTILISATEUR. Une exigence qui dit « les parcours de refus sont couverts » verra donc EA6 " +
+      "s'allumer a tort. Distinguer « specifier un refus » de « tester des refus » est une lecture " +
+      "de SENS, que cet oracle ne fait pas ; les autres formulations acceptees par EA9 (« cas " +
+      "d'erreur », « parcours en echec fonctionnel ») contournent la collision sans rien " +
+      "affaiblir. Elargir EA6 pour exclure ce cas eteindrait la regle sur des refus REELS : le " +
+      "prix est paye du bon cote.",
     "EA4/EA5 jugent l'exigence PRISE SEULE. Un projet qui répond aux quatre questions dans une " +
       "exigence transverse (« toute session expire après 30 min ») fera échouer chaque exigence " +
       "d'authentification particulière : le rattachement d'une réponse portée ailleurs n'est pas " +

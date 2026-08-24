@@ -75,7 +75,19 @@ const ORACLES = [
     // TF-0576 (24/08) : EA7 — troisieme instance du meme patron, appliquee a une DEPENDANCE
     // EXTERNE. La verte declare l'indisponibilite ET le sort du geste ; la rouge porte le contrat
     // a deux issues qui n'avait nulle part ou ranger « l'analyse n'a pas eu lieu ».
-    regles: ['EA1', 'EA2', 'EA3', 'EA4', 'EA5', 'EA6', 'EA7'],
+    // TF-0577 (24/08) : EA8 — QUATRIEME instance, appliquee a l'identite DELEGUEE. La contrepartie
+    // manquante y est la TESTABILITE : comment teste-t-on ce que ce choix rend intestable ? La
+    // rouge est l'exigence EA-907 elle-meme — une seule phrase de cahier (« SSO via Microsoft
+    // Entra ID / OIDC ») qui plante EA5 ET EA8, comme c'est arrive. La verte a du GRANDIR : son
+    // exigence d'authentification nommait OIDC, donc EA8 s'y reveille aussi, et sans les quatre
+    // reponses la verte aurait mis en echec une exigence CONFORME.
+    // TF-0588 (24/08) : EA9 — CINQUIEME instance, appliquee a une demande de STRATEGIE DE TESTS.
+    // La contrepartie manquante y est le PERIMETRE et le critere de completude : « sur quoi, et a
+    // quoi reconnait-on que c'est fait ? ». La rouge porte la demande telle qu'elle a ete recue,
+    // tenue pour honoree alors que la moitie du produit n'etait pas testee. La verte a du etre
+    // ecrite de toutes pieces — aucune exigence du jeu ne parlait de tests — et sa REDACTION est
+    // contrainte : le mot « refus » reveille EA6, l'interaction est declaree au non_juge.
+    regles: ['EA1', 'EA2', 'EA3', 'EA4', 'EA5', 'EA6', 'EA7', 'EA8', 'EA9'],
     args: (dossier) => [dossier === VERTE ? EARS_VERTE : EARS_ROUGE]
   },
   {
