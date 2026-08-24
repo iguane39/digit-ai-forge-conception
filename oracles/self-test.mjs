@@ -22,6 +22,9 @@ const EARS_VERTE = join(ICI, 'fixtures', 'ears-verte', 'EXIGENCES.json')
 const EARS_ROUGE = join(ICI, 'fixtures', 'ears-rouge', 'EXIGENCES.json')
 const CONSTIT_VERTE = join(ICI, 'fixtures', 'constitution-verte', 'CONSTITUTION.md')
 const CONSTIT_ROUGE = join(ICI, 'fixtures', 'constitution-rouge', 'CONSTITUTION.md')
+// TF-0577 : fixture ISOLANTE — le MEME document que la verte, prive de sa SEULE section
+// « Promesse ». La rouge generale declenche C1 a C4 ensemble et ne prouve pas que C4 discrimine.
+const CONSTIT_SANS_PROMESSE = join(ICI, 'fixtures', 'constitution-sans-promesse', 'CONSTITUTION.md')
 const DELTA_VERTE = join(ICI, 'fixtures', 'delta-verte')
 const DELTA_ROUGE = join(ICI, 'fixtures', 'delta-rouge')
 const RETROM_VERTE = join(ICI, 'fixtures', 'retro-modele-verte', 'RETRO-MODELE.md')
@@ -94,8 +97,16 @@ const ORACLES = [
     // TF-0101 (2/3) : contrôle d'existence (exit 2 s'il est absent, comme tout autre oracle de
     // cette forge) et de format de CONSTITUTION.md. Fixtures dédiées, comme oracle-ears.
     fichier: 'oracle-constitution.mjs',
-    regles: ['C1', 'C2', 'C3'],
+    regles: ['C1', 'C2', 'C3', 'C4'],
     args: (dossier) => [dossier === VERTE ? CONSTIT_VERTE : CONSTIT_ROUGE]
+  },
+  {
+    // TF-0577 (25/08) : C4 SEULE. La fixture rouge generale declenche C1, C2, C3 et C4
+    // ensemble et ne prouve donc pas que C4 discrimine ; celle-ci est le MEME document que la
+    // verte, prive de sa seule section « Promesse ».
+    fichier: 'oracle-constitution.mjs',
+    regles: ['C4'],
+    args: (dossier) => [dossier === VERTE ? CONSTIT_VERTE : CONSTIT_SANS_PROMESSE]
   },
   {
     // TF-0101 (3/3) : format d'un delta de référentiel (cycle propose/apply/archive façon

@@ -11,11 +11,6 @@ palier, aucune reformulation n'a le droit de trahir. Distinct d'`EXIGENCES.json`
 chaque itération de palier ; ce fichier ne change que par ratification explicite (bump de
 `version`).
 
-## Promesse
-
-Vos demandes d'absence se traitent sans relance et sans tableur, et vous savez à tout moment
-où en est chacune.
-
 ## Principes non négociables
 
 1. Aucune donnée de démonstration n'est visible en production, sous quelque compte que ce soit.

@@ -21,6 +21,7 @@ const VERSION = '1.0.0'
 
 const SEMVER = /^\d+\.\d+\.\d+$/
 const RE_TITRE_PRINCIPES = /^#{1,6}\s*Principes non n[ée]gociables\s*$/i
+const RE_TITRE_PROMESSE = /^#{1,6}\s*Promesse\s*$/i
 const RE_TITRE = /^#{1,6}\s/
 const RE_PUCE = /^\s*(?:[-*]|\d+[.)])\s+(.+)$/
 const PLACEHOLDERS = /^(todo|à compl[ée]ter|a completer|\.\.\.|tbd|xxx)$/i
@@ -115,6 +116,51 @@ if (!sectionTrouvee) {
   constats.push(constat('C3', PASS, 'corps', `${principesValides.length} principe(s) non négociable(s) déclaré(s)`))
 }
 
+// C4 — LA PROMESSE AU CLIENT (TF-0577, lot Produit-02 20260824).
+//
+// Le fait fondateur : la une d'un site promettait « votre produit, livré avec ses preuves » — un
+// visiteur en déduit une LIVRAISON. Les six services vendus, produits par le MÊME RUN, disaient
+// tout autre chose : « nous évaluons VOTRE chaîne », « VOS ÉQUIPES apprennent », « à la fin vos
+// équipes exécutent SANS NOUS ». Aucun des six ne disait « nous construisons votre produit ».
+//
+// Ce qui rend le défaut structurel et non accidentel : la liste fermée des six services était une
+// DÉCISION HUMAINE DATÉE, consignée et opposable. La promesse, elle, n'était opposable à rien —
+// elle s'est décidée par défaut, en rédigeant un titre, c'est-à-dire au plus bas niveau de la
+// chaîne. Deux affirmations du même run se contredisaient, et une seule avait un porteur.
+//
+// La promesse rejoint donc CONSTITUTION.md, dont c'est exactement la nature : ce qui ne change
+// que par ratification explicite. Une phrase, dans les mots du CLIENT — ce qu'il gagne et ce
+// qu'il n'a plus à faire — jamais dans ceux du produit.
+const extrairePromesse = (corps) => {
+  const lignes = corps.split(/\r?\n/)
+  const debut = lignes.findIndex(l => RE_TITRE_PROMESSE.test(l))
+  if (debut === -1) return { sectionTrouvee: false, texte: '' }
+  const suite = []
+  for (let i = debut + 1; i < lignes.length; i++) {
+    if (RE_TITRE.test(lignes[i])) break
+    suite.push(lignes[i])
+  }
+  return { sectionTrouvee: true, texte: suite.join(' ').replace(/\s+/g, ' ').trim() }
+}
+
+const promesse = extrairePromesse(fm.corps)
+if (!promesse.sectionTrouvee) {
+  constats.push(constat('C4', FAIL, 'corps',
+    'section "## Promesse" absente — ce que le produit promet a son client se DECIDE et se ratifie, ' +
+    'sinon il se decide par defaut en redigeant un titre, au plus bas niveau de la chaine (TF-0577)'))
+} else if (promesse.texte === '' || PLACEHOLDERS.test(promesse.texte)) {
+  constats.push(constat('C4', FAIL, 'corps',
+    'section "## Promesse" presente mais vide ou placeholder — une promesse non ecrite n\'est ' +
+    'opposable a rien, et c\'est precisement ce qui a laisse une une contredire son offre'))
+} else if (promesse.texte.length > 400) {
+  constats.push(constat('C4', FAIL, 'corps',
+    `promesse de ${promesse.texte.length} caracteres — UNE PHRASE est demandee. Au-dela, ce n'est ` +
+    'plus une promesse opposable mais une description, et une description ne se contredit pas : ' +
+    'elle se nuance, ce qui est exactement le contraire de ce qu\'on veut ici'))
+} else {
+  constats.push(constat('C4', PASS, 'corps', `promesse ratifiee, ${promesse.texte.length} caracteres`))
+}
+
 emettre({
   oracle: 'oracle-constitution',
   version: VERSION,
@@ -126,6 +172,8 @@ emettre({
     'La cohérence entre la constitution et le contenu réel d\'EXIGENCES.json — aucun croisement ' +
       'mécanique entre les deux fichiers n\'est fait par cet oracle, contrairement à ce que fait ' +
       'oracle-tracabilite entre EXIGENCES.json et ses vues.',
+    'Que la promesse soit ECRITE DANS LES MOTS DU CLIENT et non du produit : C4 verifie qu\'elle existe, qu\'elle est ratifiee et qu\'elle tient en une phrase, jamais qu\'elle parle du gain du client plutot que des moyens du fournisseur. Ce jugement se fait a la lecture, par un humain — et selon TF-0577 lui-meme, un controle n\'a pas besoin d\'etre automatique pour etre opposable, il a besoin d\'EXISTER et d\'avoir un porteur.',
+    'La COHERENCE entre cette promesse et ce que la page d\'accueil affiche : c\'est le retour jumeau vers forge-design (TF-0578), qui met la une, la liste des services et ce champ cote a cote.',
     'Le respect effectif des principes par le produit livré — c\'est un contrôle de forme du ' +
       'document, pas un audit de conformité du code ou de l\'infrastructure.'
   ]
