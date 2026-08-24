@@ -193,7 +193,7 @@ const REPONSES_DEPENDANCE = [
              'perdu', 'conserv', 'brouillon', 'abandon', 'repris'] }
 ]
 
-// EA8 — TF-0577 (24/08, retour d'usage Produit-01, PR 3685). QUATRIÈME INSTANCE DU MÊME PATRON,
+// EA8 — TF-0592 (24/08, retour d'usage Produit-01, PR 3685). QUATRIÈME INSTANCE DU MÊME PATRON,
 // après EA4 (déclencheur asynchrone), EA6 (refus spécifié) et EA7 (dépendance externe) : *une
 // contrainte énoncée sans sa contrepartie observable est une exigence incomplète*. Ici la
 // contrainte est l'identité DÉLÉGUÉE, et la contrepartie manquante est celle-ci : COMMENT
@@ -257,7 +257,7 @@ const REPONSES_DELEGATION = [
              'émetteur privé', 'audience unique', 'ne demarre pas', 'ne démarre pas'] }
 ]
 
-// EA9 — TF-0588 (24/08, retour d'usage Produit-01, lot 20260824d). CINQUIÈME INSTANCE DU MÊME
+// EA9 — TF-0603 (24/08, retour d'usage Produit-01, lot 20260824d). CINQUIÈME INSTANCE DU MÊME
 // PATRON, après EA4 (déclencheur asynchrone), EA6 (refus spécifié), EA7 (dépendance externe) et
 // EA8 (identité déléguée) : *une contrainte énoncée sans sa contrepartie observable est une
 // exigence incomplète*. Ici l'intention est « une stratégie de tests », et la contrepartie
@@ -481,7 +481,7 @@ for (const [i, e] of exigences.entries()) {
         'indiscernable d\'une panne transitoire'))
   }
 
-  // EA8 — identité déléguée : le substitut local, ses identités, sa bascule, son garde (TF-0577).
+  // EA8 — identité déléguée : le substitut local, ses identités, sa bascule, son garde (TF-0592).
   if (!mentionne(texte, DECLENCHEURS_DELEGATION)) {
     constats.push(constat('EA8', SANS_OBJET, ou, "aucune identité déléguée nommée — une authentification LOCALE n'a besoin d'aucun substitut"))
   } else {
@@ -496,7 +496,7 @@ for (const [i, e] of exigences.entries()) {
         "la session dans le stockage du navigateur, saute le seul contrôle qui aurait vu l'erreur"))
   }
 
-  // EA9 — stratégie de tests : les périmètres, leur état, les refus, l'accessibilité (TF-0588).
+  // EA9 — stratégie de tests : les périmètres, leur état, les refus, l'accessibilité (TF-0603).
   if (!mentionne(texte, DECLENCHEURS_STRATEGIE_TESTS)) {
     constats.push(constat('EA9', SANS_OBJET, ou, "aucune stratégie de tests demandée — rien à énumérer"))
   } else {
