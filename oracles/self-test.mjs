@@ -31,6 +31,11 @@ const RETROM_VERTE = join(ICI, 'fixtures', 'retro-modele-verte', 'RETRO-MODELE.m
 const RETROM_ROUGE = join(ICI, 'fixtures', 'retro-modele-rouge', 'RETRO-MODELE.md')
 const VUESP_VERTE = join(ICI, 'fixtures', 'vues-profil-verte')
 const VUESP_ROUGE = join(ICI, 'fixtures', 'vues-profil-rouge')
+// TF-0811 : fixtures DEDIEES de S4 devenue jugeante. La rouge est le MEME referentiel que la
+// verte, prive de sa seule 404 et de son champ d'ecarts -- fixture isolante, meme idiome que
+// CONSTIT_SANS_PROMESSE : un seul FAIL possible, celui que la regle doit prouver.
+const SURFIMP_VERTE = join(ICI, 'fixtures', 'surface-implicite-verte')
+const SURFIMP_ROUGE = join(ICI, 'fixtures', 'surface-implicite-rouge')
 
 const ORACLES = [
   {
@@ -48,13 +53,22 @@ const ORACLES = [
     // un operateur qui la joue via le registre central lit desormais le meme verdict que
     // ce self-test. La branche « ratio >= seuil -> avertissement nomme » (RC-1) est prouvee
     // a part, sur la fixture dediee seuil-rc1 (voir bloc apres la boucle).
-    // TF-0804 : S4 (la 404 par langue, candidat d'office) N'EST PAS dans cette liste, et ce
-    // n'est pas un oubli -- la liste dit les regles que la fixture ROUGE doit faire ECHOUER,
-    // or S4 n'echoue jamais par construction (avertissement nomme, cf. oracle-surface.mjs).
-    // Ses trois branches sont prouvees a part, comme celle de RC-1 : voir la branche TF-0804.
+    // TF-0811 : S4 (la surface implicite, candidat par candidat) n'est pas dans CETTE liste,
+    // et ce n'est pas un oubli -- les fixtures VERTE/ROUGE partagees n'enumerent aucun point
+    // d'entree web, donc S4 y rend un PASS motive et n'y jugerait rien. Elle a ses fixtures
+    // DEDIEES (entree suivante) et ses six etats en branche : voir la branche TF-0811.
     fichier: 'oracle-surface.mjs',
     regles: ['S1', 'S2', 'S3'],
     args: (dossier) => [join(dossier, 'EXIGENCES.json')]
+  },
+  {
+    // TF-0811 : S4 SEULE, sur ses fixtures dediees. La rouge est le MEME referentiel que la
+    // verte, prive de sa seule page 404 et de son champ d'ecarts : S1, S2 et S3 y restent
+    // verts, et le seul FAIL possible est celui d'un candidat d'office ni retenu ni ecarte.
+    // Une fixture rouge qui echouerait partout ne prouverait pas que S4 discrimine.
+    fichier: 'oracle-surface.mjs',
+    regles: ['S4'],
+    args: (dossier) => [join(dossier === VERTE ? SURFIMP_VERTE : SURFIMP_ROUGE, 'EXIGENCES.json')]
   },
   {
     fichier: 'oracle-claims.mjs',
@@ -447,65 +461,127 @@ for (const o of ORACLES) {
   }
 }
 
-// --- branche TF-0804 : S4, la 404 par langue entre a la surface implicite d'office --------
-// Le candidat n'est du QUE si le produit a une surface web -- une regle proposee partout ne
-// serait plus un candidat, ce serait un dogme. La fixture porte donc les DEUX sens, plus le
-// cas ou la garde doit PARLER (sans quoi S4 serait un controle neuf, vert, joue par personne) :
-//   1. surface web + 404 enumeree            -> PASS, la 404 est nommee
-//   2. surface web SANS 404                  -> SANS_OBJET, avertissement nomme non bloquant
-//   3. aucune surface web                    -> PASS, motif « la 404 n'est pas due »
-// S4 n'echoue jamais : EXIGENCES.json n'offre aucun champ ou declarer l'ecart explicite d'un
-// candidat d'office (il vit en prose, SURFACE.md §3) -- cf. l'en-tete d'oracle-surface.mjs.
+// --- branche TF-0811 : S4 juge, et l'ecart explicite a un lieu ou s'ecrire ---------------
+// TF-0804 avait pose S4 en avertissement NON BLOQUANT, pour une seule raison : EXIGENCES.json
+// n'offrait aucun champ ou porter l'ecart explicite d'un candidat d'office -- un FAIL aurait
+// accuse un referentiel dont l'ecart est legitime, et l'oubli restait indiscernable de la
+// decision. Le champ racine `ecarts_surface_implicite` comble ce trou ; la regle devient
+// jugeante, ce qui oblige a prouver QUATRE etats plus les DEUX facons dont un ecart ne tient
+// pas. Sans ces temoins, S4 redeviendrait une regle qui ne discrimine rien :
+//   1. surface web + candidat present, AUCUN champ d'ecart   -> PASS (referentiel anterieur)
+//   2. surface web + candidat absent + ecart valide          -> PASS, message « [ECARTE] »
+//   3. surface web + candidat absent + aucun ecart           -> FAIL, le candidat NOMME
+//   4. aucune surface web                                    -> PASS motive, un seul constat
+//   5. ecart au motif trop court (< 20 caracteres)           -> FAIL (temoin : le motif est lu)
+//   6. ecart designant un element hors de la liste close     -> FAIL (temoin : la cle est lue)
+// Le candidat mis en jeu est la 404 : tous les autres candidats de la liste close sont
+// enumeres dans la fixture, ce qui ISOLE la mesure sur un seul d'entre eux.
+// Fixtures ephemeres, comme TF-0114 et TF-0799.
 {
-  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0804-'))
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0811-'))
   try {
-    const referentiel = (surface, liens) => ({
-      projet: 'Fixture TF-0804 (surface implicite : la 404 par langue)',
-      besoins: [{ id: 'B-01', enonce: 'Un visiteur doit atteindre le produit depuis le web.' }],
-      surface,
-      exigences: surface.map((s, i) => ({
-        id: `E-${String(i + 1).padStart(3, '0')}`,
-        besoin: 'B-01',
-        enonce: `Le produit sert ${s.libelle}.`,
-        critere: 'La ressource est affichée.',
-        palier: 'MVP',
-        statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-0804' },
-        surface: [s.id],
-        cotation: { impact: 3, confiance: 3, effort: 2 }
-      })).filter(e => liens.includes(e.surface[0]))
-    })
-    const POINT_WEB = { id: 'S-01', type: 'point-entree', libelle: "Page d'accueil du site" }
-    const PAGE_404 = { id: 'S-02', type: 'point-entree', libelle: 'Page 404 par langue' }
+    const BASE = [
+      { id: 'S-01', type: 'point-entree', libelle: "Page d'accueil du site" },
+      { id: 'S-02', type: 'point-entree', libelle: 'Aide utilisateur' },
+      { id: 'S-03', type: 'parcours', libelle: 'Onboarding de première connexion' },
+      { id: 'S-04', type: 'objet', libelle: 'Compte utilisateur' },
+      { id: 'S-05', type: 'objet', libelle: 'Favicon' },
+      { id: 'S-06', type: 'parcours', libelle: 'États vides guidés' },
+      { id: 'S-07', type: 'regle', libelle: 'Gestion des erreurs visible' },
+      { id: 'S-08', type: 'point-entree', libelle: 'Mentions légales' },
+      { id: 'S-09', type: 'regle', libelle: 'Responsive mobile' },
+      { id: 'S-10', type: 'regle', libelle: 'Accessibilité RGAA' },
+      { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" }
+    ]
+    const PAGE_404 = { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' }
     const LOT_NUIT = { id: 'S-01', type: 'point-entree', libelle: 'Import de nuit du fichier fournisseur' }
+    const ECART_VALIDE = {
+      element: 'page-404',
+      motif: 'le routeur de la plateforme possede deja sa page d\'erreur par langue : c\'est lui qui la sert, pas le produit',
+      decide_par: 'le commanditaire du produit',
+      date: '2026-09-05'
+    }
+
+    const referentiel = (surface, ecarts) => {
+      const ref = {
+        projet: 'Fixture TF-0811 (surface implicite : l\'ecart explicite)',
+        besoins: [{ id: 'B-01', enonce: 'Un visiteur doit atteindre le produit depuis le web.' }],
+        surface,
+        exigences: surface.map((s, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: `Le produit sert ${s.libelle}.`,
+          critere: 'La ressource est affichee.',
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-0811' },
+          surface: [s.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_surface_implicite = ecarts
+      return ref
+    }
 
     const jouer = (nom, ref) => {
       const chemin = join(tmp, `EXIGENCES-${nom}.json`)
-      writeFileSync(chemin, JSON.stringify(ref, null, 2) + '\n')
-      const r = lancer('oracle-surface.mjs', [chemin, '--seuil', '0'])
-      const s4 = (r.rapport?.constats ?? []).find(c => c.regle === 'S4')
-      return { code: r.code, statut: s4?.statut, message: s4?.message ?? '', ou: s4?.ou ?? '' }
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-surface.mjs', [chemin])
+      const s4 = (r.rapport?.constats ?? []).filter(c => c.regle === 'S4')
+      return {
+        code: r.code,
+        s4,
+        fails: s4.filter(c => c.statut === 'FAIL'),
+        sur: (fragment) => s4.find(c => `${c.ou} ${c.message}`.includes(fragment))
+      }
     }
 
-    const avec404 = jouer('web-avec-404', referentiel([POINT_WEB, PAGE_404], ['S-01', 'S-02']))
-    const sans404 = jouer('web-sans-404', referentiel([POINT_WEB], ['S-01']))
-    const sansWeb = jouer('sans-surface-web', referentiel([LOT_NUIT], ['S-01']))
+    const complet = jouer('1-candidat-present', referentiel([...BASE, PAGE_404]))
+    const ecarte = jouer('2-ecart-valide', referentiel(BASE, [ECART_VALIDE]))
+    const oubli = jouer('3-aucun-ecart', referentiel(BASE))
+    const sansWeb = jouer('4-sans-surface-web', referentiel([LOT_NUIT]))
+    const motifCourt = jouer('5-motif-trop-court',
+      referentiel(BASE, [{ ...ECART_VALIDE, motif: 'pas utile' }]))
+    const cleInconnue = jouer('6-element-hors-liste',
+      referentiel(BASE, [{ ...ECART_VALIDE, element: 'page-quatre-cent-quatre' }]))
+
+    // Le sceau de la vue derivee : la fixture VERTE dediee porte son CADRAGE-DESIGN.md
+    // regenere, champ `ecarts_surface_implicite` compris. Une vue qui ne porterait pas le
+    // champ neuf serait indetectable ici -- c'est T3, sur l'empreinte de la source, qui le dit.
+    const sceau = lancer('oracle-tracabilite.mjs',
+      [join(SURFIMP_VERTE, 'EXIGENCES.json'), '--vue', join(SURFIMP_VERTE, 'CADRAGE-DESIGN.md')])
+    const t3 = (sceau.rapport?.constats ?? []).find(c => c.regle === 'T3')
+    const vueCadrage = readFileSync(join(SURFIMP_VERTE, 'CADRAGE-DESIGN.md'), 'utf8')
 
     const cas = [
-      ['surface web + 404 enumeree -> PASS, la 404 est nommee',
-        avec404.statut === 'PASS' && avec404.ou.includes('S-02')],
-      ['surface web SANS 404 -> SANS_OBJET nomme (la garde parle), exit 0 conserve',
-        sans404.statut === 'SANS_OBJET' && sans404.code === 0 &&
-        sans404.message.includes('candidat d\'office')],
-      ['aucune surface web -> PASS motive : la 404 n\'est pas due',
-        sansWeb.statut === 'PASS' && sansWeb.message.includes('pas due')]
+      ['1. candidat present, aucun champ d\'ecart -> PASS (referentiel anterieur au champ)',
+        complet.code === 0 && complet.fails.length === 0 && complet.s4.length === 11],
+      ['2. candidat absent + ecart valide -> PASS imprime « [ECARTE] »',
+        ecarte.code === 0 && ecarte.fails.length === 0 &&
+        (ecarte.sur('page-404')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['3. candidat absent + aucun ecart -> FAIL, le candidat NOMME',
+        oubli.code === 1 && oubli.fails.length === 1 &&
+        oubli.fails[0].message.includes('Page 404 par langue')],
+      ['4. aucune surface web -> PASS motive, un seul constat S4',
+        sansWeb.code === 0 && sansWeb.s4.length === 1 &&
+        sansWeb.s4[0].message.includes('n\'est pas due')],
+      ['5. ecart au motif trop court -> FAIL nommant `motif`',
+        motifCourt.code === 1 && motifCourt.fails.length === 1 &&
+        motifCourt.fails[0].message.includes('motif')],
+      ['6. ecart hors liste close -> FAIL sur l\'ecart ET sur le candidat reste nu',
+        cleInconnue.code === 1 && cleInconnue.fails.length === 2],
+      ['7. vue derivee regeneree sur la fixture verte : T3 PASS et le champ y figure',
+        sceau.code === 0 && t3?.statut === 'PASS' &&
+        vueCadrage.includes('ecarts_surface_implicite') &&
+        vueCadrage.includes('accessibilite-rgaa')]
     ]
     const ko = cas.filter(([, ok]) => !ok)
-    console.log('oracle-surface.mjs (branche TF-0804, fixtures ephemeres, 2 sens + temoin)')
+    console.log('oracle-surface.mjs (branche TF-0811, fixtures ephemeres, 4 etats + 2 temoins)')
     for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
     console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
     if (ko.length > 0) {
       echecs++
-      console.log(`         statuts obtenus : avec404=${avec404.statut} sans404=${sans404.statut} sansWeb=${sansWeb.statut}`)
+      console.log(`         exits obtenus : 1=${complet.code} 2=${ecarte.code} 3=${oubli.code} ` +
+        `4=${sansWeb.code} 5=${motifCourt.code} 6=${cleInconnue.code} 7=${sceau.code}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })

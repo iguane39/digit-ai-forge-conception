@@ -1,7 +1,7 @@
 ---
 name: enumere-la-surface
 description: Énumère mécaniquement la surface fonctionnelle d'un produit à concevoir — objets métier, rôles, parcours, points d'entrée, règles de gestion — depuis l'entrant qualifié, et produit un SURFACE.md où chaque élément porte un identifiant stable. Inverse le sens de la génération : on énumère d'abord ce qui existe, on rédige ensuite, pour que tout élément non couvert par une exigence soit un manque nommé et non une absence silencieuse. Use when / déclencher dès qu'il faut inventorier ce qu'un produit doit couvrir avant d'écrire des exigences, lister les objets métier, rôles ou parcours d'un CDC ou d'un dépôt existant, ou vérifier qu'une spécification n'oublie pas une partie du périmètre. Ne pas déclencher pour qualifier l'entrant lui-même (→ qualifie-l-entrant), pour rédiger les exigences (→ redige-les-exigences), ni pour énumérer la surface d'un produit déjà construit à des fins de test (→ Forge Tests, qui l'énumère depuis le code exécutable).
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Énumère la surface
@@ -35,7 +35,8 @@ d'identifiants stables qui survivront jusqu'au champ `risque` de Forge Tests.
 1. Entrée        → ENTRANT.md, section 3 (extractible obtenu)
 2. Typologie     → references/typologie-surface.md, 5 types
 3. Implicite     → references/typologie-surface.md, « Surface implicite SaaS » : chaque
-                   candidat retenu ou écarté explicitement (SURFACE.md section 3)
+                   candidat retenu ou écarté explicitement (SURFACE.md section 3, puis
+                   `ecarts_surface_implicite` du référentiel — oracle-surface S4 le juge)
 4. Identifiants  → S-01, S-02… stables, jamais réaffectés
 5. Artefact      → SURFACE.md + le tableau `surface[]` du référentiel
 6. Contrôle      → node oracles/oracle-surface.mjs EXIGENCES.json
@@ -72,8 +73,16 @@ proposée d'office en fin d'énumération, chacun retenu (→ exigence) ou écar
 `SURFACE.md` section 3. Liste complète : `references/typologie-surface.md`, section « Surface
 implicite SaaS ». Un candidat peut porter une **condition d'applicabilité** plutôt qu'un
 simple type suggéré : la **page 404 par langue** (P-2 — patron éprouvé du pilot, TF-0804)
-n'est proposée que si le produit a une surface web, avec ses cinq critères d'acceptation ;
-`oracle-surface` (règle S4) le rappelle mécaniquement, en avertissement nommé et non bloquant.
+n'est proposée que si le produit a une surface web, avec ses cinq critères d'acceptation.
+
+**L'écart s'écrit dans le référentiel, pas seulement en prose (TF-0811).** La section 3 de
+`SURFACE.md` reste le lieu où l'écart se rédige ; elle est transcrite, sans reformulation, dans
+le champ racine `ecarts_surface_implicite` — `{ element, motif, decide_par, date }`, une entrée
+par candidat écarté, `element` pris dans les onze clés de la liste close. `oracle-surface`
+(règle **S4**) juge alors chaque candidat individuellement : présent → PASS, écarté avec un
+motif d'au moins vingt caractères → PASS imprimé « [ÉCARTÉ] », ni l'un ni l'autre → **FAIL**.
+Sans point d'entrée web énuméré, le bloc n'est pas dû et S4 rend un PASS motivé. C'est le seul
+endroit de la forge où l'oubli et la décision cessent de se ressembler.
 
 **Deux natures d'élément rendent huit exigences DUES — dès l'énumération (TF-0376).** Un
 `point-entree` ou un `parcours` dont l'entrant dit qu'il est **asynchrone** (conversion, import,

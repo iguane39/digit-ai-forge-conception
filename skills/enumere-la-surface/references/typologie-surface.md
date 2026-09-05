@@ -46,8 +46,10 @@ toute appli SaaS ». Loi transverse qui en découle : **l'oubli n'existe pas** �
 est proposée d'office en fin d'énumération dès que l'entrant vise une application web/SaaS à
 utilisateur final. Chaque candidat est **retenu** (un `id` comme n'importe quel élément de
 surface, puis une exigence qui le couvre) ou **écarté explicitement**, raison consignée en
-section 3 de `SURFACE.md` (« Écartés »). Un candidat non mentionné dans SURFACE.md est un oubli,
-jamais un arbitrage.
+section 3 de `SURFACE.md` (« Écartés ») **et transcrite dans le champ `ecarts_surface_implicite`
+du référentiel** (TF-0811, section « Les clés de la liste close » ci-dessous). Un candidat
+mentionné dans aucune des deux est un oubli, jamais un arbitrage — et depuis TF-0811,
+`oracle-surface` S4 le refuse au lieu de s'en plaindre.
 
 Ceci ne rouvre pas la règle « on énumère ce qui est dit, pas ce qui est probable » ci-dessus :
 c'est une liste **fermée et versionnée**, pas une invitation générale à ajouter ce qui « existe
@@ -57,6 +59,12 @@ la liste fermée des prédicats binaires de `redige-les-exigences`.
 Hors périmètre déclaré d'un coup : un entrant sans IHM utilisateur final (batch, job planifié,
 API interne, produit tiers analysé de l'extérieur) écarte le bloc entier avec une raison unique
 — « pas d'utilisateur final » ou équivalent — sans examiner chaque ligne séparément.
+
+Côté machine, ce cas se reconnaît le plus souvent tout seul : sans aucun `point-entree` au
+libellé web, `oracle-surface` S4 rend un PASS motivé et ne réclame aucun écart. Si le produit a
+malgré tout une surface que le lexique lit comme web — une API interne exposée par des routes,
+par exemple —, la raison unique se recopie sur chacune des onze clés. Onze lignes est le prix de
+l'opposabilité : c'est délibérément moins cher que de rendre l'omission indiscernable.
 
 | Candidat | Type suggéré | Origine |
 |---|---|---|
@@ -94,13 +102,70 @@ dans l'exigence dès que le candidat est retenu :
   script) rendant une 404 nue et jamais une page. La conception écrit ce cinquième critère,
   elle ne l'exécute pas : le contrôle se construit chez forge-tests et se joue à la MEP (M-9).
 
-Ce candidat est le seul de la liste à porter une **condition d'applicabilité** plutôt qu'une
-simple suggestion de type : il n'est proposé que **si le produit a une surface web**. P-2 écarte
-lui-même trois cas — une application sans surface web (rien à servir), un routeur qui possède
-déjà sa page d'erreur par langue (c'est lui qu'on juge alors, pas le produit), et les réponses
-d'API, qui répondent 404 en JSON et jamais en page. `oracle-surface` (règle **S4**) rappelle la
-même chose mécaniquement : dès qu'un `point-entree` au libellé web est énuméré sans 404,
-l'avertissement est **nommé** et non bloquant ; sans point d'entrée web, la 404 n'est pas due.
+Ce candidat est le seul de la liste à porter une **condition d'applicabilité** qui lui soit
+propre plutôt qu'une simple suggestion de type : il n'est proposé que **si le produit a une
+surface web**. P-2 écarte lui-même trois cas — une application sans surface web (rien à servir),
+un routeur qui possède déjà sa page d'erreur par langue (c'est lui qu'on juge alors, pas le
+produit), et les réponses d'API, qui répondent 404 en JSON et jamais en page. Ces trois cas ne
+sont pas des exceptions à la loi n° 3 : ce sont des **écarts**, et un écart s'écrit.
+
+## Les clés de la liste close, et où s'écrit un écart (TF-0811)
+
+Jusqu'au 05/09/2026, l'écart d'un candidat d'office ne vivait qu'en prose, en section 3 de
+`SURFACE.md`, qu'aucun oracle ne lisait : `oracle-surface` **S4** ne pouvait qu'avertir, jamais
+refuser — un référentiel qui écarte légitimement la 404 aurait été accusé au même titre qu'un
+référentiel qui l'oublie. **L'oubli restait indiscernable de la décision**, ce que la loi
+transverse n° 3 interdit précisément.
+
+Le référentiel porte désormais un champ racine dédié, transcrit de la section 3 et de nulle part
+ailleurs (`redige-les-exigences/references/schema-referentiel.md`) :
+
+```json
+"ecarts_surface_implicite": [
+  {
+    "element": "accessibilite-rgaa",
+    "motif": "produit interne à l'entreprise : hors du champ du site public français",
+    "decide_par": "le commanditaire du produit",
+    "date": "2026-09-05"
+  }
+]
+```
+
+`element` prend l'une des onze **clés** de la liste close, dans cet ordre — c'est la même table
+que celle ci-dessus, vue par la machine :
+
+| Clé | Candidat |
+|---|---|
+| `aide-utilisateur` | Aide utilisateur |
+| `onboarding` | Onboarding / premier lancement |
+| `compte-utilisateur` | Compte utilisateur |
+| `favicon` | Favicon |
+| `etats-vides` | États vides guidés |
+| `erreurs-visibles` | Gestion des erreurs visible |
+| `mentions-legales` | Mentions légales / pied de page |
+| `responsive-mobile` | Responsive mobile |
+| `accessibilite-rgaa` | Accessibilité RGAA — site public français |
+| `livrables-accessibilite` | Livrables légaux d'accessibilité |
+| `page-404` | Page 404 par langue |
+
+Ce que S4 juge alors, candidat par candidat, chacun **nommé** :
+
+| État | Verdict |
+|---|---|
+| Surface web + candidat présent à la surface énumérée | PASS |
+| Surface web + candidat absent + écart déclaré qui tient | PASS, message préfixé « [ÉCARTÉ] » |
+| Surface web + candidat absent + aucun écart, ou écart qui ne tient pas | **FAIL**, le candidat nommé |
+| Aucun point d'entrée web énuméré | PASS motivé — le bloc n'est pas dû |
+
+Un écart **tient** à quatre conditions cumulatives : `element` dans la liste close, `motif` d'au
+moins **20 caractères**, `decide_par` non vide, `date` au format `AAAA-MM-JJ`. Les trois
+dernières ne sont pas de la bureaucratie : un écart est opposable parce qu'il est écrit, daté et
+signé. S4 ne juge en revanche ni la véracité ni la suffisance du motif — c'est une décision
+humaine, déclarée en `non_juge`.
+
+Le champ est **facultatif à la lecture** : absent, il vaut « aucun écart déclaré ». Un
+référentiel écrit avant TF-0811 n'est donc jamais accusé d'un défaut de format — il est jugé sur
+la seule présence de ses candidats, exactement comme il l'aurait été.
 
 ## Identifiants
 
@@ -121,7 +186,7 @@ inventaire honnête d'une liste de ce qu'on avait sous les yeux.
 |---|---|
 | 1. Origine | Quel `ENTRANT.md`, quelle section, quelle date |
 | 2. Tableau | `id` · `type` · `libelle` · d'où il vient dans l'entrant |
-| 3. Écartés | Ce qui a été vu et **volontairement** exclu, avec la raison. Sans cette section, un oubli et un arbitrage se ressemblent |
+| 3. Écartés | Ce qui a été vu et **volontairement** exclu, avec la raison. Sans cette section, un oubli et un arbitrage se ressemblent. Un candidat de la surface implicite écarté ici porte les quatre colonnes `clé` · `motif` · `décidé par` · `date`, transcrites telles quelles dans `ecarts_surface_implicite` |
 | 4. Non énumérable | Ce que l'entrant ne permet pas d'énumérer, repris de `ENTRANT.md` §4 |
 
 ## `non_juge`
@@ -130,3 +195,7 @@ La **complétude de l'inventaire lui-même**. On ne peut pas prouver mécaniquem
 inventaire tiré d'un entrant textuel n'a rien oublié. `oracle-surface` mesure la couverture de
 **ce qui a été énuméré** — jamais de ce qui existe. La section 4 est le seul garde-fou, et
 c'est un garde-fou humain.
+
+La **pertinence d'un motif d'écart**, de même : S4 exige qu'il soit écrit, daté et signé, pas
+qu'il soit vrai. La liste close est le seul endroit où l'oubli devient impossible ; ce qu'on
+décide d'en écarter reste une décision humaine, simplement opposable.

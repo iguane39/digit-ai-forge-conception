@@ -36,7 +36,20 @@ lignes 33-46. La fiche est *« obligatoire et demandée »* sur un entrant sans 
 | Hypothèses | Exigences dont `statut_epistemique.nature = hypothèse` |
 
 Sections complémentaires à produire : le tableau *élément de surface → exigences rattachées*,
-et une section finale disant ce que la vue ne dit pas.
+la section **« Surface implicite écartée »** (ci-dessous), et une section finale disant ce que
+la vue ne dit pas.
+
+**Section « Surface implicite écartée » (TF-0811).** Dérivée du champ racine
+`ecarts_surface_implicite`, quatre colonnes reprises telles quelles — `element` · `motif` ·
+`decide_par` · `date`. Elle dit au design ce que le produit **n'aura pas**, et sur décision de
+qui : sans elle, un candidat d'office absent de la fiche se lit comme un oubli de la Conception,
+et le design le repropose ou l'ignore au hasard. Le champ est facultatif à la lecture ; quand il
+est absent ou vide, la section est produite quand même et porte la mention *(aucun écart
+déclaré)* — une section absente ne se distinguerait pas d'un référentiel qui n'a rien décidé.
+
+Cette vue est le seul aval qui reçoit le champ : `MISSION.md` ne le porte pas (aucun argument de
+`cadrer()` ne l'accepte, et la Conception n'étend aucun contrat aval), et Forge Tests lit
+`EXIGENCES.json` directement, donc le champ y est déjà.
 
 **Note constatée** : `ingestion.md` porte déjà, ligne 12, l'entrant « Spécification écrite
 (CDC, user stories) ». Le référentiel passe donc par un entrant existant. **Aucune extension
@@ -115,7 +128,14 @@ reste manuel jusqu'à ce que la forge tourne.
 ## Régénération
 
 À chaque modification de `EXIGENCES.json` : **les trois vues sont refaites**, l'empreinte
-recalculée, et `oracle-tracabilite` relancé avec `--vue` sur chacune.
+recalculée, et `oracle-tracabilite` relancé avec `--vue` sur chacune. Un écart de surface
+implicite ajouté ou retiré est une modification du référentiel comme une autre : la fiche de
+cadrage est régénérée, faute de quoi elle affirme un périmètre que la source ne dit plus.
+
+Exemple travaillé, source et vue scellée ensemble :
+[oracles/fixtures/surface-implicite-verte](../../../oracles/fixtures/surface-implicite-verte)
+— onze candidats de la liste close, neuf retenus, deux écartés, la vue régénérée sur
+l'empreinte de sa source.
 
 Une vue qui n'a pas été régénérée n'est pas « un peu périmée » : elle affirme un contenu que
 la source ne dit plus.

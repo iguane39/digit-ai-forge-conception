@@ -1,0 +1,246 @@
+{
+  "projet": "Portail de réservation de salles (fixture TF-0811, sens rouge)",
+  "date_generation": "2026-09-05",
+  "entrant": {
+    "type": "cdc",
+    "libelle": "fixture synthétique — surface implicite entièrement instruite",
+    "seuil_suffisance": "atteint : fixture"
+  },
+  "identifiants_retires": [],
+  "besoins": [
+    {
+      "id": "B-01",
+      "enonce": "Un collaborateur doit réserver une salle depuis son navigateur sans passer par un tiers."
+    },
+    {
+      "id": "B-02",
+      "enonce": "Un collaborateur qui se perd dans le portail doit toujours retrouver un chemin utilisable."
+    }
+  ],
+  "surface": [
+    {
+      "id": "S-01",
+      "type": "point-entree",
+      "libelle": "Page d'accueil du portail"
+    },
+    {
+      "id": "S-03",
+      "type": "point-entree",
+      "libelle": "Page d'aide utilisateur à trois niveaux"
+    },
+    {
+      "id": "S-04",
+      "type": "objet",
+      "libelle": "Compte utilisateur"
+    },
+    {
+      "id": "S-05",
+      "type": "point-entree",
+      "libelle": "Mentions légales et pied de page"
+    },
+    {
+      "id": "S-06",
+      "type": "parcours",
+      "libelle": "Onboarding de première connexion"
+    },
+    {
+      "id": "S-07",
+      "type": "parcours",
+      "libelle": "États vides guidés des listes"
+    },
+    {
+      "id": "S-08",
+      "type": "regle",
+      "libelle": "Gestion des erreurs visible"
+    },
+    {
+      "id": "S-09",
+      "type": "regle",
+      "libelle": "Responsive mobile"
+    },
+    {
+      "id": "S-10",
+      "type": "objet",
+      "libelle": "Favicon du portail"
+    },
+    {
+      "id": "S-11",
+      "type": "role",
+      "libelle": "Collaborateur"
+    }
+  ],
+  "exigences": [
+    {
+      "id": "E-001",
+      "besoin": "B-01",
+      "enonce": "Le collaborateur atteint la liste des salles depuis la page d'accueil du portail.",
+      "critere": "La liste des salles est affichée après un clic depuis la page d'accueil.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811"
+      },
+      "surface": [
+        "S-01",
+        "S-11"
+      ],
+      "cotation": {
+        "impact": 5,
+        "confiance": 4,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-003",
+      "besoin": "B-02",
+      "enonce": "L'aide utilisateur est servie sur trois niveaux : page, section et champ.",
+      "critere": "L'aide de page, l'encart de section et l'aide de champ sont affichées sur chaque écran servi.",
+      "palier": "V1",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811, RD-7"
+      },
+      "surface": [
+        "S-03"
+      ],
+      "cotation": {
+        "impact": 4,
+        "confiance": 4,
+        "effort": 3
+      }
+    },
+    {
+      "id": "E-004",
+      "besoin": "B-01",
+      "enonce": "Le collaborateur consulte et modifie les données de son compte utilisateur.",
+      "critere": "Les données modifiées sont enregistrées et relues à l'ouverture suivante du compte.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811"
+      },
+      "surface": [
+        "S-04"
+      ],
+      "cotation": {
+        "impact": 3,
+        "confiance": 4,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-005",
+      "besoin": "B-02",
+      "enonce": "Les mentions légales sont atteignables depuis le pied de page de chaque écran.",
+      "critere": "Un lien vers les mentions légales est présent dans le pied de page de chaque écran servi.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811"
+      },
+      "surface": [
+        "S-05"
+      ],
+      "cotation": {
+        "impact": 2,
+        "confiance": 5,
+        "effort": 1
+      }
+    },
+    {
+      "id": "E-006",
+      "besoin": "B-02",
+      "enonce": "La première connexion ouvre un panneau d'onboarding en tête de page, avec sa progression.",
+      "critere": "Le panneau affiche une progression x/N et disparaît lorsque les N étapes sont complétées.",
+      "palier": "V1",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811, RC-4"
+      },
+      "surface": [
+        "S-06"
+      ],
+      "cotation": {
+        "impact": 4,
+        "confiance": 3,
+        "effort": 3
+      }
+    },
+    {
+      "id": "E-007",
+      "besoin": "B-02",
+      "enonce": "Une liste sans contenu affiche un état vide guidé portant l'action qui la remplit.",
+      "critere": "Le texte d'explication et le bouton d'action sont affichés sur une liste sans aucun enregistrement.",
+      "palier": "V1",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811, RC-3"
+      },
+      "surface": [
+        "S-07"
+      ],
+      "cotation": {
+        "impact": 3,
+        "confiance": 4,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-008",
+      "besoin": "B-02",
+      "enonce": "Tout échec de traitement produit un message d'erreur visible à l'écran.",
+      "critere": "Le message nommant la cause est affiché à chaque échec de traitement.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811"
+      },
+      "surface": [
+        "S-08"
+      ],
+      "cotation": {
+        "impact": 5,
+        "confiance": 4,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-009",
+      "besoin": "B-01",
+      "enonce": "Le portail est utilisable sur un écran de largeur 360 points sans défilement horizontal.",
+      "critere": "À 360 points de largeur, la barre de défilement horizontale est absente de chaque écran.",
+      "palier": "V1",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811"
+      },
+      "surface": [
+        "S-09"
+      ],
+      "cotation": {
+        "impact": 4,
+        "confiance": 4,
+        "effort": 3
+      }
+    },
+    {
+      "id": "E-010",
+      "besoin": "B-02",
+      "enonce": "Le portail sert un favicon propre sur chacun de ses écrans.",
+      "critere": "La requête du favicon retourne le code 200 sur chaque écran servi.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-0811, RC-3"
+      },
+      "surface": [
+        "S-10"
+      ],
+      "cotation": {
+        "impact": 2,
+        "confiance": 5,
+        "effort": 1
+      }
+    }
+  ]
+}

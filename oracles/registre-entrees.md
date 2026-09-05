@@ -30,16 +30,20 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 | **Fixtures** | idem, avec `CADRAGE-DESIGN.md` en vue |
 | **`non_juge`** | La justesse du rattachement · la véracité de la source citée |
 
-## `oracle-surface` v1.1.0
+## `oracle-surface` v1.2.0
 
 | | |
 |---|---|
-| **Domaine** | Couverture de la surface fonctionnelle énumérée |
+| **Domaine** | Couverture de la surface fonctionnelle énumérée, et surface implicite retenue ou écartée |
 | **Artefact jugé** | `EXIGENCES.json` |
 | **Invocation** | `node oracles/oracle-surface.mjs <EXIGENCES.json> [--seuil 95]` |
-| **Règles** | S1 chaque élément non couvert est **nommé** · S2 ratio publié avec sa liste · S3 lien de surface valide ou raison `hors_surface` · S4 la 404 par langue, candidat d'office si le produit a une surface web (P-2, TF-0804) — avertissement nommé, jamais un refus |
-| **Fixtures** | idem |
-| **`non_juge`** | La complétude de l'inventaire de surface lui-même · le caractère web du produit, inféré d'un lexique fermé · le contenu de la 404 servie (MEP M-9, forge-tests) |
+| **Règles** | S1 chaque élément non couvert est **nommé** · S2 ratio publié avec sa liste · S3 lien de surface valide ou raison `hors_surface` · S4 chacun des **onze candidats d'office** de la surface implicite est retenu, ou écarté dans `ecarts_surface_implicite` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, le candidat nommé (P-2 et TF-0804 pour la 404, TF-0811 pour le champ et le jugement) |
+| **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` pour S1-S3 · `oracles/fixtures/surface-implicite-verte` (avec sa vue `CADRAGE-DESIGN.md` scellée) · `oracles/fixtures/surface-implicite-rouge` pour S4 |
+| **`non_juge`** | La complétude de l'inventaire de surface lui-même · le caractère web du produit et la présence d'un candidat, inférés d'un lexique fermé · la pertinence du motif d'un écart · les conditions d'applicabilité hors surface web (« site public français ») · le contenu de la 404 servie (MEP M-9, forge-tests) |
+
+**Le champ `ecarts_surface_implicite` est facultatif à la lecture** : absent, il vaut « aucun
+écart déclaré ». Un référentiel scellé avant TF-0811 n'est donc jamais accusé d'un défaut de
+format — il est jugé sur la seule présence de ses candidats. Aucune migration n'est due.
 
 ## `oracle-claims` v1.0.0
 

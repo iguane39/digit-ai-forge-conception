@@ -11,6 +11,7 @@ trois vues aval en sont dérivées. Une modification se fait dans le JSON, jamai
 | `date_generation` | `AAAA-MM-JJ` | Date réelle, jamais codée en dur |
 | `entrant` | objet | `type`, `libelle`, `seuil_suffisance` — repris de `ENTRANT.md` |
 | `identifiants_retires` | tableau de chaînes | Les identifiants morts. **Jamais réaffectés** |
+| `ecarts_surface_implicite` | tableau | **Facultatif.** Les candidats d'office de la surface implicite délibérément écartés — `oracle-surface` S4 |
 | `besoins` | tableau | `id`, `enonce`, `source` (facultatif) |
 | `surface` | tableau | `id`, `type`, `libelle` — repris de `SURFACE.md` |
 | `exigences` | tableau | Les 8 champs ci-dessous |
@@ -40,6 +41,27 @@ lien de surface **et** sans raison est un trou silencieux : S3 la refuse.
 `event-driven` · `state-driven` · `optional` · `unwanted`), déclaré à la main pour confronter
 l'intention de l'auteur au patron **calculé** par `oracle-ears` (règle EA3, TF-0101). Absent :
 `oracle-ears` calcule seul, rien à confronter — pas un défaut.
+
+`ecarts_surface_implicite` — tableau, à la racine du référentiel (TF-0811). Une entrée par
+candidat de la surface implicite **écarté** : `{ element, motif, decide_par, date }`.
+
+| Champ | Contrainte vérifiée par `oracle-surface` S4 |
+|---|---|
+| `element` | l'une des onze clés de la liste close (`enumere-la-surface/references/typologie-surface.md`, « Les clés de la liste close ») |
+| `motif` | chaîne d'au moins **20 caractères** — plus court, ce n'est pas une raison, c'est un mot |
+| `decide_par` | chaîne non vide — un écart est décidé par quelqu'un |
+| `date` | `AAAA-MM-JJ` |
+
+**Il ne se saisit nulle part ailleurs qu'en transcription de la section 3 « Écartés » de
+`SURFACE.md`** : la prose reste le lieu où l'écart se rédige et s'argumente, le champ n'en est
+que la forme lisible par un oracle. Écrire un écart directement dans le JSON, sans qu'il existe
+dans `SURFACE.md`, produit un référentiel qui passe l'oracle et une décision que personne n'a
+prise.
+
+Le champ est **facultatif à la lecture** : absent, il vaut « aucun écart déclaré ». Un
+référentiel écrit avant TF-0811 n'est donc pas invalidé — il est jugé sur la seule présence de
+ses candidats. Il n'est en revanche pas facultatif dans les faits dès que le produit a une
+surface web et qu'un candidat manque : S4 rend alors FAIL, en nommant le candidat.
 
 `source` — chaîne, sur un **besoin**. Un besoin n'a pas de `statut_epistemique` — ce
 formalisme est réservé aux exigences. Mais un `besoin.enonce` peut porter un chiffre (« réduire
@@ -94,6 +116,12 @@ chaque candidate est **retenue** (une exigence normale, avec `id`, critère et `
 Hors périmètre déclaré d'un coup : un produit sans données de production, sans catalogue ni
 tarif volatil, ou sans élément interactif écarte la ligne correspondante avec cette seule raison
 — pas d'examen ligne à ligne nécessaire au-delà.
+
+Ces trois candidates-là n'ont **pas** de champ machine : leur écart vit en section 7 de
+`EXIGENCES.md`, en prose, et aucun oracle ne le lit. Seule la surface implicite
+d'`enumere-la-surface` porte le sien (`ecarts_surface_implicite`, TF-0811). L'écart est donc
+nommé ici plutôt que passé sous silence : la même mécanique reste à câbler pour les exigences
+socle candidates, le jour où elle sera demandée.
 
 ## Gabarit de `EXIGENCES.md`
 
