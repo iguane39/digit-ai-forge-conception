@@ -21,9 +21,9 @@
 // « Option » — Quand et Lorsque sont des synonymes stricts en français, ils ne peuvent pas porter
 // deux patrons EARS différents (cf. `skills/redige-les-exigences/references/formulation.md`).
 
-import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET } from './_contrat.mjs'
+import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, AVANT, APRES } from './_contrat.mjs'
 
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 
 export const PATRONS = ['ubiquitous', 'event-driven', 'state-driven', 'optional', 'unwanted']
 
@@ -57,7 +57,9 @@ const AMBIGUS = [
 const AMBIGUS_RE = AMBIGUS.map(terme => {
   const echappe = terme.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
   const multiMots = /\s/.test(terme)
-  return { terme, re: new RegExp(multiMots ? echappe : `\\b${echappe}\\b`, 'i') }
+  // TF-0799 — bornes Unicode : avec `\b`, « etc. » (bord non alphanumérique) ne matchait
+  // jamais, et un terme précédé d'une lettre accentuée matchait au milieu d'un mot.
+  return { terme, re: new RegExp(multiMots ? echappe : `${AVANT}${echappe}${APRES}`, 'iu') }
 })
 
 // EA4 / EA5 — TF-0376 (18/08, retour d'usage Produit-01). Ce ne sont pas des règles de forme :
@@ -358,6 +360,13 @@ function detecterAmbigus (texte) {
   return AMBIGUS_RE.filter(({ re }) => re.test(texte)).map(({ terme }) => terme)
 }
 
+// Mots-clés de tête des patrons EARS. TF-0799 — borne Unicode : avec `\b`, un énoncé ouvrant
+// sur « Siège… » était classé conditionnel (le `è` faisait frontière après « si »), donc jugé
+// ambigu faute de polarité — un défaut de classement produit par la seule frontière ASCII.
+const RE_TETE_ETAT = new RegExp(`^tant que${APRES}`, 'iu')
+const RE_TETE_EVENEMENT = new RegExp(`^(quand|lorsque)${APRES}`, 'iu')
+const RE_TETE_SI = new RegExp(`^si${APRES}`, 'iu')
+
 /**
  * Classe un énoncé dans l'un des 5 patrons EARS.
  * Retourne { patron, ambigu, positif, negatif } — `patron` est `null` si `ambigu` est vrai :
@@ -365,9 +374,9 @@ function detecterAmbigus (texte) {
  */
 function classifier (enonce, critere) {
   const tete = (enonce ?? '').trim()
-  if (/^tant que\b/i.test(tete)) return { patron: 'state-driven', ambigu: false }
-  if (/^(quand|lorsque)\b/i.test(tete)) return { patron: 'event-driven', ambigu: false }
-  if (/^si\b/i.test(tete)) {
+  if (RE_TETE_ETAT.test(tete)) return { patron: 'state-driven', ambigu: false }
+  if (RE_TETE_EVENEMENT.test(tete)) return { patron: 'event-driven', ambigu: false }
+  if (RE_TETE_SI.test(tete)) {
     const texte = `${enonce} ${critere}`.toLowerCase()
     const positif = MARQUEURS_POSITIFS.some(m => texte.includes(m))
     const negatif = MARQUEURS_NEGATIFS.some(m => texte.includes(m))

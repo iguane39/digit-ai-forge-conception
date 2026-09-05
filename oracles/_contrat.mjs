@@ -69,3 +69,26 @@ export function erreur (message) {
 /** Les champs traversés par plusieurs oracles, définis une seule fois. */
 export const PALIERS = ['MVP', 'V1', 'V2']
 export const NATURES = ['fait constaté', 'hypothèse']
+
+/**
+ * TF-0799 — frontières de mot Unicode pour les gardes lexicales.
+ *
+ * `\b` est ASCII dans le moteur de Node : un caractère accentué y vaut frontière de mot. Sur
+ * des textes français, cela produit les DEUX défauts, mesurés le 05/09/2026 :
+ *   — faux positif : `\belle\b` se déclenche À L'INTÉRIEUR de « réelle » (le `é` fait
+ *     frontière) — un critère juste est refusé, et l'auteur réécrit l'énoncé pour esquiver la
+ *     garde plutôt que pour écrire juste ;
+ *   — faux négatif : un motif dont le bord est accentué n'atteint jamais sa forme accentuée —
+ *     `\bça\b`, `\bcelle-là\b`, `de qualité\b`, `10 €`, `80 %`, `etc.\b` ne matchent rien.
+ *
+ * AVANT / APRÈS généralisent EXACTEMENT le caractère de mot d'ASCII (`[A-Za-z0-9_]`) à son
+ * équivalent Unicode (`[\p{L}\p{N}_]`) : sur un texte sans accent, le verdict est inchangé —
+ * seul l'accent cesse de faire frontière. Les chiffres et le `_` restent des caractères de mot,
+ * pour qu'aucune garde ne s'élargisse au passage (`elle2` ne devient pas un pronom).
+ *
+ * Tout motif qui les emploie EXIGE le drapeau `u` — lequel rend invalides les échappements
+ * inutiles (`\-` hors classe, par exemple) : rejouer `node oracles/self-test.mjs` après chaque
+ * motif changé.
+ */
+export const AVANT = '(?<![\\p{L}\\p{N}_])'
+export const APRES = '(?![\\p{L}\\p{N}_])'

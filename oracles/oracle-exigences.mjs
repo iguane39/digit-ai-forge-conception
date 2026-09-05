@@ -3,7 +3,9 @@
 // CDC §7.1 — règles E1 à E6. E7-E9 : étude P-10 d'organization (EARS · ISO/IEC/IEEE 29148 ·
 // INCOSE GtWR v4), TF-0015 — 3 contrôles proposés à l'état d'étude, ici rendus exécutables.
 
-import { charger, constat, emettre, erreur, PASS, FAIL, PALIERS, NATURES } from './_contrat.mjs'
+import {
+  charger, constat, emettre, erreur, PASS, FAIL, PALIERS, NATURES, AVANT, APRES
+} from './_contrat.mjs'
 
 const VERSION = '1.1.0'
 
@@ -17,7 +19,11 @@ const CHAMPS_OBLIGATOIRES = [
 const UNITES = '%|ms|s|min|h|j|jours?|semaines?|mois|Ko|Mo|Go|px|caract[eè]res?|' +
   '[eé]l[eé]ments?|lignes?|items?|€|fois|tentatives?|niveaux?|utilisateurs?|' +
   'requ[eê]tes?|champs?|clics?|[eé]crans?'
-const CHIFFRE = new RegExp(`(^|[^\\w])(?:[<>≤≥=]\\s*)?\\d+(?:[.,]\\d+)?\\s*(?:${UNITES})\\b`, 'i')
+// TF-0799 — frontière de FIN Unicode (`APRES`) : avec `\b`, une unité qui n'est pas un
+// caractère de mot ne fermait jamais le motif — « le coût est de 10 € » et « le taux atteint
+// 80 % » étaient jugés NON chiffrés, donc E3 FAIL sur un critère parfaitement chiffré.
+const CHIFFRE = new RegExp(
+  `(^|[^\\w])(?:[<>≤≥=]\\s*)?\\d+(?:[.,]\\d+)?\\s*(?:${UNITES})${APRES}`, 'iu')
 const COMPARATEUR = /[<>≤≥]\s*\d/
 
 // E3 — un critère binaire porte un prédicat observable. Liste fermée, versionnée.
@@ -78,7 +84,8 @@ const LISTE_NOIRE = [
   'ergonomique', 'ergonomiques', 'simple', 'simples',
   'rapide', 'rapides', 'convivial', 'conviviale', 'conviviaux', 'conviviales'
 ]
-const RE_NOIRE = new RegExp(`\\b(${LISTE_NOIRE.join('|')})\\b`, 'gi')
+// TF-0799 — bornes Unicode : avec `\b`, « de qualité » (bord accentué) n'était JAMAIS trouvé.
+const RE_NOIRE = new RegExp(`${AVANT}(${LISTE_NOIRE.join('|')})${APRES}`, 'giu')
 
 // E6 — marqueurs d'énumération explicite. L'atomicité sémantique est `non_juge`.
 const MARQUEURS_MULTIPLES = [';', ' puis ', ' ainsi que ', ' et/ou ', ' et également ', ' ou bien ']
@@ -88,7 +95,9 @@ const MARQUEURS_MULTIPLES = [';', ' puis ', ' ainsi que ', ' et/ou ', ' et égal
 // condition sans suite (« orpheline ») ne se vérifie pas. Les exigences sans mot-clé restent
 // dans la forme « ubiquitaire » (sujet, prédicat, complément) — recevable telle quelle.
 const MOTS_CONDITION = ['tant que', 'quand', 'lorsque', 'si']
-const RE_CONDITION = new RegExp(`^(${MOTS_CONDITION.join('|')})\\b`, 'i')
+// TF-0799 — borne Unicode : avec `\b`, un énoncé commençant par « Siège… » était lu comme une
+// conditionnelle « si » (le `è` faisait frontière) et E7 y voyait une condition orpheline.
+const RE_CONDITION = new RegExp(`^(${MOTS_CONDITION.join('|')})${APRES}`, 'iu')
 
 function raisonOrpheline (enonce) {
   const virgule = enonce.indexOf(',')
@@ -105,13 +114,16 @@ function raisonOrpheline (enonce) {
 // sujet vérifiable (pronom sans antécédent mécanique) ou une portée non bornée (« toujours »,
 // « tous », « 100 % »).
 const LISTE_ABSOLUS = ['toujours', 'jamais', 'tous', 'toutes', 'systématiquement']
-const RE_ABSOLUS = new RegExp(`\\b(${LISTE_ABSOLUS.join('|')})\\b`, 'gi')
-const RE_POURCENT_TOTAL = /\b100\s?%/g
+const RE_ABSOLUS = new RegExp(`${AVANT}(${LISTE_ABSOLUS.join('|')})${APRES}`, 'giu')
+const RE_POURCENT_TOTAL = new RegExp(`${AVANT}100\\s?%`, 'gu')
 const LISTE_PRONOMS = [
   'il', 'elle', 'ils', 'elles', 'cela', 'ça', 'on', 'lui', 'eux',
   'celui-ci', 'celle-ci', 'celui-là', 'celle-là'
 ]
-const RE_PRONOMS = new RegExp(`\\b(${LISTE_PRONOMS.join('|')})\\b`, 'gi')
+// TF-0799 — les DEUX sens du défaut de frontière, sur cette seule garde : avec `\b`, « elle »
+// était lu dans « réelle » (refus d'un critère juste) et « ça » comme « celle-là », dont un bord
+// est accentué, n'étaient jamais atteints (garde muette là où elle devait parler).
+const RE_PRONOMS = new RegExp(`${AVANT}(${LISTE_PRONOMS.join('|')})${APRES}`, 'giu')
 
 // E9 — caractéristiques d'ensemble (ISO/IEC/IEEE 29148 : *complete*, *consistent*), étude P-10
 // §3.3 M2. Contrôle mécanique, pas sémantique : deux exigences du même besoin, partageant un

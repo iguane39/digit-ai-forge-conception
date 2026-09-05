@@ -6,12 +6,17 @@
 // (exigée par oracle-exigences E3) ; un chiffre dans un `enonce` est une AFFIRMATION sur le
 // monde. Seule la seconde demande une source.
 
-import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET } from './_contrat.mjs'
+import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, APRES } from './_contrat.mjs'
 
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 
 // Un chiffre porteur d'affirmation. Les ordinaux et les identifiants ne comptent pas.
-const CHIFFRE = /(^|[^\w-])\d+(?:[ .,]\d+)*\s*(?:%|k|K|M|Md|milliers?|millions?|milliards?|€|\$|ms|s|min|h|jours?|semaines?|mois|ans?|Ko|Mo|Go|To|utilisateurs?|clients?|requ[eê]tes?|lignes?|dossiers?|commandes?|fois)\b/
+// TF-0799 — frontière de fin Unicode : avec `\b`, les deux unités les plus fréquentes d'une
+// affirmation commerciale (« 30 % », « 10 € ») ne fermaient jamais le motif, et A1 laissait
+// passer sans source le chiffre qu'il existe précisément pour attraper.
+const CHIFFRE = new RegExp('(^|[^\\w-])\\d+(?:[ .,]\\d+)*\\s*(?:%|k|K|M|Md|milliers?|millions?|' +
+  'milliards?|€|\\$|ms|s|min|h|jours?|semaines?|mois|ans?|Ko|Mo|Go|To|utilisateurs?|clients?|' +
+  `requ[eê]tes?|lignes?|dossiers?|commandes?|fois)${APRES}`, 'u')
 const MARQUEUR = /à vérifier/i
 
 // Faux positifs à écarter : références internes et versions.

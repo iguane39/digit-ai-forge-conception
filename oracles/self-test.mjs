@@ -358,6 +358,91 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-0799 : frontieres de mot Unicode dans les gardes lexicales ---------------
+// `\b` est ASCII dans le moteur de Node : un accent y vaut frontiere de mot. Le defaut a DEUX
+// sens, et une fixture ne prouve jamais que le sien -- les deux sont donc joues ici :
+//   (a) FAUX POSITIF -- la garde se declenchait a l'INTERIEUR d'un mot accentue (« elle » lu
+//       dans « reelle ») : le critere juste doit desormais PASSER, et le pronom NU doit
+//       continuer d'echouer (sans quoi on aurait juste eteint la regle) ;
+//   (b) FAUX NEGATIF -- un motif au bord accentue n'atteignait jamais sa forme accentuee
+//       (« ca », « celle-la », « de qualite », « 10 EUR », « Siege… ») : la garde doit
+//       desormais parler la ou elle etait muette.
+// Fixtures ephemeres derivees de la VERTE partagee (comme TF-0114) : une seule exigence
+// change, tout le reste du referentiel est celui qui passe deja -- ce qui isole la mesure.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0799-'))
+  try {
+    const base = JSON.parse(readFileSync(join(VERTE, 'EXIGENCES.json'), 'utf8'))
+    const juger = (nom, { enonce, critere }) => {
+      const ref = JSON.parse(JSON.stringify(base))
+      const cible = ref.exigences.find(e => e.id === 'E-001')
+      if (enonce !== undefined) cible.enonce = enonce
+      if (critere !== undefined) cible.critere = critere
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + '\n')
+      const r = lancer('oracle-exigences.mjs', [chemin])
+      const surE001 = (r.rapport?.constats ?? []).filter(c => String(c.ou).includes('E-001'))
+      return {
+        code: r.code,
+        statut: (regle) => surE001.find(c => c.regle === regle)?.statut,
+        message: (regle) => surE001.find(c => c.regle === regle)?.message ?? '',
+        brut: r.brut
+      }
+    }
+
+    // (a) le mot accentue n'est plus decoupe : « reelle » ne contient plus le pronom « elle »
+    const sensA = juger('sens-a-vrai-negatif', {
+      enonce: "Le salarié consulte les exemples issus de l'arborescence réelle.",
+      critere: "La liste des exemples issus de l'arborescence réelle est affichée."
+    })
+    // (a bis) temoin : le pronom NU echoue toujours -- la garde n'a pas ete eteinte
+    const sensATemoin = juger('sens-a-temoin', {
+      critere: 'Elle est affichée dans la liste des demandes.'
+    })
+    // (b1) E8 : les pronoms au bord accentue sont enfin atteints
+    const sensB1 = juger('sens-b-pronoms-accentues', {
+      critere: 'Ça est enregistré, et celle-là est enregistrée aussi.'
+    })
+    // (b2) E4 : le terme subjectif au bord accentue est enfin attrape
+    const sensB2 = juger('sens-b-liste-noire-accentuee', {
+      critere: 'La demande enregistrée est de qualité.'
+    })
+    // (b3) E3 : une unite qui n'est pas un caractere de mot ferme enfin le motif chiffre
+    const sensB3 = juger('sens-b-unite-symbole', {
+      critere: 'Le montant retenu vaut 10 €.'
+    })
+    // (b4) E7 : « Siege… » n'est plus lu comme la conditionnelle « si »
+    const sensB4 = juger('sens-b-tete-accentuee', {
+      enonce: 'Siège du salarié affiché à côté du nom dans la liste.'
+    })
+
+    const cas = [
+      ['(a) E8 -- le mot accentue n\'est plus decoupe : PASS sur « r[e]elle »',
+        sensA.code === 0 && sensA.statut('E8') === 'PASS'],
+      ['(a) E8 -- temoin : le pronom NU echoue toujours (FAIL nommant le pronom)',
+        sensATemoin.code === 1 && sensATemoin.statut('E8') === 'FAIL' &&
+        sensATemoin.message('E8').includes('elle')],
+      ['(b) E8 -- pronoms au bord accentue enfin atteints (« [c]a », « celle-l[a] »)',
+        sensB1.statut('E8') === 'FAIL' && sensB1.message('E8').includes('ça') &&
+        sensB1.message('E8').includes('celle-là')],
+      ['(b) E4 -- terme subjectif au bord accentue enfin attrape (« de qualit[e] »)',
+        sensB2.statut('E4') === 'FAIL' && sensB2.message('E4').includes('de qualité')],
+      ['(b) E3 -- unite symbole enfin reconnue comme chiffre (« 10 EUR »)',
+        sensB3.code === 0 && sensB3.statut('E3') === 'PASS' &&
+        sensB3.message('E3').includes('chiffré')],
+      ['(b) E7 -- « Si[e]ge… » n\'est plus lu comme la conditionnelle « si »',
+        sensB4.code === 0 && sensB4.statut('E7') === 'PASS']
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences.mjs (branche TF-0799, fixtures ephemeres, 2 sens)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)
