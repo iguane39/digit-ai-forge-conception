@@ -36,8 +36,8 @@ lignes 33-46. La fiche est *« obligatoire et demandée »* sur un entrant sans 
 | Hypothèses | Exigences dont `statut_epistemique.nature = hypothèse` |
 
 Sections complémentaires à produire : le tableau *élément de surface → exigences rattachées*,
-la section **« Surface implicite écartée »** (ci-dessous), et une section finale disant ce que
-la vue ne dit pas.
+les sections **« Surface implicite écartée »** et **« Exigences socle écartées »**
+(ci-dessous), et une section finale disant ce que la vue ne dit pas.
 
 **Section « Surface implicite écartée » (TF-0811).** Dérivée du champ racine
 `ecarts_surface_implicite`, quatre colonnes reprises telles quelles — `element` · `motif` ·
@@ -50,6 +50,15 @@ déclaré)* — une section absente ne se distinguerait pas d'un référentiel q
 Cette vue est le seul aval qui reçoit le champ : `MISSION.md` ne le porte pas (aucun argument de
 `cadrer()` ne l'accepte, et la Conception n'étend aucun contrat aval), et Forge Tests lit
 `EXIGENCES.json` directement, donc le champ y est déjà.
+
+**Section « Exigences socle écartées » (TF-0814).** Même forme, dérivée du champ racine
+`ecarts_exigences_socle` : quatre colonnes reprises telles quelles — `element` · `motif` ·
+`decide_par` · `date`. Elle dit au design ce que le référentiel **ne demande pas** parmi les
+trois exigences socle candidates (données de démonstration invisibles en production, données
+volatiles éditables/datées/sourcées, effet observable de tout élément interactif) et sur décision
+de qui. Champ facultatif à la lecture ; absent ou vide, la section est produite quand même et
+porte la mention *(aucun écart déclaré)*. Comme la précédente, cette vue est le seul aval qui la
+reçoit.
 
 **Note constatée** : `ingestion.md` porte déjà, ligne 12, l'entrant « Spécification écrite
 (CDC, user stories) ». Le référentiel passe donc par un entrant existant. **Aucune extension
@@ -136,6 +145,10 @@ Exemple travaillé, source et vue scellée ensemble :
 [oracles/fixtures/surface-implicite-verte](../../../oracles/fixtures/surface-implicite-verte)
 — onze candidats de la liste close, neuf retenus, deux écartés, la vue régénérée sur
 l'empreinte de sa source.
+
+Second exemple travaillé, une candidate socle écartée et deux retenues :
+[oracles/fixtures/exigences-socle-verte](../../../oracles/fixtures/exigences-socle-verte)
+— la fiche porte la section « Exigences socle écartées », scellée sur l'empreinte de sa source.
 
 Une vue qui n'a pas été régénérée n'est pas « un peu périmée » : elle affirme un contenu que
 la source ne dit plus.

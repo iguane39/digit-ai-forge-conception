@@ -7,6 +7,26 @@
     "seuil_suffisance": "atteint : fixture"
   },
   "identifiants_retires": [],
+  "ecarts_exigences_socle": [
+    {
+      "element": "donnees-demonstration",
+      "motif": "portail réservé aux collaborateurs authentifiés : aucun jeu de démonstration n'est prévu, et aucun environnement de démonstration n'est ouvert",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-09-05"
+    },
+    {
+      "element": "donnees-volatiles",
+      "motif": "les salles et leurs créneaux sont saisis par les services généraux depuis le produit : aucun catalogue ni tarif figé dans le code n'existe",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-09-05"
+    },
+    {
+      "element": "effet-observable",
+      "motif": "chaque exigence de ce référentiel porte déjà son critère observable ; aucune règle transverse supplémentaire n'est retenue au palier MVP",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-09-05"
+    }
+  ],
   "besoins": [
     {
       "id": "B-01",

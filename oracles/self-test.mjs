@@ -36,12 +36,28 @@ const VUESP_ROUGE = join(ICI, 'fixtures', 'vues-profil-rouge')
 // CONSTIT_SANS_PROMESSE : un seul FAIL possible, celui que la regle doit prouver.
 const SURFIMP_VERTE = join(ICI, 'fixtures', 'surface-implicite-verte')
 const SURFIMP_ROUGE = join(ICI, 'fixtures', 'surface-implicite-rouge')
+// TF-0814 : fixtures DEDIEES d'E10. Meme idiome que SURFIMP ci-dessus -- la rouge est le MEME
+// referentiel que la verte, prive de son seul champ d'ecarts : un seul FAIL possible, celui que
+// la regle doit prouver.
+const SOCLE_VERTE = join(ICI, 'fixtures', 'exigences-socle-verte')
+const SOCLE_ROUGE = join(ICI, 'fixtures', 'exigences-socle-rouge')
 
 const ORACLES = [
   {
     fichier: 'oracle-exigences.mjs',
     regles: ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'E9'],
     args: (dossier) => [join(dossier, 'EXIGENCES.json')]
+  },
+  {
+    // TF-0814 : E10 SEULE, sur ses fixtures dediees. La rouge est le MEME referentiel que la
+    // verte, prive de son SEUL champ `ecarts_exigences_socle` : E1 a E9 y restent verts, et le
+    // seul FAIL possible est celui d'une exigence socle candidate ni retenue ni ecartee.
+    // Elle n'est pas dans l'entree E1-E9 ci-dessus parce que les fixtures VERTE/ROUGE partagees
+    // ne portent aucune des trois candidates : E10 y jugerait sur trois ecarts declares, pas
+    // sur la presence d'une exigence.
+    fichier: 'oracle-exigences.mjs',
+    regles: ['E10'],
+    args: (dossier) => [join(dossier === VERTE ? SOCLE_VERTE : SOCLE_ROUGE, 'EXIGENCES.json')]
   },
   {
     fichier: 'oracle-tracabilite.mjs',
@@ -588,6 +604,148 @@ for (const o of ORACLES) {
   }
 }
 
+
+// --- branche TF-0814 : E10 juge, et l'ecart d'une exigence socle a un lieu ou s'ecrire -----
+// Le schema du referentiel propose d'office TROIS exigences socle candidates -- donnees de
+// demonstration invisibles en production, donnees volatiles editables/datees/sourcees, effet
+// observable de tout element interactif -- avec la meme regle que la surface implicite : chacune
+// est RETENUE ou ECARTEE explicitement. L'ecart ne vivait qu'en prose, section 7 d'EXIGENCES.md,
+// qu'aucun des onze oracles ne prend en entree : une candidate oubliee et une candidate ecartee
+// en connaissance de cause produisaient le MEME referentiel. Le champ racine
+// `ecarts_exigences_socle` comble ce trou ; E10 juge, ce qui oblige a prouver TROIS etats plus
+// les TROIS facons dont un ecart ne tient pas :
+//   1. les trois candidates portees, AUCUN champ d'ecart    -> PASS (referentiel anterieur)
+//   2. candidate absente + ecart valide                     -> PASS, message « [ECARTE] »
+//   3. candidate absente + aucun ecart                      -> FAIL, la candidate NOMMEE
+//   4. ecart au motif trop court (< 20 caracteres)          -> FAIL (temoin : le motif est lu)
+//   5. ecart designant une cle hors de la liste close       -> FAIL (temoin : la cle est lue)
+//   6. ecart a la date hors format AAAA-MM-JJ               -> FAIL (temoin : la date est lue)
+// Il n'y a pas de quatrieme ETAT : contrairement a S4, aucune condition d'applicabilite n'est
+// inferee -- un produit sans donnee de production ou sans element interactif ECRIT son ecart.
+// La candidate mise en jeu est celle des donnees de demonstration : les deux autres restent
+// portees par une exigence, ce qui ISOLE la mesure sur une seule d'entre elles.
+// Fixtures ephemeres, comme TF-0114, TF-0799 et TF-0811.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0814-'))
+  try {
+    const CANDIDATES = {
+      demonstration: {
+        surface: { id: 'S-01', type: 'regle', libelle: 'Jeu de demonstration' },
+        enonce: 'Le jeu de démonstration reste invisible hors de son environnement dédié.',
+        critere: "En l'absence du drapeau d'environnement dédié, aucune donnée de démonstration n'est affichée."
+      },
+      volatiles: {
+        surface: { id: 'S-02', type: 'objet', libelle: 'Catalogue des formations' },
+        enonce: 'Le catalogue des formations est édité en base, sans livraison de code.',
+        critere: 'La date de mise à jour et la source de chaque fiche du catalogue sont présentes, chacune non vide.'
+      },
+      effet: {
+        surface: { id: 'S-03', type: 'parcours', libelle: 'Inscription a une session' },
+        enonce: 'Chaque élément interactif du produit produit un effet observable.',
+        critere: "Un message de confirmation est affiché après l'envoi du formulaire d'inscription."
+      }
+    }
+    const ECART_VALIDE = {
+      element: 'donnees-demonstration',
+      motif: "le produit n'embarque aucun jeu de demonstration : la recette se fait sur un extrait anonymise depose hors du binaire livre",
+      decide_par: 'le commanditaire du produit',
+      date: '2026-09-05'
+    }
+
+    // Le referentiel se construit DEPUIS les candidates retenues : retirer une candidate retire
+    // aussi son element de surface, sans quoi E9 (couverture d'ensemble) echouerait pour une
+    // raison etrangere a ce qu'on mesure.
+    const referentiel = (cles, ecarts) => {
+      const retenues = cles.map(c => CANDIDATES[c])
+      const ref = {
+        projet: 'Fixture TF-0814 (exigences socle candidates)',
+        besoins: [{ id: 'B-01', enonce: 'Le produit doit tenir les trois lois transverses du socle.' }],
+        surface: retenues.map(c => c.surface),
+        exigences: retenues.map((c, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: c.enonce,
+          critere: c.critere,
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-0814' },
+          surface: [c.surface.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_exigences_socle = ecarts
+      return ref
+    }
+
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-exigences.mjs', [chemin])
+      const constats = r.rapport?.constats ?? []
+      const e10 = constats.filter(c => c.regle === 'E10')
+      return {
+        code: r.code,
+        e10,
+        fails: e10.filter(c => c.statut === 'FAIL'),
+        autresFails: constats.filter(c => c.statut === 'FAIL' && c.regle !== 'E10'),
+        sur: (fragment) => e10.find(c => `${c.ou} ${c.message}`.includes(fragment))
+      }
+    }
+
+    const TOUTES = ['demonstration', 'volatiles', 'effet']
+    const SANS_DEMO = ['volatiles', 'effet']
+    const completes = jouer('1-trois-candidates', referentiel(TOUTES))
+    const ecartee = jouer('2-ecart-valide', referentiel(SANS_DEMO, [ECART_VALIDE]))
+    const oubli = jouer('3-aucun-ecart', referentiel(SANS_DEMO))
+    const motifCourt = jouer('4-motif-trop-court',
+      referentiel(SANS_DEMO, [{ ...ECART_VALIDE, motif: 'pas utile' }]))
+    const cleInconnue = jouer('5-cle-hors-liste',
+      referentiel(SANS_DEMO, [{ ...ECART_VALIDE, element: 'donnees-de-demo' }]))
+    const dateInvalide = jouer('6-date-hors-format',
+      referentiel(SANS_DEMO, [{ ...ECART_VALIDE, date: '05/09/2026' }]))
+
+    // Le sceau de la vue derivee : la fixture VERTE dediee porte son CADRAGE-DESIGN.md
+    // regenere, section « Exigences socle ecartees » comprise. Une vue qui ne porterait pas le
+    // champ neuf serait indetectable ici -- c'est T3, sur l'empreinte de la source, qui le dit.
+    const sceau = lancer('oracle-tracabilite.mjs',
+      [join(SOCLE_VERTE, 'EXIGENCES.json'), '--vue', join(SOCLE_VERTE, 'CADRAGE-DESIGN.md')])
+    const t3 = (sceau.rapport?.constats ?? []).find(c => c.regle === 'T3')
+    const vueCadrage = readFileSync(join(SOCLE_VERTE, 'CADRAGE-DESIGN.md'), 'utf8')
+
+    const cas = [
+      ["1. les trois candidates portees, aucun champ d'ecart -> PASS (referentiel anterieur)",
+        completes.code === 0 && completes.fails.length === 0 && completes.e10.length === 3],
+      ['2. candidate absente + ecart valide -> PASS imprime « [ECARTE] »',
+        ecartee.code === 0 && ecartee.fails.length === 0 &&
+        (ecartee.sur('donnees-demonstration')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['3. candidate absente + aucun ecart -> FAIL, la candidate NOMMEE',
+        oubli.code === 1 && oubli.fails.length === 1 && oubli.autresFails.length === 0 &&
+        oubli.fails[0].message.includes('Données de démonstration invisibles en production')],
+      ['4. ecart au motif trop court -> FAIL nommant `motif`',
+        motifCourt.code === 1 && motifCourt.fails.length === 1 &&
+        motifCourt.fails[0].message.includes('motif')],
+      ["5. ecart hors liste close -> FAIL sur l'ecart ET sur la candidate restee nue",
+        cleInconnue.code === 1 && cleInconnue.fails.length === 2],
+      ['6. ecart a la date hors format -> FAIL nommant `date`',
+        dateInvalide.code === 1 && dateInvalide.fails.length === 1 &&
+        dateInvalide.fails[0].message.includes('date')],
+      ['7. vue derivee regeneree sur la fixture verte : T3 PASS et le champ y figure',
+        sceau.code === 0 && t3?.statut === 'PASS' &&
+        vueCadrage.includes('ecarts_exigences_socle') &&
+        vueCadrage.includes('donnees-demonstration')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences.mjs (branche TF-0814, fixtures ephemeres, 3 etats + 3 temoins)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${completes.code} 2=${ecartee.code} 3=${oubli.code} ` +
+        `4=${motifCourt.code} 5=${cleInconnue.code} 6=${dateInvalide.code} 7=${sceau.code}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)

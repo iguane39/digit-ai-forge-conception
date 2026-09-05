@@ -1,7 +1,7 @@
 ---
 name: redige-les-exigences
 description: Rédige le référentiel d'exigences d'un produit — chaque exigence atomique, identifiée de façon stable, assortie d'un critère d'acceptation binaire ou chiffré, d'un palier MVP/V1/V2, d'un statut fait constaté ou hypothèse, et d'un lien vers l'élément de surface couvert — puis le fait juger par quatre oracles exécutés. Produit EXIGENCES.md et EXIGENCES.json, la source unique dont toutes les vues aval sont dérivées. Use when / déclencher dès qu'il faut transformer un besoin, un cadrage ou une surface fonctionnelle en spécification opposable, écrire des exigences testables, poser des critères d'acceptation, arbitrer un périmètre MVP, ou produire le PRD d'un produit à construire. Ne pas déclencher pour qualifier l'entrant (→ qualifie-l-entrant), énumérer la surface (→ enumere-la-surface), dériver les vues aval (→ derive-les-vues), ni pour produire epics, stories ou architecture d'implémentation (→ étape C de la SaaS Forge, moteur BMAD).
-version: 1.2.0
+version: 1.3.0
 ---
 
 # Rédige les exigences
@@ -62,7 +62,17 @@ d'identifiant jamais réaffecté.
 Schéma complet, types et exemples : `references/schema-referentiel.md`. La même référence porte
 une courte liste d'**exigences socle candidates** (données de démo invisibles en production,
 données volatiles éditables/datées/sourcées, effet observable de tout élément interactif) —
-proposées d'office, retenues ou écartées explicitement en section 7 d'`EXIGENCES.md`.
+proposées d'office, retenues ou écartées explicitement.
+
+**L'écart s'écrit dans le référentiel, pas seulement en prose (TF-0814).** La section 7
+d'`EXIGENCES.md` (« Ce que le référentiel ne dit pas ») reste le lieu où l'écart se rédige ; elle
+est transcrite, sans reformulation, dans le champ racine `ecarts_exigences_socle` —
+`{ element, motif, decide_par, date }`, une entrée par candidate écartée, `element` pris dans les
+trois clés de la liste close. `oracle-exigences` (règle **E10**) juge alors chaque candidate :
+portée par une exigence → PASS, écartée avec un motif d'au moins vingt caractères, daté et signé
+→ PASS imprimé « [ÉCARTÉ] », ni l'un ni l'autre → **FAIL**, la candidate nommée. Aucune condition
+d'applicabilité n'est inférée : un produit sans donnée de production ou sans élément interactif
+écrit son écart, il ne compte pas sur l'oracle pour le deviner.
 
 ## Le périmètre est un champ, pas un document
 

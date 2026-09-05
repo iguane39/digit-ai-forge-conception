@@ -12,6 +12,7 @@ trois vues aval en sont dérivées. Une modification se fait dans le JSON, jamai
 | `entrant` | objet | `type`, `libelle`, `seuil_suffisance` — repris de `ENTRANT.md` |
 | `identifiants_retires` | tableau de chaînes | Les identifiants morts. **Jamais réaffectés** |
 | `ecarts_surface_implicite` | tableau | **Facultatif.** Les candidats d'office de la surface implicite délibérément écartés — `oracle-surface` S4 |
+| `ecarts_exigences_socle` | tableau | **Facultatif.** Les exigences socle candidates délibérément écartées — `oracle-exigences` E10 |
 | `besoins` | tableau | `id`, `enonce`, `source` (facultatif) |
 | `surface` | tableau | `id`, `type`, `libelle` — repris de `SURFACE.md` |
 | `exigences` | tableau | Les 8 champs ci-dessous |
@@ -63,6 +64,27 @@ référentiel écrit avant TF-0811 n'est donc pas invalidé — il est jugé sur
 ses candidats. Il n'est en revanche pas facultatif dans les faits dès que le produit a une
 surface web et qu'un candidat manque : S4 rend alors FAIL, en nommant le candidat.
 
+`ecarts_exigences_socle` — tableau, à la racine du référentiel (TF-0814). Une entrée par
+**exigence socle candidate** écartée : `{ element, motif, decide_par, date }`. Même forme, mêmes
+quatre contraintes et même validateur que `ecarts_surface_implicite` — « écarté explicitement »
+veut dire la même chose des deux côtés, c'est un seul contrôle partagé (`oracles/_contrat.mjs`).
+
+| Champ | Contrainte vérifiée par `oracle-exigences` E10 |
+|---|---|
+| `element` | l'une des trois clés de la liste close (« Exigences socle candidates » ci-dessous) |
+| `motif` | chaîne d'au moins **20 caractères** — plus court, ce n'est pas une raison, c'est un mot |
+| `decide_par` | chaîne non vide — un écart est décidé par quelqu'un |
+| `date` | `AAAA-MM-JJ` |
+
+**Il ne se saisit nulle part ailleurs qu'en transcription de la section 7 « Ce que le référentiel
+ne dit pas » d'`EXIGENCES.md`** : la prose reste le lieu où l'écart se rédige et s'argumente, le
+champ n'en est que la forme lisible par un oracle.
+
+Le champ est **facultatif à la lecture** : absent, il vaut « aucun écart déclaré ». Un
+référentiel écrit avant TF-0814 n'est donc pas invalidé — il est jugé sur la seule présence de
+ses candidates. Il n'est en revanche pas facultatif dans les faits dès qu'une candidate manque :
+E10 rend alors FAIL, en la nommant.
+
 `source` — chaîne, sur un **besoin**. Un besoin n'a pas de `statut_epistemique` — ce
 formalisme est réservé aux exigences. Mais un `besoin.enonce` peut porter un chiffre (« réduire
 le délai de 30 % ») sans qu'aucun champ n'existe pour le sourcer : `source` comble ce trou.
@@ -105,7 +127,9 @@ tout référentiel touchant un produit avec données ou éléments interactifs �
 jamais absentes en silence. Même mécanique que la surface implicite SaaS d'`enumere-la-surface` :
 chaque candidate est **retenue** (une exigence normale, avec `id`, critère et `surface` ou
 `hors_surface`) ou **écartée explicitement**, raison consignée en section 7 de `EXIGENCES.md`
-(« Ce que le référentiel ne dit pas »). Absente des deux, c'est un oubli.
+(« Ce que le référentiel ne dit pas »), puis transcrite dans le champ racine
+`ecarts_exigences_socle` du référentiel. Absente des deux, c'est un oubli — et depuis TF-0814,
+`oracle-exigences` E10 le refuse.
 
 | Candidate | Loi transverse | Exemple de critère |
 |---|---|---|
@@ -117,11 +141,56 @@ Hors périmètre déclaré d'un coup : un produit sans données de production, s
 tarif volatil, ou sans élément interactif écarte la ligne correspondante avec cette seule raison
 — pas d'examen ligne à ligne nécessaire au-delà.
 
-Ces trois candidates-là n'ont **pas** de champ machine : leur écart vit en section 7 de
-`EXIGENCES.md`, en prose, et aucun oracle ne le lit. Seule la surface implicite
-d'`enumere-la-surface` porte le sien (`ecarts_surface_implicite`, TF-0811). L'écart est donc
-nommé ici plutôt que passé sous silence : la même mécanique reste à câbler pour les exigences
-socle candidates, le jour où elle sera demandée.
+### Les clés de la liste close, et où s'écrit un écart (TF-0814)
+
+Jusqu'au 05/09/2026, ces trois candidates-là avaient exactement le trou que la surface implicite
+avait avant TF-0811 : la règle « retenue ou écartée explicitement » était écrite, mais l'écart ne
+vivait qu'en prose, en section 7, qu'**aucun** oracle de la forge ne prend en entrée — sur onze
+oracles, zéro ne lit `EXIGENCES.md`, et les huit qui jugent `EXIGENCES.json` n'avaient aucun
+champ à lire. Une candidate oubliée et une candidate écartée en connaissance de cause
+produisaient le même référentiel.
+
+Le référentiel porte désormais son champ racine, transcrit de la section 7 et de nulle part
+ailleurs :
+
+```json
+"ecarts_exigences_socle": [
+  {
+    "element": "donnees-demonstration",
+    "motif": "le produit n'embarque aucun jeu de démonstration : la recette se fait sur un extrait anonymisé",
+    "decide_par": "le commanditaire du produit",
+    "date": "2026-09-05"
+  }
+]
+```
+
+`element` prend l'une des trois **clés** de la liste close — c'est la table ci-dessus, vue par la
+machine :
+
+| Clé | Candidate |
+|---|---|
+| `donnees-demonstration` | Données de démonstration invisibles en production |
+| `donnees-volatiles` | Données volatiles éditables, datées, sourcées |
+| `effet-observable` | Effet observable de tout élément interactif |
+
+Ce que `oracle-exigences` **E10** juge alors, candidate par candidate, chacune **nommée** :
+
+| État | Verdict |
+|---|---|
+| Candidate portée par au moins une exigence | PASS |
+| Candidate absente + écart déclaré qui tient | PASS, message préfixé « [ÉCARTÉ] » |
+| Candidate absente + aucun écart, ou écart qui ne tient pas | **FAIL**, la candidate nommée |
+
+Il n'y a **pas de quatrième état**. Contrairement à `oracle-surface` S4, qui n'exige la surface
+implicite que si le produit a une surface web, E10 n'infère aucune condition d'applicabilité : le
+« hors périmètre d'un coup » ci-dessus s'écrit, il ne se devine pas. Trois lignes d'écart sont le
+prix de l'opposabilité — délibérément moins cher que de rendre l'omission indiscernable.
+
+La **présence** d'une candidate est inférée d'un lexique fermé sur l'énoncé et le critère,
+volontairement permissif : E10 peut taire une candidate, jamais en inventer une. Ce que l'oracle
+ne juge pas non plus : la pertinence du motif d'un écart, et le respect effectif d'une candidate
+retenue par le produit livré — celui-là relève de forge-tests et de la MEP.
+
 
 ## Gabarit de `EXIGENCES.md`
 
@@ -133,7 +202,7 @@ socle candidates, le jour où elle sera demandée.
 | 4. Hypothèses | Extrait des exigences `hypothèse`, avec leur mode de validation. Section obligatoire |
 | 5. Couverture de surface | Ratio **et** liste nominative des éléments non couverts |
 | 6. Relevé des oracles | Les 4 verdicts exécutés, `SANS_OBJET` compris, avec leur raison |
-| 7. Ce que le référentiel ne dit pas | Section obligatoire et non vide. L'écart entre ce qui est spécifié et ce qui reste à trancher |
+| 7. Ce que le référentiel ne dit pas | Section obligatoire et non vide. L'écart entre ce qui est spécifié et ce qui reste à trancher — dont l'écart de chaque exigence socle candidate, transcrit ensuite dans `ecarts_exigences_socle` |
 
 La section 7 est le pendant du *« Ce que la maquette ne fait pas »* de Forge Design. Sans elle,
 un référentiel se lit comme un produit déjà conçu aux trois quarts.

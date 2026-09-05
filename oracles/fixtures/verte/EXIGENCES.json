@@ -9,6 +9,26 @@
   "identifiants_retires": [
     "E-003"
   ],
+  "ecarts_exigences_socle": [
+    {
+      "element": "donnees-demonstration",
+      "motif": "produit interne servi sur les seules données de l'entreprise : aucun jeu de démonstration n'est embarqué, la recette se fait sur un extrait anonymisé déposé hors du binaire livré",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-08-04"
+    },
+    {
+      "element": "donnees-volatiles",
+      "motif": "ni catalogue, ni tarif, ni barème : les seules données servies sont les demandes d'absence et les soldes, qui ne sont pas des référentiels périssables",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-08-04"
+    },
+    {
+      "element": "effet-observable",
+      "motif": "l'effet de chaque geste est déjà porté exigence par exigence (E-001, E-002, E-004), avec son critère observable : aucune règle transverse supplémentaire n'est retenue au palier MVP",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-08-04"
+    }
+  ],
   "besoins": [
     {
       "id": "B-01",

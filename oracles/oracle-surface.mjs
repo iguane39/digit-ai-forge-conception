@@ -9,7 +9,9 @@
 // part et toujours visible) : le seuil de S2 redevient opérant sans faire disparaître le nom
 // de l'élément.
 
-import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, AVANT, APRES } from './_contrat.mjs'
+import {
+  charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart
+} from './_contrat.mjs'
 
 const VERSION = '1.2.0'
 const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
@@ -42,9 +44,8 @@ const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 // à ce champ n'est donc jamais accusé d'un défaut de format — il est jugé sur la seule présence
 // de ses candidats, exactement comme il l'aurait été.
 const MARQUEURS_WEB = ['page', 'écran', 'site', 'web', 'url', 'route', 'portail', 'navigateur']
-// TF-0799 — bornes Unicode obligatoires ici : avec `\b`, « écran » (bord accentué) précédé
+// TF-0799 — bornes Unicode obligatoires ici (`lexique`, contrat commun) : avec `\b`, « écran » (bord accentué) précédé
 // d'une espace n'aurait JAMAIS été trouvé, et « route » se serait lu dans « routeur ».
-const lexique = (motifs) => new RegExp(`${AVANT}(${motifs.join('|')})s?${APRES}`, 'iu')
 const RE_WEB = lexique(MARQUEURS_WEB)
 
 // La liste CLOSE de la surface implicite. Ordre et libellés repris à l'identique de
@@ -113,27 +114,8 @@ for (const c of SURFACE_IMPLICITE) c.re = lexique(c.motifs)
 const CLES_IMPLICITES = SURFACE_IMPLICITE.map(c => c.cle)
 const EST_CLE = new Set(CLES_IMPLICITES)
 
-const MOTIF_MINIMUM = 20 // caractères : plus court, ce n'est pas une raison, c'est un mot
-const RE_DATE = /^\d{4}-\d{2}-\d{2}$/
-
-/** Ce qui manque à un écart pour tenir. Chaîne vide = l'écart tient. */
-function defautDeLEcart (e) {
-  const texte = (v) => (typeof v === 'string' ? v.trim() : '')
-  if (!e || typeof e !== 'object' || Array.isArray(e)) return 'entrée non objet'
-  if (!EST_CLE.has(texte(e.element))) {
-    return `\`element\` « ${texte(e.element) || '(vide)'} » hors de la liste close ` +
-      `(${CLES_IMPLICITES.join(', ')})`
-  }
-  if (texte(e.motif).length < MOTIF_MINIMUM) {
-    return `\`motif\` de ${texte(e.motif).length} caractère(s), minimum ${MOTIF_MINIMUM} — ` +
-      'un écart sans raison écrite est un oubli déguisé'
-  }
-  if (texte(e.decide_par) === '') {
-    return '`decide_par` absent ou vide — un écart est décidé par quelqu\'un'
-  }
-  if (!RE_DATE.test(texte(e.date))) return '`date` absente ou hors format AAAA-MM-JJ'
-  return ''
-}
+/** Ce qui manque à un écart pour tenir. Chaîne vide = l'écart tient — contrat commun. */
+const defautDeLEcart = (e) => defautDEcart(e, CLES_IMPLICITES)
 
 const cible = process.argv[2]
 let seuil = SEUIL_DEFAUT

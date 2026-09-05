@@ -92,3 +92,42 @@ export const NATURES = ['fait constaté', 'hypothèse']
  */
 export const AVANT = '(?<![\\p{L}\\p{N}_])'
 export const APRES = '(?![\\p{L}\\p{N}_])'
+
+/**
+ * Une garde lexicale sur une liste fermée de motifs, bornée aux frontières Unicode ci-dessus.
+ * Le `s?` final tolère le pluriel du dernier mot du motif (« erreurs », « états vides »).
+ */
+export const lexique = (motifs) => new RegExp(`${AVANT}(${motifs.join('|')})s?${APRES}`, 'iu')
+
+/**
+ * TF-0811 puis TF-0814 — le format COMMUN d'un écart explicite, défini une seule fois.
+ *
+ * Deux champs racine portent désormais des écarts : `ecarts_surface_implicite` (les onze
+ * candidats d'office de la surface implicite, `oracle-surface` S4) et `ecarts_exigences_socle`
+ * (les trois exigences socle candidates, `oracle-exigences` E10). Ce qui fait qu'un écart
+ * TIENT ne dépend pas de la liste close visée : deux définitions divergeraient au premier
+ * correctif, et « écarté explicitement » cesserait de vouloir dire la même chose selon la
+ * règle qui lit. La liste des clés recevables est donc le seul paramètre.
+ *
+ * Rend la chaîne VIDE quand l'écart tient, sinon ce qui lui manque, en clair.
+ */
+export const MOTIF_MINIMUM = 20 // caractères : plus court, ce n'est pas une raison, c'est un mot
+const RE_DATE_ECART = /^\d{4}-\d{2}-\d{2}$/
+
+export function defautDEcart (e, cles) {
+  const texte = (v) => (typeof v === 'string' ? v.trim() : '')
+  if (!e || typeof e !== 'object' || Array.isArray(e)) return 'entrée non objet'
+  if (!cles.includes(texte(e.element))) {
+    return `\`element\` « ${texte(e.element) || '(vide)'} » hors de la liste close ` +
+      `(${cles.join(', ')})`
+  }
+  if (texte(e.motif).length < MOTIF_MINIMUM) {
+    return `\`motif\` de ${texte(e.motif).length} caractère(s), minimum ${MOTIF_MINIMUM} — ` +
+      'un écart sans raison écrite est un oubli déguisé'
+  }
+  if (texte(e.decide_par) === '') {
+    return '`decide_par` absent ou vide — un écart est décidé par quelqu\'un'
+  }
+  if (!RE_DATE_ECART.test(texte(e.date))) return '`date` absente ou hors format AAAA-MM-JJ'
+  return ''
+}

@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: 84012012a80b49031abb610e340a731bb8943754ffdcd769f6a42f2c6c68840e -->
+<!-- source-sha256: e9de52d59db30741bc7c5ec5724c9d79c8497f0987445f80ca36d06df7d77e92 -->
 
 # Configuration de mission — Suivi des demandes d'absence
 

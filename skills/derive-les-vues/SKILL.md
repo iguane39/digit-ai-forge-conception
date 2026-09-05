@@ -1,7 +1,7 @@
 ---
 name: derive-les-vues
 description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par l'empreinte de sa source pour qu'une vue périmée ou éditée à la main soit détectée. Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, régénérer des vues après modification du référentiel, ou décliner un rétro-modèle en documentations par audience (vues par profil PO / CSM / utilisateur, scellées par empreinte). Ne pas déclencher pour rédiger ou modifier les exigences elles-mêmes (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Dérive les vues
@@ -39,7 +39,7 @@ permet aux trois forges aval de continuer à fonctionner si la Conception dispar
 
 | Vue | Consommateur | Ce qu'il accepte déjà |
 |---|---|---|
-| `CADRAGE-DESIGN.md` | Forge Design | La fiche 6 champs de `ameliore-le-design/references/ingestion.md`, plus la section « Surface implicite écartée » (TF-0811) |
+| `CADRAGE-DESIGN.md` | Forge Design | La fiche 6 champs de `ameliore-le-design/references/ingestion.md`, plus les sections « Surface implicite écartée » (TF-0811) et « Exigences socle écartées » (TF-0814) |
 | `MISSION.md` | SaaS Forge | Les 10 arguments de `cadrer()`, étape A du conducteur |
 | `EXIGENCES.json` | Forge Tests | Le champ `risque` de son référentiel de tests, seuil 100 % |
 
@@ -68,6 +68,21 @@ Ce verbe **ne décide aucun écart et n'en invente aucun** : il traduit ceux que
 porte déjà, eux-mêmes transcrits de la section 3 « Écartés » de `SURFACE.md`. Format des quatre
 champs et liste close des clés : `enumere-la-surface/references/typologie-surface.md`.
 L'oracle qui juge la même chose côté source est `oracle-surface` S4.
+
+## Ce que le référentiel ne demande pas — les exigences socle écartées (TF-0814)
+
+Même mécanique, même vue, autre champ racine : `ecarts_exigences_socle` porte les **exigences
+socle candidates** écartées (données de démonstration invisibles en production, données volatiles
+éditables/datées/sourcées, effet observable de tout élément interactif). `CADRAGE-DESIGN.md`
+porte donc une seconde section dérivée, une ligne par candidate écartée avec son motif, qui l'a
+décidé et quand. Champ facultatif à la lecture, section produite quand même — *(aucun écart
+déclaré)* quand il est absent ou vide.
+
+Ce verbe **ne décide aucun écart et n'en invente aucun** : il traduit ceux que le référentiel
+porte déjà, eux-mêmes transcrits de la section 7 « Ce que le référentiel ne dit pas »
+d'`EXIGENCES.md`. Format des quatre champs et liste close des trois clés :
+`redige-les-exigences/references/schema-referentiel.md`. L'oracle qui juge la même chose côté
+source est `oracle-exigences` E10.
 
 ## Les champs non dérivables
 

@@ -8,16 +8,22 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 
 ---
 
-## `oracle-exigences` v1.1.0
+## `oracle-exigences` v1.2.0
 
 | | |
 |---|---|
-| **Domaine** | Testabilité d'un énoncé d'exigence |
+| **Domaine** | Testabilité d'un énoncé d'exigence, et exigences socle candidates retenues ou écartées |
 | **Artefact jugé** | `EXIGENCES.json` |
 | **Invocation** | `node oracles/oracle-exigences.mjs <EXIGENCES.json>` |
-| **Règles** | E1 champs obligatoires · E2 identifiant unique et non réaffecté · E3 critère chiffré ou binaire · E4 liste noire de termes subjectifs · E5 palier valide · E6 énoncé atomique · E7 forme EARS non orpheline · E8 absolus/pronoms non vérifiables · E9 caractéristiques d'ensemble (contradiction, complétude) |
-| **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` |
-| **`non_juge`** | La pertinence produit de l'exigence · l'atomicité sémantique sans marqueur · la justesse d'une condition EARS reconnue · la contradiction hors du lexique antonyme surveillé |
+| **Règles** | E1 champs obligatoires · E2 identifiant unique et non réaffecté · E3 critère chiffré ou binaire · E4 liste noire de termes subjectifs · E5 palier valide · E6 énoncé atomique · E7 forme EARS non orpheline · E8 absolus/pronoms non vérifiables · E9 caractéristiques d'ensemble (contradiction, complétude) · E10 chacune des **trois exigences socle candidates** est portée par une exigence, ou écartée dans `ecarts_exigences_socle` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, la candidate nommée (TF-0814) |
+| **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` pour E1-E9 · `oracles/fixtures/exigences-socle-verte` (avec sa vue `CADRAGE-DESIGN.md` scellée) · `oracles/fixtures/exigences-socle-rouge` pour E10 |
+| **`non_juge`** | La pertinence produit de l'exigence · l'atomicité sémantique sans marqueur · la justesse d'une condition EARS reconnue · la contradiction hors du lexique antonyme surveillé · la présence d'une candidate socle, inférée d'un lexique fermé · la pertinence du motif d'un écart · le respect effectif d'une candidate retenue par le produit livré |
+
+**Le champ `ecarts_exigences_socle` est facultatif à la lecture** : absent, il vaut « aucun écart
+déclaré ». Un référentiel scellé avant TF-0814 n'est donc jamais accusé d'un défaut de format —
+il est jugé sur la seule présence de ses candidates. Aucune migration n'est due. Le format d'un
+écart valide est le **même** que celui de `ecarts_surface_implicite` (S4) : un seul validateur,
+partagé au contrat commun `oracles/_contrat.mjs`.
 
 ## `oracle-tracabilite` v1.0.0
 

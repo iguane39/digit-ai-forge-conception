@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: e2c5b13ac83e3463cb4a72bbaca0277b02a4c0057a4c0ebf9960e2de7ef631b5 -->
+<!-- source-sha256: 4b266217a7406f921b0e49ebecd42c5c2b3168e05d4610b13415c11f2364ddb3 -->
 
 # Fiche de cadrage design — Portail de réservation de salles
 
@@ -44,6 +44,23 @@ transcrit de la section 3 « Écartés » de `SURFACE.md`. Un candidat d'office 
 
 Les neuf autres candidats de la liste close sont **retenus** : ils figurent au tableau
 ci-dessus, chacun porteur d'au moins une exigence.
+
+## Exigences socle écartées
+
+Ce que le référentiel **ne demande pas**, et pourquoi — dérivé du champ racine
+`ecarts_exigences_socle`, lui-même transcrit de la section 7 « Ce que le référentiel ne dit
+pas » d'`EXIGENCES.md`. Une candidate absente de ce tableau **et** des exigences est un oubli,
+jamais un arbitrage : `oracle-exigences` E10 le refuse.
+
+| Candidate écartée | Motif | Décidé par | Date |
+|---|---|---|---|
+| `donnees-demonstration` | portail réservé aux collaborateurs authentifiés : aucun jeu de démonstration n'est prévu, et aucun environnement de démonstration n'est ouvert | le commanditaire du produit | 2026-09-05 |
+| `donnees-volatiles` | les salles et leurs créneaux sont saisis par les services généraux depuis le produit : aucun catalogue ni tarif figé dans le code n'existe | le commanditaire du produit | 2026-09-05 |
+| `effet-observable` | chaque exigence de ce référentiel porte déjà son critère observable ; aucune règle transverse supplémentaire n'est retenue au palier MVP | le commanditaire du produit | 2026-09-05 |
+
+Les trois candidates du schéma sont écartées : le design n'a donc à prévoir ni jeu de
+démonstration, ni écran d'édition de référentiel périssable, et hérite de l'effet observable
+exigence par exigence.
 
 ## Ce que cette vue ne dit pas
 

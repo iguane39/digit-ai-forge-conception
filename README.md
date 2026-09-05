@@ -69,12 +69,12 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 12 entrées d'oracle, 49 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 13 entrées d'oracle, 50 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
 |---|---|---|
-| `oracle-exigences` | E1–E9 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9). Gardes lexicales à frontières de mot **Unicode** depuis TF-0799 : `` est ASCII, et un accent y valait frontière — « elle » se lisait dans « réelle » |
+| `oracle-exigences` | E1–E10 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9). Gardes lexicales à frontières de mot **Unicode** depuis TF-0799 : `\b` est ASCII, et un accent y valait frontière — « elle » se lisait dans « réelle ». **E10** : chacune des **trois exigences socle candidates** (données de démonstration invisibles en production, données volatiles éditables/datées/sourcées, effet observable de tout élément interactif) est **portée** par une exigence ou **écartée** dans `ecarts_exigences_socle`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, la candidate nommée (TF-0814) |
 | `oracle-tracabilite` | T1–T4 | orphelins des deux côtés, statut épistémique, vues régénérables |
 | `oracle-surface` | S1–S4 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio ; **S4** : dès que le produit a une surface web, chacun des **onze candidats d'office** de la surface implicite (aide, onboarding, compte, favicon, états vides, erreurs visibles, mentions légales, responsive, accessibilité RGAA et ses livrables, 404 par langue — patron P-2 du pilot, TF-0804) est **retenu** ou **écarté** dans `ecarts_surface_implicite`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, le candidat nommé (TF-0811) |
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
@@ -180,7 +180,7 @@ imposée :
 **Rejouer les 8 oracles + le self-test**, depuis la racine du dépôt :
 
 ```bash
-node oracles/self-test.mjs                                   # fixtures verte/rouge, 49 règles
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 50 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
 node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md>
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
@@ -268,6 +268,14 @@ produit a une surface web. Ce qu'on n'en retient pas s'écrit — section 3 de `
 champ `ecarts_surface_implicite` du référentiel, motif d'au moins 20 caractères, décidé par
 quelqu'un, à une date. `oracle-surface` S4 refuse le reste : l'oubli et la décision cessent de se
 ressembler (loi transverse n° 3, TF-0811).
+
+**Une exigence socle candidate est retenue ou écartée, jamais absente par omission.** Trois lois
+transverses sont proposées d'office à tout référentiel : données de démonstration invisibles en
+production, données volatiles éditables/datées/sourcées, effet observable de tout élément
+interactif. Ce qu'on n'en retient pas s'écrit — section 7 d'`EXIGENCES.md`, puis le champ
+`ecarts_exigences_socle` du référentiel, mêmes quatre contraintes que ci-dessus.
+`oracle-exigences` E10 refuse le reste, et ne devine aucune condition d'applicabilité : le hors
+périmètre s'écrit lui aussi (TF-0814).
 
 **Sous le seuil de suffisance, on rend la main.** Questions indicées `a/b/c`, avec option
 recommandée et défaut appliqué — et tout défaut appliqué est marqué comme hypothèse.

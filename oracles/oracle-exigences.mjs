@@ -4,10 +4,11 @@
 // INCOSE GtWR v4), TF-0015 — 3 contrôles proposés à l'état d'étude, ici rendus exécutables.
 
 import {
-  charger, constat, emettre, erreur, PASS, FAIL, PALIERS, NATURES, AVANT, APRES
+  charger, constat, emettre, erreur, PASS, FAIL, PALIERS, NATURES, AVANT, APRES, lexique,
+  defautDEcart
 } from './_contrat.mjs'
 
-const VERSION = '1.1.0'
+const VERSION = '1.2.0'
 
 // --- Checklist versionnée ---------------------------------------------------
 
@@ -153,6 +154,61 @@ function normaliserReste (texte, predicat) {
   const sansPredicat = texte.replace(new RegExp(echappe, 'i'), ' ')
   return sansPredicat.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
 }
+
+// E10 — les exigences socle candidates : chacune est RETENUE ou ÉCARTÉE explicitement.
+//
+// `redige-les-exigences/references/schema-referentiel.md`, section « Exigences socle
+// candidates », propose d'office TROIS exigences à la rédaction de tout référentiel, parce que
+// chacune porte une loi transverse constatée en production plutôt qu'une préférence : données
+// de démonstration invisibles hors de leur environnement (frontières d'environnement
+// explicites), données volatiles éditables/datées/sourcées (une donnée périssable est une
+// donnée, pas du code), effet observable de tout élément interactif (une affordance est câblée
+// ou n'existe pas).
+//
+// TF-0814 : jusqu'au 05/09/2026, ces trois candidates avaient exactement le trou que la surface
+// implicite avait avant TF-0811. La règle « retenue ou écartée explicitement » était écrite,
+// mais l'écart ne vivait qu'en prose, section 7 d'`EXIGENCES.md` (« Ce que le référentiel ne dit
+// pas »), qu'AUCUN oracle de la forge ne prend en entrée : sur onze oracles, zéro ne lit le
+// Markdown, et les huit qui jugent `EXIGENCES.json` n'avaient aucun champ à lire. Une candidate
+// oubliée et une candidate écartée en connaissance de cause produisaient le même référentiel,
+// ce que la loi transverse n° 3 (« l'oubli n'existe pas ») interdit. Le champ racine
+// `ecarts_exigences_socle` comble ce trou, et E10 juge :
+//
+//   candidate portée par au moins une exigence          -> PASS
+//   candidate absente + écart déclaré valide            -> PASS, message préfixé « [ÉCARTÉ] »
+//   candidate absente + aucun écart, ou écart qui ne tient pas -> FAIL, la candidate NOMMÉE
+//
+// Il n'y a pas de quatrième état : contrairement à S4, aucune condition d'applicabilité n'est
+// INFÉRÉE. Un produit sans donnée de production, sans référentiel périssable ou sans élément
+// interactif écarte la ligne correspondante « d'un coup », avec cette seule raison — la doctrine
+// le prévoit explicitement, et un écart écrit reste moins cher qu'une omission indiscernable.
+//
+// Le champ est FACULTATIF à la lecture : absent = aucun écart déclaré. Un référentiel scellé
+// avant ce champ n'est donc jamais accusé d'un défaut de FORMAT — il est jugé sur la seule
+// présence de ses candidates, exactement comme il l'aurait été. Aucune migration n'est due.
+const EXIGENCES_SOCLE = [
+  {
+    cle: 'donnees-demonstration',
+    libelle: 'Données de démonstration invisibles en production',
+    motifs: ['démonstration', 'démo', 'demo', 'données factices', 'données fictives',
+      "jeu d'essai"]
+  },
+  {
+    cle: 'donnees-volatiles',
+    libelle: 'Données volatiles éditables, datées, sourcées',
+    motifs: ['données volatiles', 'donnée volatile', 'données périssables',
+      'donnée périssable', 'date de mise à jour', 'mise_a_jour_le', 'référentiel éditable',
+      'catalogue', 'tarif', 'barème', 'taux de']
+  },
+  {
+    cle: 'effet-observable',
+    libelle: 'Effet observable de tout élément interactif',
+    motifs: ['effet observable', 'effet visible', 'élément interactif', 'éléments interactifs',
+      'retour visuel', "changement d'état visible", 'message de confirmation', 'affordance']
+  }
+]
+for (const c of EXIGENCES_SOCLE) c.re = lexique(c.motifs)
+const CLES_SOCLE = EXIGENCES_SOCLE.map(c => c.cle)
 
 // --- Exécution --------------------------------------------------------------
 
@@ -309,6 +365,59 @@ if (surfaceRefE9.length === 0) {
       `ensemble incomplet : ${arrondiE9} % < ${SEUIL_E9} % — non couverts : ${nonCouvertsE9.join(', ')}`))
 }
 
+// --- E10 : les exigences socle candidates, retenues ou écartées -------------
+
+{
+  // 10.1 — les écarts déclarés, indexés par candidate. Un écart qui ne désigne aucune des trois
+  // ne protège rien : il est nommé pour lui-même, jamais silencieux.
+  const brut = ref.ecarts_exigences_socle
+  const ecarts = new Map()
+  if (brut !== undefined && !Array.isArray(brut)) {
+    constats.push(constat('E10', FAIL, 'ecarts_exigences_socle',
+      'champ présent mais non tableau — attendu [{ element, motif, decide_par, date }]'))
+  } else {
+    for (const [i, e] of (brut ?? []).entries()) {
+      const cle = typeof e?.element === 'string' ? e.element.trim() : ''
+      const defaut = defautDEcart(e, CLES_SOCLE)
+      if (!CLES_SOCLE.includes(cle)) {
+        constats.push(constat('E10', FAIL, `ecarts_exigences_socle[${i}]`,
+          `écart rattaché à aucune exigence socle candidate : ${defaut}`))
+        continue
+      }
+      // Le premier écart valide d'une candidate gagne ; un doublon invalide ne l'annule pas.
+      if (ecarts.get(cle)?.defaut !== '') ecarts.set(cle, { indice: i, ecart: e, defaut })
+    }
+  }
+
+  // 10.2 — la candidate est-elle portée par une exigence ? Inférence lexicale sur l'énoncé et
+  // le critère, volontairement permissive : elle peut taire une candidate, jamais en inventer.
+  for (const c of EXIGENCES_SOCLE) {
+    const porteuses = exigences.filter(e =>
+      c.re.test(`${e?.enonce ?? ''} ${e?.critere ?? ''}`))
+    const ecart = ecarts.get(c.cle)
+    if (porteuses.length > 0) {
+      constats.push(constat('E10', PASS, `exigences[] (${porteuses.map(e => e?.id).join(', ')})`,
+        `« ${c.libelle} » est portée par le référentiel`))
+    } else if (ecart && ecart.defaut === '') {
+      constats.push(constat('E10', PASS, `ecarts_exigences_socle[${ecart.indice}] (${c.cle})`,
+        `[ÉCARTÉ] « ${c.libelle} » — ${String(ecart.ecart.motif).trim()} ` +
+        `(décidé par ${String(ecart.ecart.decide_par).trim()}, ` +
+        `le ${String(ecart.ecart.date).trim()})`))
+    } else if (ecart) {
+      constats.push(constat('E10', FAIL, `ecarts_exigences_socle[${ecart.indice}] (${c.cle})`,
+        `« ${c.libelle} » n'est portée par aucune exigence, et son écart ne tient pas : ` +
+        ecart.defaut))
+    } else {
+      constats.push(constat('E10', FAIL, `exigences[] (${c.cle})`,
+        `« ${c.libelle} » : exigence socle candidate, portée par aucune exigence du référentiel ` +
+        'et sans écart déclaré. À retenir (une exigence normale, avec son critère et son lien ' +
+        'de surface), ou à écarter EXPLICITEMENT en section 7 d\'`EXIGENCES.md`, transcrite ' +
+        'dans `ecarts_exigences_socle` { element, motif, decide_par, date }. La loi transverse ' +
+        'n° 3 ne connaît pas l\'absence par omission.'))
+    }
+  }
+}
+
 emettre({
   oracle: 'oracle-exigences',
   version: VERSION,
@@ -321,6 +430,17 @@ emettre({
     'La justesse d\'une condition EARS reconnue par E7 — la forme est vérifiée, pas que le ' +
       'déclencheur décrit corresponde à un état réel du système.',
     'La contradiction sémantique hors du lexique antonyme surveillé par E9 — deux exigences ' +
-      'peuvent se contredire sans jamais employer un couple de prédicats de la liste fermée.'
+      'peuvent se contredire sans jamais employer un couple de prédicats de la liste fermée.',
+    'La PRÉSENCE d\'une exigence socle candidate, que E10 INFÈRE d\'un lexique fermé sur ' +
+      'l\'énoncé et le critère : une exigence qui parle du « catalogue » des formations ' +
+      'satisfait la candidate « données volatiles » sans qu\'aucune date de mise à jour ne soit ' +
+      'due. L\'inférence est volontairement permissive — elle peut taire une candidate, jamais ' +
+      'en inventer une.',
+    'La PERTINENCE du motif d\'un écart. E10 exige qu\'il soit écrit, daté et signé ; il ne juge ' +
+      'ni sa véracité ni sa suffisance — un écart est opposable parce qu\'écrit, pas parce que ' +
+      'vrai.',
+    'Le RESPECT effectif d\'une candidate retenue par le produit livré : E10 juge que le ' +
+      'référentiel la porte, jamais que le code la tient. Cela relève de forge-tests et de la ' +
+      'MEP, jamais d\'un référentiel d\'exigences.'
   ]
 })
