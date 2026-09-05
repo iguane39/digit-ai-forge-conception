@@ -1,7 +1,7 @@
 ---
 name: derive-les-vues
 description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par l'empreinte de sa source pour qu'une vue périmée ou éditée à la main soit détectée. Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, régénérer des vues après modification du référentiel, ou décliner un rétro-modèle en documentations par audience (vues par profil PO / CSM / utilisateur, scellées par empreinte). Ne pas déclencher pour rédiger ou modifier les exigences elles-mêmes (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Dérive les vues
@@ -13,10 +13,18 @@ chaque consommateur accepte déjà.
 
 **Une vue est régénérable, jamais éditée.** Toute modification se fait dans `EXIGENCES.json`,
 puis les vues sont refaites. Une vue éditée à la main est un défaut détecté par
-`oracle-tracabilite` T3, pas une correction.
+`oracle-tracabilite`, pas une correction.
 
-Mécanisme : chaque vue porte en tête l'empreinte SHA-256 de la source dont elle est issue. Si
-la source bouge ou si la vue est retouchée, l'empreinte ne correspond plus.
+Mécanisme : chaque vue porte en tête **deux** empreintes SHA-256, parce qu'elles ne prouvent
+pas la même chose — `source-sha256` dit **d'où** vient la vue (jugée par T3), `corps-sha256`
+dit **ce qu'elle contient** (jugée par T5, TF-0818). La première seule ne suffisait pas, et
+c'est un fait mesuré le 05/09/2026 : un `CADRAGE-DESIGN.md` amputé de sa section « Surface
+implicite écartée » — 996 caractères sur 4 327, dont deux écarts opposables — gardait un
+en-tête valide et rendait PASS ; une décision opposable disparaissait sans juge.
+
+`corps-sha256` couvre tout ce qui suit la ligne du sceau, sceau exclu, fins de ligne
+normalisées LF ; elle se calcule **avant** d'écrire l'en-tête. Recette et cas de la vue non
+migrée : `references/vues.md`.
 
 ## Ce que ce skill n'a pas le droit de faire
 
@@ -29,7 +37,7 @@ permet aux trois forges aval de continuer à fonctionner si la Conception dispar
 ```
 1. Entrée        → EXIGENCES.json
 2. Contrats      → references/vues.md
-3. Empreinte     → node -e "…sha256 de EXIGENCES.json normalisé LF (CRLF→LF)…"  (en-tête de chaque vue)
+3. Empreintes    → source-sha256 (la source) + corps-sha256 (le corps), normalisées LF
 4. Artefacts     → CADRAGE-DESIGN.md · MISSION.md · EXIGENCES.json exposé
 5. Contrôle      → node oracles/oracle-tracabilite.mjs EXIGENCES.json --vue CADRAGE-DESIGN.md
 6. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs
@@ -107,5 +115,4 @@ date d'observation), jamais en `*(à demander)*`. Détail et gabarit dans
 ## Ce qui n'est jamais fait
 
 Éditer une vue. Inventer un `ton`. Remplir un argument de `cadrer()` par un défaut silencieux.
-Appeler une forge aval. Livrer une vue dont l'empreinte n'a pas été recalculée après une
-modification de la source.
+Appeler une forge aval. Livrer une vue dont l'une des deux empreintes n'a pas été recalculée.

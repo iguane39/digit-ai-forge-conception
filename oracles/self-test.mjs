@@ -11,7 +11,7 @@
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 
@@ -41,6 +41,13 @@ const SURFIMP_ROUGE = join(ICI, 'fixtures', 'surface-implicite-rouge')
 // la regle doit prouver.
 const SOCLE_VERTE = join(ICI, 'fixtures', 'exigences-socle-verte')
 const SOCLE_ROUGE = join(ICI, 'fixtures', 'exigences-socle-rouge')
+// TF-0818 : fixtures DEDIEES de T5. Le MEME EXIGENCES.json et le MEME en-tete de sceau des
+// deux cotes ; seule la vue change -- la rouge est la verte AMPUTEE de sa seule section
+// « Exigences socle ecartees » (862 caracteres sur 2 649, un tiers du corps). T1 a T4 y
+// restent verts, T3 compris : le seul FAIL possible est celui du corps altere. C'est la
+// mesure du 05/09 rejouee, cette fois avec un juge.
+const CORPS_VERTE = join(ICI, 'fixtures', 'corps-de-vue-verte')
+const CORPS_ROUGE = join(ICI, 'fixtures', 'corps-de-vue-rouge')
 
 const ORACLES = [
   {
@@ -63,6 +70,18 @@ const ORACLES = [
     fichier: 'oracle-tracabilite.mjs',
     regles: ['T1', 'T2', 'T3', 'T4'],
     args: (dossier) => [join(dossier, 'EXIGENCES.json'), '--vue', join(dossier, 'CADRAGE-DESIGN.md')]
+  },
+  {
+    // TF-0818 : T5 SEULE, sur ses fixtures dediees. T5 n'est pas dans l'entree T1-T4 ci-dessus,
+    // et ce n'est pas un oubli : les vues des fixtures VERTE/ROUGE partagees ont ete scellees
+    // avant TF-0818, aucune n'a ete migree, T5 y rend donc un SANS_OBJET motive et n'y jugerait
+    // rien. Ici la verte et la rouge portent le MEME en-tete de sceau et le MEME referentiel ;
+    // seul le corps de la vue differe. Une fixture rouge qui echouerait aussi sur T3 ne
+    // prouverait pas que T5 attrape ce que T3 laisse passer.
+    fichier: 'oracle-tracabilite.mjs',
+    regles: ['T5'],
+    args: (dossier) => [join(CORPS_VERTE, 'EXIGENCES.json'), '--vue',
+      join(dossier === VERTE ? CORPS_VERTE : CORPS_ROUGE, 'CADRAGE-DESIGN.md')]
   },
   {
     // TF-0070 : la verte passe au seuil PAR DEFAUT (S-06 couvert par E-008, palier V2) —
@@ -746,6 +765,96 @@ for (const o of ORACLES) {
     rmSync(tmp, { recursive: true, force: true })
   }
 }
+
+// --- branche TF-0818 : le sceau prouvait la provenance, jamais le contenu -----------------
+// T3 compare l'empreinte que la vue PORTE a celle de sa SOURCE : elle dit d'ou vient la vue,
+// jamais ce qu'elle contient. Mesure du 05/09/2026 : la section « Surface implicite ecartee »
+// retiree d'un CADRAGE-DESIGN.md -- en-tete laisse intact -- et T3 rendait PASS, verdict
+// global PASS, exit 0 ; deux ecarts opposables disparaissaient sans juge. La vue porte donc
+// desormais AUSSI l'empreinte de son propre corps, et T5 la recalcule. Six etats a prouver :
+//   1. vue intacte                                        -> PASS (T3 et T5)
+//   2. vue amputee, en-tete intact                        -> FAIL « corps de la vue altere »,
+//                                                            T3 restant PASS (T5 seule voit)
+//   3. LA MESURE D'AVANT : amputee ET sans corps-sha256   -> PASS, mais T5 le DIT en SANS_OBJET
+//   4. un seul mot change dans le corps                   -> FAIL (temoin : pas que l'amputation)
+//   5. la meme vue amputee, RESCELLEE sur son corps       -> PASS (le controle est calculable,
+//                                                            le sceau ne se hache pas lui-meme)
+//   6. la phrase citee de `vues.md` y est encore, mot pour mot (une citation qui derive de sa
+//      source est une transcription sans correspondance -- le defaut que ce lot ne doit pas creer)
+// Fixtures ephemeres pour 3, 4 et 5 ; fixtures dediees versionnees pour 1 et 2.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0818-'))
+  try {
+    const CIBLE = join(CORPS_VERTE, 'EXIGENCES.json')
+    const RE_SCEAU = /<!--\s*corps-sha256:\s*[0-9a-f]{64}\s*-->[^\S\r\n]*\r?\n/i
+    const vueIntacte = readFileSync(join(CORPS_VERTE, 'CADRAGE-DESIGN.md'), 'utf8')
+      .replace(/\r\n/g, NL)
+    const vueAmputee = readFileSync(join(CORPS_ROUGE, 'CADRAGE-DESIGN.md'), 'utf8')
+      .replace(/\r\n/g, NL)
+
+    // Chaque cas dans son propre dossier, la vue gardant son NOM reel : le rappel des sections
+    // attendues est indexe sur le nom de fichier de la vue, et un `2-amputee.md` ne le
+    // declencherait pas -- le self-test jugerait alors un message que personne ne recoit.
+    const jouer = (nom, texte) => {
+      const dossier = join(tmp, nom)
+      mkdirSync(dossier)
+      const chemin = join(dossier, 'CADRAGE-DESIGN.md')
+      writeFileSync(chemin, texte)
+      const r = lancer('oracle-tracabilite.mjs', [CIBLE, '--vue', chemin])
+      const de = (regle) => (r.rapport?.constats ?? []).find(c => c.regle === regle)
+      return { code: r.code, t3: de('T3'), t5: de('T5') }
+    }
+
+    const intacte = jouer('1-intacte', vueIntacte)
+    const amputee = jouer('2-amputee', vueAmputee)
+    // 3. la mesure d'avant correctif, rejouee : meme amputation, mais vue NON MIGREE
+    const avant = jouer('3-avant-correctif', vueAmputee.replace(RE_SCEAU, ''))
+    // 4. un seul mot du corps change -- l'amputation n'est pas le seul cas
+    const unMot = jouer('4-un-mot-change',
+      vueIntacte.replace('le commanditaire du produit', 'le commanditaire du produiT'))
+    // 5. la vue amputee RESCELLEE sur son propre corps : le controle est calculable
+    const corpsAmpute = vueAmputee.slice(vueAmputee.match(RE_SCEAU)[0].length +
+      vueAmputee.match(RE_SCEAU).index)
+    const rescellee = jouer('5-rescellee', vueAmputee.replace(RE_SCEAU,
+      `<!-- corps-sha256: ${createHash('sha256').update(corpsAmpute, 'utf8').digest('hex')} -->${NL}`))
+
+    // 6. la citation embarquee dans le message d'echec est-elle encore celle du contrat ?
+    const citee = (amputee.t5?.message ?? '').match(/: "([^"]+)"/)?.[1] ?? ''
+    const contrat = readFileSync(
+      join(ICI, '..', 'skills', 'derive-les-vues', 'references', 'vues.md'), 'utf8')
+      .replace(/\*/g, '').replace(/\s+/g, ' ')
+    const citationTenue = citee.length > 60 && contrat.includes(citee.replace(/\s+/g, ' '))
+
+    const cas = [
+      ['1. vue intacte -> PASS, T3 et T5 verts',
+        intacte.code === 0 && intacte.t3?.statut === 'PASS' && intacte.t5?.statut === 'PASS'],
+      ['2. vue amputee, en-tete intact -> FAIL « corps de la vue altere », T3 restant PASS',
+        amputee.code === 1 && amputee.t3?.statut === 'PASS' &&
+        amputee.t5?.statut === 'FAIL' && amputee.t5.message.includes('corps de la vue altéré')],
+      ['3. la mesure d\'avant : amputee sans corps-sha256 -> PASS, mais T5 le DIT (SANS_OBJET)',
+        avant.code === 0 && avant.t3?.statut === 'PASS' &&
+        avant.t5?.statut === 'SANS_OBJET' && avant.t5.message.includes('corps-sha256')],
+      ['4. un seul mot change dans le corps -> FAIL (temoin : pas que l\'amputation)',
+        unMot.code === 1 && unMot.t5?.statut === 'FAIL'],
+      ['5. la meme vue amputee, RESCELLEE sur son corps -> PASS (le sceau ne se hache pas lui-meme)',
+        rescellee.code === 0 && rescellee.t5?.statut === 'PASS'],
+      ['6. la phrase citee dans le FAIL est encore celle de `vues.md`, mot pour mot',
+        citationTenue]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-tracabilite.mjs (branche TF-0818, fixtures dediees + ephemeres, 5 etats + 1 temoin)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${intacte.code} 2=${amputee.code} 3=${avant.code} ` +
+        `4=${unMot.code} 5=${rescellee.code} ; citation retrouvee : ${citationTenue}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)

@@ -25,16 +25,16 @@ il est jugé sur la seule présence de ses candidates. Aucune migration n'est du
 écart valide est le **même** que celui de `ecarts_surface_implicite` (S4) : un seul validateur,
 partagé au contrat commun `oracles/_contrat.mjs`.
 
-## `oracle-tracabilite` v1.0.0
+## `oracle-tracabilite` v1.1.0
 
 | | |
 |---|---|
 | **Domaine** | Bijection besoin ↔ exigence ↔ critère, et régénérabilité des vues |
 | **Artefact jugé** | `EXIGENCES.json` + les vues dérivées |
 | **Invocation** | `node oracles/oracle-tracabilite.mjs <EXIGENCES.json> [--vue <fichier>]…` |
-| **Règles** | T1 aucun orphelin des deux côtés · T2 exactement un critère · T3 vue alignée sur l'empreinte de sa source · T4 statut épistémique porteur de sa source ou de son mode de validation |
-| **Fixtures** | idem, avec `CADRAGE-DESIGN.md` en vue |
-| **`non_juge`** | La justesse du rattachement · la véracité de la source citée |
+| **Règles** | T1 aucun orphelin des deux côtés · T2 exactement un critère · T3 vue alignée sur l'empreinte de sa **source** · T4 statut épistémique porteur de sa source ou de son mode de validation · T5 corps de la vue conforme à l'empreinte de **son propre corps** (TF-0818) |
+| **Fixtures** | idem, avec `CADRAGE-DESIGN.md` en vue ; `corps-de-vue-verte` / `corps-de-vue-rouge` pour T5 — même source, même en-tête, la rouge amputée de sa seule section « Exigences socle écartées » |
+| **`non_juge`** | La justesse du rattachement · la véracité de la source citée · CE QUI a changé dans un corps altéré (la liste des sections attendues est citée, jamais vérifiée) · le contenu d'une vue sans `corps-sha256` |
 
 ## `oracle-surface` v1.2.0
 

@@ -7,17 +7,42 @@ cités sont ceux vérifiés le 04/08/2026.
 
 ## En-tête commun — obligatoire sur toute vue markdown
 
-Les deux premières lignes, avant tout contenu :
+Les trois premières lignes, avant tout contenu :
 
 > `<!-- source: EXIGENCES.json -->`
 > `<!-- source-sha256: <64 caractères hexadécimaux> -->`
+> `<!-- corps-sha256: <64 caractères hexadécimaux> -->`
 
-L'empreinte est celle des **octets** de `EXIGENCES.json`, fins de ligne **normalisées LF**
-(CRLF→LF) avant hachage — TF-0114 : sous Windows, `core.autocrlf` convertit le fichier en
-CRLF au checkout, alors qu'un poste Linux/macOS le voit en LF ; sans cette normalisation,
-un contenu identique au caractère près produirait deux empreintes différentes selon l'OS.
-Elle se recalcule à chaque régénération. `oracle-tracabilite` T3 la compare avec la même
-normalisation ; une vue sans en-tête est un échec au même titre qu'une vue périmée.
+**`source-sha256` — d'où vient cette vue.** L'empreinte est celle des **octets** de
+`EXIGENCES.json`, fins de ligne **normalisées LF** (CRLF→LF) avant hachage — TF-0114 : sous
+Windows, `core.autocrlf` convertit le fichier en CRLF au checkout, alors qu'un poste
+Linux/macOS le voit en LF ; sans cette normalisation, un contenu identique au caractère près
+produirait deux empreintes différentes selon l'OS. Elle se recalcule à chaque régénération.
+`oracle-tracabilite` T3 la compare avec la même normalisation ; une vue sans en-tête est un
+échec au même titre qu'une vue périmée.
+
+**`corps-sha256` — ce que cette vue contient (TF-0818).** L'empreinte de la source prouve la
+**provenance**, jamais le **contenu** : mesuré le 05/09/2026, un `CADRAGE-DESIGN.md` privé de
+sa seule section « Surface implicite écartée » — 996 caractères sur 4 327, dont deux écarts
+opposables — gardait un en-tête valide, et T3 rendait PASS. La vue porte donc aussi
+l'empreinte SHA-256 de **son propre corps** : tout ce qui suit la ligne `corps-sha256`,
+sceau exclu, mêmes fins de ligne normalisées LF. `oracle-tracabilite` **T5** la recalcule et la
+compare ; une amputation, un ajout, un mot changé la font diverger.
+
+Ordre de production, et il n'est pas indifférent : **le corps d'abord**, son empreinte
+ensuite, l'en-tête en dernier. Hacher un fichier dont l'en-tête contiendrait déjà sa propre
+empreinte n'aurait pas de point fixe.
+
+```bash
+# corps = le fichier SANS ses trois lignes d'en-tête ; empreinte à recopier en 3e ligne
+node -e "const{createHash}=require('crypto');const fs=require('fs');\
+process.stdout.write(createHash('sha256').update(fs.readFileSync('corps.md','utf8')\
+.replace(/\r\n/g,'\n'),'utf8').digest('hex'))"
+```
+
+**Aucune vue déjà scellée n'a été migrée.** Une vue qui ne porte pas `corps-sha256` se juge
+comme avant — provenance seule — et T5 le **dit** en `SANS_OBJET` plutôt que de laisser croire
+que son contenu a été vérifié. La régénérer par ce verbe lui donne l'empreinte de son corps.
 
 ---
 
@@ -36,8 +61,14 @@ lignes 33-46. La fiche est *« obligatoire et demandée »* sur un entrant sans 
 | Hypothèses | Exigences dont `statut_epistemique.nature = hypothèse` |
 
 Sections complémentaires à produire : le tableau *élément de surface → exigences rattachées*,
-les sections **« Surface implicite écartée »** et **« Exigences socle écartées »**
-(ci-dessous), et une section finale disant ce que la vue ne dit pas.
+les sections **« Surface implicite écartée »** et **« Exigences socle écartées »** définies
+plus bas, et une section finale disant ce que la vue ne dit pas.
+
+Cette phrase est **citée mot pour mot** par `oracle-tracabilite` T5 dans son message d'échec,
+pour dire au lecteur d'une vue altérée ce qu'elle devait porter. Elle n'y est pas **câblée** :
+T5 ne cherche aucune de ces sections dans la vue. Le self-test rejoue la citation contre cette
+phrase et échoue si elle a changé ici sans changer là — une citation qui dérive de sa source
+est une transcription sans correspondance, pas un rappel.
 
 **Section « Surface implicite écartée » (TF-0811).** Dérivée du champ racine
 `ecarts_surface_implicite`, quatre colonnes reprises telles quelles — `element` · `motif` ·
@@ -149,6 +180,13 @@ l'empreinte de sa source.
 Second exemple travaillé, une candidate socle écartée et deux retenues :
 [oracles/fixtures/exigences-socle-verte](../../../oracles/fixtures/exigences-socle-verte)
 — la fiche porte la section « Exigences socle écartées », scellée sur l'empreinte de sa source.
+
+Ces deux exemples ont été scellés **avant** TF-0818 : ils ne portent que `source-sha256`, et
+n'ont pas été migrés. L'exemple travaillé du sceau **à deux empreintes** est
+[oracles/fixtures/corps-de-vue-verte](../../../oracles/fixtures/corps-de-vue-verte) — même
+fiche, même source, en-tête complet ; sa jumelle `corps-de-vue-rouge` est la même vue amputée
+de sa seule section « Exigences socle écartées » (862 caractères sur 2 649, un tiers du corps),
+en-tête laissé intact : T3 y reste vert, T5 seule la refuse.
 
 Une vue qui n'a pas été régénérée n'est pas « un peu périmée » : elle affirme un contenu que
 la source ne dit plus.

@@ -1,0 +1,142 @@
+{
+  "projet": "Catalogue de formations internes",
+  "date_generation": "2026-09-05",
+  "entrant": {
+    "type": "cdc",
+    "libelle": "Note de cadrage du service formation, 3 pages",
+    "seuil_suffisance": "atteint : 2 objets métier et 2 rôles identifiés"
+  },
+  "identifiants_retires": [],
+  "ecarts_exigences_socle": [
+    {
+      "element": "donnees-demonstration",
+      "motif": "le produit n'embarque aucun jeu de démonstration : la recette se fait sur un extrait anonymisé du catalogue réel, déposé hors du binaire livré",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-09-05"
+    }
+  ],
+  "besoins": [
+    {
+      "id": "B-01",
+      "enonce": "Un collaborateur doit trouver une formation ouverte aux inscriptions sans passer par le service formation."
+    },
+    {
+      "id": "B-02",
+      "enonce": "Le service formation doit tenir le catalogue et ses tarifs à jour sans livraison de code."
+    }
+  ],
+  "surface": [
+    {
+      "id": "S-01",
+      "type": "objet",
+      "libelle": "Fiche de formation"
+    },
+    {
+      "id": "S-02",
+      "type": "objet",
+      "libelle": "Inscription à une session"
+    },
+    {
+      "id": "S-03",
+      "type": "role",
+      "libelle": "Collaborateur"
+    },
+    {
+      "id": "S-04",
+      "type": "role",
+      "libelle": "Gestionnaire du catalogue"
+    },
+    {
+      "id": "S-05",
+      "type": "parcours",
+      "libelle": "Inscription à une session ouverte"
+    },
+    {
+      "id": "S-06",
+      "type": "point-entree",
+      "libelle": "Recherche du catalogue"
+    }
+  ],
+  "exigences": [
+    {
+      "id": "E-001",
+      "besoin": "B-01",
+      "enonce": "Le collaborateur recherche une formation par intitulé depuis la recherche du catalogue.",
+      "critere": "La liste retourne uniquement les formations dont l'intitulé contient le terme saisi.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "Note de cadrage du service formation, section 1"
+      },
+      "surface": [
+        "S-01",
+        "S-03",
+        "S-06"
+      ],
+      "cotation": {
+        "impact": 5,
+        "confiance": 4,
+        "effort": 2
+      }
+    },
+    {
+      "id": "E-002",
+      "besoin": "B-01",
+      "enonce": "Le collaborateur s'inscrit à une session ouverte depuis la fiche de formation.",
+      "critere": "L'inscription est enregistrée avec un identifiant propre et un statut initial.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "Note de cadrage du service formation, section 2"
+      },
+      "surface": [
+        "S-02",
+        "S-05"
+      ],
+      "cotation": {
+        "impact": 5,
+        "confiance": 4,
+        "effort": 3
+      }
+    },
+    {
+      "id": "E-003",
+      "besoin": "B-02",
+      "enonce": "Le gestionnaire modifie le tarif d'une formation depuis le catalogue, sans livraison de code.",
+      "critere": "La date de mise à jour et la source du tarif servi sont présentes, chacune non vide.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "Note de cadrage du service formation, section 3"
+      },
+      "surface": [
+        "S-01",
+        "S-04"
+      ],
+      "cotation": {
+        "impact": 4,
+        "confiance": 4,
+        "effort": 3
+      }
+    },
+    {
+      "id": "E-004",
+      "besoin": "B-01",
+      "enonce": "Le collaborateur obtient un retour visuel après chaque geste déclenché depuis un élément interactif.",
+      "critere": "Un message de confirmation est affiché après l'envoi du formulaire d'inscription.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "hypothèse",
+        "validation": "à confirmer avec le service formation lors de la revue de maquette"
+      },
+      "surface": [
+        "S-05"
+      ],
+      "cotation": {
+        "impact": 4,
+        "confiance": 3,
+        "effort": 2
+      }
+    }
+  ]
+}
