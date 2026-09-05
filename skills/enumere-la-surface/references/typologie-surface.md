@@ -5,6 +5,9 @@ contexte, il vit dans `ENTRANT.md`.
 
 ## Ce qu'on cherche, par entrant
 
+On ne cherche pas les mêmes signaux dans une idée et dans un dépôt existant. Ce tableau dit,
+pour chaque nature d'entrant, où regarder et à quoi se reconnaît un élément de surface.
+
 | Entrant | Où chercher | Signal d'un élément |
 |---|---|---|
 | Idée | Les 4 champs de seuil | Un nom commun répété dans la formulation du job |
@@ -67,6 +70,7 @@ API interne, produit tiers analysé de l'extérieur) écarte le bloc entier avec
 | Responsive mobile | `regle` (contrainte d'affichage transversale) | Généralisation |
 | Accessibilité RGAA — site public français | `regle` (RGAA 4.1/WCAG AA : obligation légale, pas un objectif) + `point-entree` (déclaration d'accessibilité publiée avec son taux) | RF-6, lot Produit-09 20260820a — retour littéral |
 | Livrables légaux d'accessibilité (si site public FR) | `objet` ×4 : schéma pluriannuel, plan d'action annuel, mécanisme de signalement, voie de recours | RF-6 — aucune forge ne les produisait, aucun CDC ne les demandait |
+| **Page 404 par langue** — proposée **si et seulement si** le produit a une surface web | `point-entree` (une page servie, atteignable par une adresse inconnue) | P-2 (`PATRONS-EPROUVES.md` du pilot), TF-0804 — retour d'un produit, 404 nu du serveur servi en production du 25/08 au 01/09/2026 |
 
 **Critères d'acceptation précisés** (2ᵉ inspection utilisateur du premier produit, lot 03) —
 « exister » ne suffit pas, la perception de l'utilisateur fait foi ; ces critères s'écrivent
@@ -75,9 +79,28 @@ dans l'exigence dès que le candidat est retenu :
   bienvenue en tête de page, progression visible (x/N étapes), badge persistant tant que non
   complété, actions directes depuis le panneau, disparition à complétion. Une carte repliable
   discrète « existe » mais n'est pas perçue comme un onboarding : exigence non tenue.
-- **Aide utilisateur** (RD-7) : **trois niveaux** — aide de page (rôle de l'écran, circuit,
+- **Aide utilisateur** (RD-7 — 7ᵉ constat de ce retour) : **trois niveaux** — aide de page (rôle de l'écran, circuit,
   pièges), encarts par section non évidente, aide par champ. Une page d'aide unique ne tient
   pas l'exigence.
+- **Page 404 par langue** (P-2, TF-0804) : **cinq critères**, à recopier dans l'exigence dès
+  que le candidat est retenu — (1) une 404 **par langue**, du **même gabarit** que les autres
+  pages : menu complet, charte, consentement, liens de secours (accueil, plan du site, contact),
+  car une 404 « spéciale » vieillit seule ; (2) le **statut 404 conservé** — une page d'erreur
+  rendue en 200 est un soft-404 indexable ; (3) **`noindex` et exclusion du sitemap**,
+  l'exclusion **déclarée** dans l'oracle SEO du produit, sans quoi elle passe pour un oubli ;
+  (4) la **langue choisie au préfixe du chemin** (`/fr/inconnu` rend la 404 en français ; sans
+  préfixe, la langue par défaut) ; (5) un **contrôle exécutable qui joue les cas** : adresse
+  inconnue rendant une 404 avec menu, préfixe respecté, ressource non-HTML inconnue (image,
+  script) rendant une 404 nue et jamais une page. La conception écrit ce cinquième critère,
+  elle ne l'exécute pas : le contrôle se construit chez forge-tests et se joue à la MEP (M-9).
+
+Ce candidat est le seul de la liste à porter une **condition d'applicabilité** plutôt qu'une
+simple suggestion de type : il n'est proposé que **si le produit a une surface web**. P-2 écarte
+lui-même trois cas — une application sans surface web (rien à servir), un routeur qui possède
+déjà sa page d'erreur par langue (c'est lui qu'on juge alors, pas le produit), et les réponses
+d'API, qui répondent 404 en JSON et jamais en page. `oracle-surface` (règle **S4**) rappelle la
+même chose mécaniquement : dès qu'un `point-entree` au libellé web est énuméré sans 404,
+l'avertissement est **nommé** et non bloquant ; sans point d'entrée web, la 404 n'est pas due.
 
 ## Identifiants
 
@@ -90,6 +113,9 @@ dans l'exigence dès que le candidat est retenu :
 | Élément renommé | Même identifiant, libellé changé. Un renommage n'est pas une suppression |
 
 ## Gabarit de `SURFACE.md`
+
+Quatre sections, dont aucune n'est décorative : les deux dernières sont ce qui distingue un
+inventaire honnête d'une liste de ce qu'on avait sous les yeux.
 
 | Section | Contenu |
 |---|---|

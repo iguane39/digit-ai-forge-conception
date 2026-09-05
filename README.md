@@ -52,6 +52,9 @@ scripts/           delta.mjs — cycle propose/apply/archive, seul endroit qui m
 
 ## Les quatre verbes
 
+Quatre verbes, quatre artefacts : le tableau dit ce que chacun consomme et ce qu'il dépose.
+Ce qui vient après lui explique pourquoi aucun ordre ne leur est imposé.
+
 | Skill | Entrée | Sortie |
 |---|---|---|
 | [qualifie-l-entrant](skills/qualifie-l-entrant/) | idée, CDC, produit à reprendre, à faire évoluer, produit tiers | `ENTRANT.md`, ou des questions et un arrêt |
@@ -71,9 +74,9 @@ node oracles/self-test.mjs        # 8 oracles, 30 règles, fixtures verte et rou
 
 | Oracle | Règles | Domaine |
 |---|---|---|
-| `oracle-exigences` | E1–E9 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9) |
+| `oracle-exigences` | E1–E9 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9). Gardes lexicales à frontières de mot **Unicode** depuis TF-0799 : `` est ASCII, et un accent y valait frontière — « elle » se lisait dans « réelle » |
 | `oracle-tracabilite` | T1–T4 | orphelins des deux côtés, statut épistémique, vues régénérables |
-| `oracle-surface` | S1–S3 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio |
+| `oracle-surface` | S1–S4 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio ; **S4** : la 404 par langue est un candidat d'office de la surface implicite dès que le produit a une surface web (patron P-2 du pilot, TF-0804) — avertissement nommé, non bloquant |
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
 | `oracle-etat` | EM1–EM3 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) |
 | `oracle-ears` | EA1–EA5 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) ; **EA4/EA5** : les deux sujets qu un cahier laisse vides sans que rien ne le signale — traitement asynchrone et cycle de vie de session, quatre réponses dues chacun (TF-0376) |
@@ -274,6 +277,9 @@ puis livraison avec les écarts résiduels nommés.
 - Pas de MEP — aucune des quatre forges ne la couvre, et le trou est déclaré plutôt que masqué.
 
 ## État au 04/08/2026
+
+Où en est la forge, ligne à ligne — y compris là où la preuve manque : les deux dernières
+lignes sont les écarts assumés, nommés juste après le tableau.
 
 | | |
 |---|---|

@@ -9,10 +9,30 @@
 // part et toujours visible) : le seuil de S2 redevient opérant sans faire disparaître le nom
 // de l'élément.
 
-import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET } from './_contrat.mjs'
+import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, AVANT, APRES } from './_contrat.mjs'
 
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
+
+// S4 — TF-0804, patron P-2 du pilot. La 404 est la page que PERSONNE ne conçoit : aucun
+// gabarit ne la génère, aucune revue ne la voit, et un site multilingue a servi en production
+// le 404 nu de son serveur de fichiers du 25/08 au 01/09/2026. C'est le profil type de la loi
+// transverse n° 3 (« l'oubli n'existe pas ») : un candidat d'office, retenu ou écarté
+// EXPLICITEMENT, jamais absent par omission. La règle ne juge donc pas la page servie — cela
+// relève de la MEP (contrôle M-9) et de forge-tests — mais l'ÉNUMÉRATION : le candidat est-il
+// entré dans la surface, là où l'oubli est encore réparable ?
+//
+// S4 n'échoue JAMAIS. `EXIGENCES.json` n'offre aucun champ où déclarer l'écart explicite d'un
+// candidat d'office (cet écart vit en prose, `SURFACE.md` §3), et un FAIL refuserait un
+// référentiel dont l'écart est légitime — P-2 exclut lui-même l'application sans surface web,
+// le routeur qui possède déjà sa page d'erreur, et les réponses d'API en JSON. Le verdict est
+// donc l'avertissement NOMMÉ non bloquant du contrat (SANS_OBJET, compté à part et toujours
+// visible), même idiome que RC-1 sur S1.
+const MARQUEURS_WEB = ['page', 'écran', 'site', 'web', 'url', 'route', 'portail', 'navigateur']
+// TF-0799 — bornes Unicode obligatoires ici : avec `\b`, « écran » (bord accentué) précédé
+// d'une espace n'aurait JAMAIS été trouvé, et « route » se serait lu dans « routeur ».
+const RE_WEB = new RegExp(`${AVANT}(${MARQUEURS_WEB.join('|')})s?${APRES}`, 'iu')
+const RE_404 = /404/
 
 const cible = process.argv[2]
 let seuil = SEUIL_DEFAUT
@@ -94,6 +114,29 @@ for (const [i, e] of ref.exigences.entries()) {
     : constat('S3', FAIL, ou, `éléments de surface inconnus : ${inconnus.join(', ')}`))
 }
 
+// S4 — la 404 par langue, candidat d'office SI ET SEULEMENT SI le produit a une surface web.
+{
+  const tous = surface ?? []
+  const pointsWeb = tous.filter(s =>
+    s?.type === 'point-entree' && RE_WEB.test(`${s?.libelle ?? ''}`))
+  const quatreCentQuatre = tous.filter(s => RE_404.test(`${s?.libelle ?? ''}`))
+  if (pointsWeb.length === 0) {
+    constats.push(constat('S4', PASS, 'surface[]',
+      'aucun point d\'entrée web énuméré : la 404 par langue n\'est pas due ' +
+      '(P-2, exclusion « application sans surface web »)'))
+  } else if (quatreCentQuatre.length > 0) {
+    constats.push(constat('S4', PASS, `surface[] (${quatreCentQuatre.map(s => s.id).join(', ')})`,
+      `la 404 figure à la surface énumérée, avec ${pointsWeb.length} point(s) d'entrée web : ` +
+      `${pointsWeb.map(s => s.id).join(', ')}`))
+  } else {
+    constats.push(constat('S4', SANS_OBJET, 'surface[]',
+      `${pointsWeb.length} point(s) d'entrée web énuméré(s) (${pointsWeb.map(s => s.id).join(', ')}) ` +
+      'et aucune 404 : candidat d\'office de la surface implicite (P-2, cinq critères dans ' +
+      '`enumere-la-surface/references/typologie-surface.md`) — à retenir, ou à écarter ' +
+      'EXPLICITEMENT en section 3 de SURFACE.md. Avertissement nommé, non bloquant.'))
+  }
+}
+
 emettre({
   oracle: 'oracle-surface',
   version: VERSION,
@@ -102,6 +145,13 @@ emettre({
   non_juge: [
     'La complétude de l\'inventaire de surface lui-même. On ne peut pas prouver mécaniquement ' +
       'qu\'un inventaire tiré d\'un entrant textuel n\'a rien oublié. Le ratio mesure la ' +
-      'couverture de ce qui a été énuméré, jamais de ce qui existe.'
+      'couverture de ce qui a été énuméré, jamais de ce qui existe.',
+    'Le caractère web du produit, que S4 INFÈRE d\'un lexique fermé sur les libellés de type ' +
+      '`point-entree` : une surface web énumérée sans aucun de ces mots reste invisible pour ' +
+      'S4, et un point d\'entrée non web qui les emploie la réveille pour rien. C\'est la ' +
+      'raison pour laquelle S4 avertit et ne refuse jamais.',
+    'Le contenu de la 404 elle-même — gabarit, statut HTTP conservé, `noindex`, préfixe de ' +
+      'langue : les cinq critères de P-2 se vérifient sur la page servie (MEP, contrôle M-9 ; ' +
+      'contrôle exécutable chez forge-tests), jamais sur un référentiel d\'exigences.'
   ]
 })

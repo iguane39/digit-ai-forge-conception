@@ -48,6 +48,10 @@ const ORACLES = [
     // un operateur qui la joue via le registre central lit desormais le meme verdict que
     // ce self-test. La branche « ratio >= seuil -> avertissement nomme » (RC-1) est prouvee
     // a part, sur la fixture dediee seuil-rc1 (voir bloc apres la boucle).
+    // TF-0804 : S4 (la 404 par langue, candidat d'office) N'EST PAS dans cette liste, et ce
+    // n'est pas un oubli -- la liste dit les regles que la fixture ROUGE doit faire ECHOUER,
+    // or S4 n'echoue jamais par construction (avertissement nomme, cf. oracle-surface.mjs).
+    // Ses trois branches sont prouvees a part, comme celle de RC-1 : voir la branche TF-0804.
     fichier: 'oracle-surface.mjs',
     regles: ['S1', 'S2', 'S3'],
     args: (dossier) => [join(dossier, 'EXIGENCES.json')]
@@ -438,6 +442,71 @@ for (const o of ORACLES) {
     for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
     console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
     if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-0804 : S4, la 404 par langue entre a la surface implicite d'office --------
+// Le candidat n'est du QUE si le produit a une surface web -- une regle proposee partout ne
+// serait plus un candidat, ce serait un dogme. La fixture porte donc les DEUX sens, plus le
+// cas ou la garde doit PARLER (sans quoi S4 serait un controle neuf, vert, joue par personne) :
+//   1. surface web + 404 enumeree            -> PASS, la 404 est nommee
+//   2. surface web SANS 404                  -> SANS_OBJET, avertissement nomme non bloquant
+//   3. aucune surface web                    -> PASS, motif « la 404 n'est pas due »
+// S4 n'echoue jamais : EXIGENCES.json n'offre aucun champ ou declarer l'ecart explicite d'un
+// candidat d'office (il vit en prose, SURFACE.md §3) -- cf. l'en-tete d'oracle-surface.mjs.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0804-'))
+  try {
+    const referentiel = (surface, liens) => ({
+      projet: 'Fixture TF-0804 (surface implicite : la 404 par langue)',
+      besoins: [{ id: 'B-01', enonce: 'Un visiteur doit atteindre le produit depuis le web.' }],
+      surface,
+      exigences: surface.map((s, i) => ({
+        id: `E-${String(i + 1).padStart(3, '0')}`,
+        besoin: 'B-01',
+        enonce: `Le produit sert ${s.libelle}.`,
+        critere: 'La ressource est affichée.',
+        palier: 'MVP',
+        statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-0804' },
+        surface: [s.id],
+        cotation: { impact: 3, confiance: 3, effort: 2 }
+      })).filter(e => liens.includes(e.surface[0]))
+    })
+    const POINT_WEB = { id: 'S-01', type: 'point-entree', libelle: "Page d'accueil du site" }
+    const PAGE_404 = { id: 'S-02', type: 'point-entree', libelle: 'Page 404 par langue' }
+    const LOT_NUIT = { id: 'S-01', type: 'point-entree', libelle: 'Import de nuit du fichier fournisseur' }
+
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + '\n')
+      const r = lancer('oracle-surface.mjs', [chemin, '--seuil', '0'])
+      const s4 = (r.rapport?.constats ?? []).find(c => c.regle === 'S4')
+      return { code: r.code, statut: s4?.statut, message: s4?.message ?? '', ou: s4?.ou ?? '' }
+    }
+
+    const avec404 = jouer('web-avec-404', referentiel([POINT_WEB, PAGE_404], ['S-01', 'S-02']))
+    const sans404 = jouer('web-sans-404', referentiel([POINT_WEB], ['S-01']))
+    const sansWeb = jouer('sans-surface-web', referentiel([LOT_NUIT], ['S-01']))
+
+    const cas = [
+      ['surface web + 404 enumeree -> PASS, la 404 est nommee',
+        avec404.statut === 'PASS' && avec404.ou.includes('S-02')],
+      ['surface web SANS 404 -> SANS_OBJET nomme (la garde parle), exit 0 conserve',
+        sans404.statut === 'SANS_OBJET' && sans404.code === 0 &&
+        sans404.message.includes('candidat d\'office')],
+      ['aucune surface web -> PASS motive : la 404 n\'est pas due',
+        sansWeb.statut === 'PASS' && sansWeb.message.includes('pas due')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-surface.mjs (branche TF-0804, fixtures ephemeres, 2 sens + temoin)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         statuts obtenus : avec404=${avec404.statut} sans404=${sans404.statut} sansWeb=${sansWeb.statut}`)
+    }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }
