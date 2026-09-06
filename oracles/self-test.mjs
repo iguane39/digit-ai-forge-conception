@@ -48,6 +48,12 @@ const SOCLE_ROUGE = join(ICI, 'fixtures', 'exigences-socle-rouge')
 // mesure du 05/09 rejouee, cette fois avec un juge.
 const CORPS_VERTE = join(ICI, 'fixtures', 'corps-de-vue-verte')
 const CORPS_ROUGE = join(ICI, 'fixtures', 'corps-de-vue-rouge')
+// TF-0822 : fixtures DEDIEES d'oracle-exigences-md. Le MEME EXIGENCES.json des deux cotes, au
+// caractere pres ; seule la PROSE change -- la rouge perd sa section 6, vide sa section 4, et
+// n'ecrit en section 7 (ni en section 3 de SURFACE.md) aucun des ecarts que le referentiel
+// porte. C'est le defaut fondateur rejoue : l'ecart saisi dans le JSON que personne n'a decide.
+const EXMD_VERTE = join(ICI, 'fixtures', 'exigences-md-verte')
+const EXMD_ROUGE = join(ICI, 'fixtures', 'exigences-md-rouge')
 
 const ORACLES = [
   {
@@ -178,6 +184,20 @@ const ORACLES = [
     fichier: 'oracle-retro-modele.mjs',
     regles: ['RM1', 'RM2', 'RM3', 'RM4', 'RM5'],
     args: (dossier) => [dossier === VERTE ? RETROM_VERTE : RETROM_ROUGE]
+  },
+  {
+    // TF-0822 : `EXIGENCES.md` devient un artefact JUGE, et la CORRESPONDANCE entre un champ
+    // transcrit de la prose et cette prose est verifiee. Fixtures dediees : les fixtures
+    // VERTE/ROUGE partagees ne portent aucun document de prose, et n'en recevront pas -- une
+    // fixture anterieure se juge sur la PRESENCE de la prose seulement, jamais accusee de son
+    // absence (l'oracle sort alors en 2, comme oracle-constitution). Aucune migration n'est due.
+    fichier: 'oracle-exigences-md.mjs',
+    regles: ['P1', 'P2', 'P3', 'P4'],
+    args: (dossier) => {
+      const d = dossier === VERTE ? EXMD_VERTE : EXMD_ROUGE
+      return [join(d, 'EXIGENCES.md'), '--referentiel', join(d, 'EXIGENCES.json'),
+        '--surface', join(d, 'SURFACE.md')]
+    }
   },
   {
     // GO du 19/08 (etude 20260819b du pilot) : vues par profil derivees du retro-modele —
@@ -385,18 +405,18 @@ for (const o of ORACLES) {
     // (exit 0), et les 3 transverses sont NON_JUGE motive (voisin absent), jamais FAIL.
     const v = lancerRunner(join(tmpVert, 'EXIGENCES.json'))
     const vertOk = v.code === 0 && v.rapport?.verdict === 'PASS' &&
-      ['oracle-constitution', 'oracle-delta', 'oracle-etat'].every(n => verdictDe(v.rapport, n) === 'NON_JUGE')
+      ['oracle-constitution', 'oracle-delta', 'oracle-etat', 'oracle-exigences-md'].every(n => verdictDe(v.rapport, n) === 'NON_JUGE')
 
     // ROUGE attendu : un vrai defaut d'un oracle applicable (fixture ROUGE partagee) reste
     // un FAIL agrege -- les transverses NON_JUGE ne masquent jamais un echec reel.
     const r = lancerRunner(join(tmpRouge, 'EXIGENCES.json'))
     const rougeOk = r.code === 1 && r.rapport?.verdict === 'FAIL' &&
-      ['oracle-constitution', 'oracle-delta', 'oracle-etat'].every(n => verdictDe(r.rapport, n) === 'NON_JUGE')
+      ['oracle-constitution', 'oracle-delta', 'oracle-etat', 'oracle-exigences-md'].every(n => verdictDe(r.rapport, n) === 'NON_JUGE')
 
     if (vertOk && rougeOk) {
       console.log('run-oracles-conception.mjs (branche TF-0255, fixtures ephemeres)\n' +
-        '  [OK]   vert  -- voisins absents : NON_JUGE motive, applicables PASS -> agrege PASS (exit 0)\n' +
-        '  [OK]   rouge -- voisins absents : NON_JUGE motive, un applicable FAIL -> agrege FAIL (exit 1)')
+        '  [OK]   vert  -- 4 voisins absents : NON_JUGE motive, applicables PASS -> agrege PASS (exit 0)\n' +
+        '  [OK]   rouge -- 4 voisins absents : NON_JUGE motive, un applicable FAIL -> agrege FAIL (exit 1)')
     } else {
       echecs++
       console.log('run-oracles-conception.mjs (branche TF-0255)\n' +
@@ -849,6 +869,198 @@ for (const o of ORACLES) {
       echecs++
       console.log(`         exits obtenus : 1=${intacte.code} 2=${amputee.code} 3=${avant.code} ` +
         `4=${unMot.code} 5=${rescellee.code} ; citation retrouvee : ${citationTenue}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-0822 : le champ transcrit de la prose a enfin une correspondance verifiee ---
+// Deux champs racine sont declares « transcrits de la prose et de nulle part ailleurs » :
+// `ecarts_surface_implicite` <- section 3 de SURFACE.md, `ecarts_exigences_socle` <- section 7
+// d'EXIGENCES.md. Mesure du 06/09/2026, AVANT cet oracle : un referentiel portant un ecart
+// socle complet, pose a cote d'un EXIGENCES.md d'une seule section, rendait oracle-exigences,
+// oracle-surface, oracle-claims, oracle-ears et oracle-tracabilite tous PASS, agrege PASS,
+// exit 0. Onze oracles, zero ne lisait le Markdown.
+// L'entree ci-dessus prouve les deux sens sur des fixtures versionnees ; cette branche isole
+// chaque etat, parce qu'une rouge qui echoue partout ne prouve pas qu'une regle discrimine :
+//   1. gabarit complet, sections 4 et 7 non vides            -> PASS (P1 et P2)
+//   2. une section du gabarit absente                        -> FAIL P1, la section NOMMEE
+//   3. section 7 presente mais VIDE                          -> FAIL P2 sur la section 7
+//   4. section 4 presente mais VIDE                          -> FAIL P2 sur la section 4
+//   5. ecart socle transcrit (cle ET motif)                  -> PASS P3
+//   6. ecart socle absent de la prose                        -> FAIL P3, l'entree NOMMEE
+//   7. cle en prose, motif DIVERGENT                         -> FAIL P3 (temoin : le motif est lu)
+//   8. ecart surface transcrit en section 3 de SURFACE.md    -> PASS P4
+//   9. ecart surface absent de la section 3                  -> FAIL P4, l'entree NOMMEE
+//  10. aucun champ d'ecart (referentiel anterieur)           -> PASS, P3/P4 SANS_OBJET motive
+//  11. SURFACE.md absent                                     -> P4 SANS_OBJET, jamais FAIL
+//  12. EXIGENCES.md absent                                   -> exit 2, jamais FAIL
+// Les cas 10, 11 et 12 sont la contrepartie de « pas de migration » : ce qui est refuse, c'est
+// l'entree de JSON qui n'a pas de prose, jamais la prose qui n'a pas encore ete ecrite.
+// Fixtures ephemeres, comme TF-0114, TF-0799, TF-0811 et TF-0814.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0822-'))
+  try {
+    const CLE_SOCLE = 'donnees-demonstration'
+    const MOTIF_SOCLE = "le produit n'embarque aucun jeu de demonstration : la recette se fait " +
+      'sur un extrait anonymise depose hors du binaire livre'
+    const CLE_SURFACE = 'accessibilite-rgaa'
+    const MOTIF_SURFACE = "produit interne a l'entreprise : il n'entre pas dans le champ du " +
+      'site public francais ou le RGAA 4.1 est une obligation legale'
+    const ECART = (element, motif) => ({
+      element, motif, decide_par: 'le commanditaire du produit', date: '2026-09-05'
+    })
+
+    // Le gabarit des sept sections, sous forme de donnee : un cas se decrit en retirant une
+    // section (`sans`) ou en la vidant (`vides`), jamais en recopiant tout le document.
+    const GABARIT = [
+      [1, 'Origine', "`ENTRANT.md` et `SURFACE.md` du 2026-09-05."],
+      [2, 'Besoins', '| id | enonce |\n|---|---|\n| B-01 | Un collaborateur reserve une salle. |'],
+      [3, 'Exigences par palier', 'MVP : E-001 a E-003.'],
+      [4, 'Hypotheses', 'Aucune exigence au statut hypothese a ce jour.'],
+      [5, 'Couverture de surface', 'Trois elements enumeres, trois couverts : 100 %.'],
+      [6, 'Releve des oracles', '`oracle-exigences` PASS, `oracle-surface` PASS.'],
+      [7, 'Ce que le referentiel ne dit pas', null] // corps fourni par chaque cas
+    ]
+    const documentMd = ({ sans = [], vides = [], section7 = '' } = {}) =>
+      '# Referentiel d\'exigences — fixture TF-0822' + NL + NL +
+      GABARIT.filter(([r]) => !sans.includes(r))
+        .map(([r, titre, corps]) => {
+          const texte = vides.includes(r) ? '' : (r === 7 ? section7 : corps)
+          return `## ${r}. ${titre}${NL}${NL}${texte}${NL}`
+        }).join(NL)
+
+    const documentSurface = (corpsSection3) =>
+      '# Surface fonctionnelle — fixture TF-0822' + NL + NL +
+      `## 1. Origine${NL}${NL}\`ENTRANT.md\` du 2026-09-05.${NL}${NL}` +
+      `## 2. Tableau${NL}${NL}| id | type | libelle |${NL}|---|---|---|${NL}` +
+      `| S-01 | point-entree | Page d'accueil |${NL}${NL}` +
+      `## 3. Ecartes${NL}${NL}${corpsSection3}${NL}${NL}` +
+      `## 4. Non enumerable${NL}${NL}Le parc reel de salles.${NL}`
+
+    const PROSE_SOCLE = `| cle | motif | decide par | date |${NL}|---|---|---|---|${NL}` +
+      `| \`${CLE_SOCLE}\` | ${MOTIF_SOCLE} | le commanditaire du produit | 2026-09-05 |`
+    const PROSE_SURFACE = `| cle | motif | decide par | date |${NL}|---|---|---|---|${NL}` +
+      `| \`${CLE_SURFACE}\` | ${MOTIF_SURFACE} | le commanditaire du produit | 2026-09-05 |`
+
+    // Le referentiel n'est lu QUE pour ses deux champs d'ecart : sa validite propre reste
+    // jugee par oracle-exigences E10 et oracle-surface S4, jamais ici (declare en non_juge).
+    const referentiel = ({ socle, surface } = {}) => {
+      const ref = { projet: 'Fixture TF-0822', besoins: [], surface: [], exigences: [] }
+      if (socle !== undefined) ref.ecarts_exigences_socle = socle
+      if (surface !== undefined) ref.ecarts_surface_implicite = surface
+      return ref
+    }
+
+    let nCas = 0
+    const jouer = (nom, { md, ref, surfaceMd }) => {
+      const dossier = join(tmp, `${++nCas}-${nom}`)
+      mkdirSync(dossier)
+      if (md !== null) writeFileSync(join(dossier, 'EXIGENCES.md'), md)
+      writeFileSync(join(dossier, 'EXIGENCES.json'), JSON.stringify(ref, null, 2) + NL)
+      if (surfaceMd !== null) writeFileSync(join(dossier, 'SURFACE.md'), surfaceMd)
+      const r = lancer('oracle-exigences-md.mjs', [join(dossier, 'EXIGENCES.md')])
+      const constats = r.rapport?.constats ?? []
+      // NB : les libelles cites par l'oracle sont ACCENTUES, ce fichier s'ecrit en ASCII —
+      // les fragments cherches par `dit` sont des sous-chaines sans accent, discriminantes.
+      const de = (regle) => constats.filter(c => c.regle === regle)
+      return {
+        code: r.code,
+        de,
+        fails: (regle) => de(regle).filter(c => c.statut === 'FAIL'),
+        dit: (regle, fragment) =>
+          de(regle).some(c => `${c.ou} ${c.message}`.includes(fragment))
+      }
+    }
+
+    const COMPLET = { socle: [ECART(CLE_SOCLE, MOTIF_SOCLE)], surface: [ECART(CLE_SURFACE, MOTIF_SURFACE)] }
+    const proseComplete = { section7: PROSE_SOCLE }
+    const surfaceComplete = documentSurface(PROSE_SURFACE)
+
+    const complet = jouer('gabarit-complet', {
+      md: documentMd(proseComplete), ref: referentiel(COMPLET), surfaceMd: surfaceComplete
+    })
+    const sansSection6 = jouer('section-6-absente', {
+      md: documentMd({ ...proseComplete, sans: [6] }), ref: referentiel(COMPLET), surfaceMd: surfaceComplete
+    })
+    const section7Vide = jouer('section-7-vide', {
+      md: documentMd({ section7: '' }), ref: referentiel({ surface: COMPLET.surface }), surfaceMd: surfaceComplete
+    })
+    const section4Vide = jouer('section-4-vide', {
+      md: documentMd({ ...proseComplete, vides: [4] }), ref: referentiel(COMPLET), surfaceMd: surfaceComplete
+    })
+    const socleSansProse = jouer('ecart-socle-sans-prose', {
+      md: documentMd({ section7: 'Rien de ce que le referentiel ecarte n\'est ecrit ici.' }),
+      ref: referentiel(COMPLET), surfaceMd: surfaceComplete
+    })
+    const motifDivergent = jouer('motif-divergent', {
+      md: documentMd({ section7: PROSE_SOCLE }),
+      ref: referentiel({ ...COMPLET, socle: [ECART(CLE_SOCLE, 'un tout autre motif, reecrit dans le JSON apres coup')] }),
+      surfaceMd: surfaceComplete
+    })
+    const surfaceSansProse = jouer('ecart-surface-sans-prose', {
+      md: documentMd(proseComplete), ref: referentiel(COMPLET),
+      surfaceMd: documentSurface("L'export tableur a ete vu et exclu du palier MVP.")
+    })
+    const anterieur = jouer('referentiel-anterieur', {
+      md: documentMd({ section7: 'Rien n\'est ecarte a ce jour.' }), ref: referentiel(),
+      surfaceMd: surfaceComplete
+    })
+    const sansSurfaceMd = jouer('surface-md-absente', {
+      md: documentMd(proseComplete), ref: referentiel(COMPLET), surfaceMd: null
+    })
+    const sansMd = jouer('exigences-md-absent', {
+      md: null, ref: referentiel(COMPLET), surfaceMd: surfaceComplete
+    })
+
+    const cas = [
+      ['1. gabarit complet, sections 4 et 7 non vides -> PASS (P1 et P2)',
+        complet.code === 0 && complet.fails('P1').length === 0 &&
+        complet.fails('P2').length === 0 && complet.de('P2').length === 2],
+      ['2. section 6 absente -> FAIL P1, la section NOMMEE',
+        sansSection6.code === 1 && sansSection6.fails('P1').length === 1 &&
+        sansSection6.dit('P1', '6. Relev')],
+      ['3. section 7 presente mais VIDE -> FAIL P2 sur la section 7',
+        section7Vide.code === 1 && section7Vide.fails('P2').length === 1 &&
+        section7Vide.dit('P2', 'ne dit pas')],
+      ['4. section 4 presente mais VIDE -> FAIL P2 sur la section 4',
+        section4Vide.code === 1 && section4Vide.fails('P2').length === 1 &&
+        section4Vide.dit('P2', 'Hypoth')],
+      ['5. ecart socle transcrit (cle ET motif) -> PASS P3',
+        complet.de('P3').length === 1 && complet.fails('P3').length === 0],
+      ['6. ecart socle absent de la prose -> FAIL P3, l\'entree NOMMEE',
+        socleSansProse.code === 1 && socleSansProse.fails('P3').length === 1 &&
+        socleSansProse.dit('P3', `ecarts_exigences_socle[0] (${CLE_SOCLE})`)],
+      ['7. cle en prose, motif DIVERGENT -> FAIL P3 nommant le seul `motif`',
+        motifDivergent.code === 1 && motifDivergent.fails('P3').length === 1 &&
+        motifDivergent.dit('P3', 'son `motif` ne s\'y trouve pas')],
+      ['8. ecart surface transcrit en section 3 de SURFACE.md -> PASS P4',
+        complet.de('P4').length === 1 && complet.fails('P4').length === 0],
+      ['9. ecart surface absent de la section 3 -> FAIL P4, l\'entree NOMMEE',
+        surfaceSansProse.code === 1 && surfaceSansProse.fails('P4').length === 1 &&
+        surfaceSansProse.dit('P4', `ecarts_surface_implicite[0] (${CLE_SURFACE})`)],
+      ['10. aucun champ d\'ecart (referentiel anterieur) -> PASS, P3/P4 SANS_OBJET motive',
+        anterieur.code === 0 &&
+        anterieur.de('P3').every(c => c.statut === 'SANS_OBJET') &&
+        anterieur.de('P4').every(c => c.statut === 'SANS_OBJET') &&
+        anterieur.dit('P3', 'rieur au champ')],
+      ['11. SURFACE.md absent -> P4 SANS_OBJET motive, jamais FAIL (aucune migration due)',
+        sansSurfaceMd.code === 0 && sansSurfaceMd.fails('P4').length === 0 &&
+        sansSurfaceMd.de('P4').every(c => c.statut === 'SANS_OBJET')],
+      ['12. EXIGENCES.md absent -> exit 2 (l\'oracle n\'a pas juge), jamais FAIL',
+        sansMd.code === 2]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences-md.mjs (branche TF-0822, fixtures ephemeres, 12 etats, 2 sens par regle)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${complet.code} 2=${sansSection6.code} ` +
+        `3=${section7Vide.code} 4=${section4Vide.code} 6=${socleSansProse.code} ` +
+        `7=${motifDivergent.code} 9=${surfaceSansProse.code} 10=${anterieur.code} ` +
+        `11=${sansSurfaceMd.code} 12=${sansMd.code}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })

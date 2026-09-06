@@ -21,7 +21,7 @@ prompt d'origine : [prompt de cadrage](<Digit-AI - Prompt Forge - Conception & P
 | **Énumérer la surface** | énumérer toute la surface fonctionnelle de mon produit | `skills\enumere-la-surface (méthode, mode degrade)` | prouvé (experimental) |
 | **Rédiger les exigences** | obtenir un référentiel d'exigences scellé et traçable | `skills\redige-les-exigences (méthode, mode degrade)` | prouvé (experimental) |
 | **Dériver les vues aval** | produire le cadrage consommable par le design et la mission | `skills\derive-les-vues (méthode, mode degrade — D-C2 soldée le 04/08)` | prouvé (experimental) |
-| **Valider les exigences (oracles)** | vérifier mécaniquement mon référentiel d'exigences | `node oracles\oracle-{exigences,tracabilite,surface,claims,etat,ears,constitution,delta}.mjs <artefact>` | prouvé (production) |
+| **Valider les exigences (oracles)** | vérifier mécaniquement mon référentiel d'exigences | `node oracles\oracle-{exigences,exigences-md,tracabilite,surface,claims,etat,ears,constitution,delta}.mjs <artefact>` | prouvé (production) |
 | **Constitution projet** | séparer mes invariants non négociables du référentiel qui évolue | `node oracles\oracle-constitution.mjs <CONSTITUTION.md>` | prouvé (experimental) |
 | **Cycle delta (évolution d'un référentiel scellé)** | faire évoluer EXIGENCES.json par deltas proposés, appliqués, archivés | `node oracles\oracle-delta.mjs <delta> --referentiel <exigences> · node scripts\delta.mjs appliquer|archiver` | prouvé (experimental) |
 
@@ -45,7 +45,7 @@ que personne d'autre ne fabrique**.
 
 ```
 corpus/            pratiques sourcées, statuts ok/todo — une entrée todo n'est pas servie
-oracles/           les 8 juges exécutés, leurs fixtures, le self-test
+oracles/           les 12 juges exécutés, leurs fixtures, le self-test
 skills/            les quatre verbes
 scripts/           delta.mjs — cycle propose/apply/archive, seul endroit qui mute un référentiel
 ```
@@ -69,7 +69,7 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 14 entrées d'oracle, 51 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 15 entrées d'oracle, 55 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
@@ -82,6 +82,7 @@ node oracles/self-test.mjs        # 14 entrées d'oracle, 51 règles, fixtures v
 | `oracle-ears` | EA1–EA5 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) ; **EA4/EA5** : les deux sujets qu un cahier laisse vides sans que rien ne le signale — traitement asynchrone et cycle de vie de session, quatre réponses dues chacun (TF-0376) |
 | `oracle-constitution` | C1–C3 | existence (exit 2 sinon) et format de `CONSTITUTION.md`, les invariants non négociables séparés d'`EXIGENCES.json` (TF-0101) |
 | `oracle-delta` | D1–D5 | format d'un delta d'évolution de référentiel et sa cohérence avec la cible (TF-0101) ; **D5** : un delta issu d'un retour d'usage **en prose** porte, par opération, sa section de référentiel et sa cause racine en ensemble fermé — dont `evolution-de-doctrine`, pour que ce qui change soit un AVIS ne soit pas compté comme un défaut du code (TF-0374) |
+| `oracle-exigences-md` | P1–P4 | **`EXIGENCES.md` est un artefact jugé**, comme `CONSTITUTION.md` : existence (exit 2 sinon), **P1** les sept sections du gabarit, **P2** les sections 4 (Hypothèses) et 7 (Ce que le référentiel ne dit pas) non vides. Et la **correspondance** d'un champ transcrit avec la prose dont il est transcrit : **P3** chaque entrée d'`ecarts_exigences_socle` figure en section 7 d'`EXIGENCES.md`, **P4** chaque entrée d'`ecarts_surface_implicite` en section 3 de `SURFACE.md` — clé **et** motif ; une entrée du JSON absente de la prose est un FAIL qui la nomme. Jusqu'au 06/09/2026, sur onze oracles, zéro ne lisait ces deux documents : un écart saisi dans le JSON sans avoir été décidé passait tout (TF-0822). Prose absente : `SANS_OBJET` motivé — aucune migration n'est due |
 
 Node seul, aucune dépendance npm. JSON sur stdout, exit 0/1/2, `non_juge` déclaré.
 Entrées prêtes pour le registre global : [oracles/registre-entrees.md](oracles/registre-entrees.md)
@@ -177,10 +178,10 @@ imposée :
 | `redige-les-exigences` | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
 | `derive-les-vues` | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
 
-**Rejouer les 8 oracles + le self-test**, depuis la racine du dépôt :
+**Rejouer les oracles + le self-test**, depuis la racine du dépôt :
 
 ```bash
-node oracles/self-test.mjs                                   # fixtures verte/rouge, 51 règles
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 55 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
 node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md>
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
@@ -189,6 +190,7 @@ node oracles/oracle-etat.mjs        <chemin/ETAT.json>
 node oracles/oracle-ears.mjs        <chemin/EXIGENCES.json>
 node oracles/oracle-constitution.mjs <chemin/CONSTITUTION.md>
 node oracles/oracle-delta.mjs       <chemin/DELTA.json> [--referentiel <chemin/EXIGENCES.json>]
+node oracles/oracle-exigences-md.mjs <chemin/EXIGENCES.md>   # voisins EXIGENCES.json / SURFACE.md lus seuls
 ```
 
 Sortie JSON sur stdout, exit 0 (PASS), 1 (FAIL — au moins un constat en échec, chacun localisé)
@@ -278,6 +280,16 @@ interactif. Ce qu'on n'en retient pas s'écrit — section 7 d'`EXIGENCES.md`, p
 `ecarts_exigences_socle` du référentiel, mêmes quatre contraintes que ci-dessus.
 `oracle-exigences` E10 refuse le reste, et ne devine aucune condition d'applicabilité : le hors
 périmètre s'écrit lui aussi (TF-0814).
+
+**Un champ transcrit de la prose correspond à sa prose.** Deux champs racine du référentiel
+sont transcrits d'un document et de nulle part ailleurs : `ecarts_surface_implicite` de la
+section 3 de `SURFACE.md`, `ecarts_exigences_socle` de la section 7 d'`EXIGENCES.md`. Jusqu'au
+06/09/2026 la règle était écrite et tenue par rien — aucun des onze oracles ne lisait ces deux
+documents, et un écart saisi directement dans le JSON produisait un référentiel qui passe tout
+et une décision que personne n'a prise. `oracle-exigences-md` juge désormais `EXIGENCES.md`
+comme `CONSTITUTION.md` (P1, P2) et confronte chaque entrée à sa prose, clé et motif (P3, P4) :
+une entrée sans prose est un FAIL qui la nomme (TF-0822). Une prose non encore écrite, elle,
+n'est jamais accusée : `SANS_OBJET` motivé, aucune migration due.
 
 **Sous le seuil de suffisance, on rend la main.** Questions indicées `a/b/c`, avec option
 recommandée et défaut appliqué — et tout défaut appliqué est marqué comme hypothèse.

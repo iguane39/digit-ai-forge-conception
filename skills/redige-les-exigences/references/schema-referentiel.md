@@ -186,6 +186,13 @@ implicite que si le produit a une surface web, E10 n'infère aucune condition d'
 « hors périmètre d'un coup » ci-dessus s'écrit, il ne se devine pas. Trois lignes d'écart sont le
 prix de l'opposabilité — délibérément moins cher que de rendre l'omission indiscernable.
 
+Depuis **TF-0822** (06/09/2026), la transcription elle-même est vérifiée : `oracle-exigences-md`
+règle **P3** confronte chaque entrée d'`ecarts_exigences_socle` à la section 7 de ce document —
+la clé **et** le motif doivent y figurer. Une entrée du JSON absente de la prose est un FAIL qui
+la nomme. Le même oracle juge le gabarit ci-dessous (P1) et exige que les sections 4 et 7 soient
+non vides (P2). Un référentiel sans `EXIGENCES.md` n'est pas accusé pour autant : l'oracle sort
+alors en 2 — il n'a pas jugé — et aucune migration n'est due.
+
 La **présence** d'une candidate est inférée d'un lexique fermé sur l'énoncé et le critère,
 volontairement permissif : E10 peut taire une candidate, jamais en inventer une. Ce que l'oracle
 ne juge pas non plus : la pertinence du motif d'un écart, et le respect effectif d'une candidate

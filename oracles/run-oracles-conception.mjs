@@ -48,10 +48,16 @@ const oracles = readdirSync(ICI)
 // ETAT.json n'existent pas encore), l'agrégé sortait FAIL alors que les 5 oracles applicables à
 // EXIGENCES.json étaient PASS. Router chacun vers son VRAI voisin restitue le exit 2 (ERREUR)
 // prévu par _contrat.mjs quand ce voisin n'existe pas encore — le voisin absent, jamais jugé.
+// TF-0822 : `oracle-exigences-md` rejoint la même table, et pour la même raison — il ne juge
+// pas `EXIGENCES.json` mais son voisin de PROSE, `EXIGENCES.md`, dont il lit ensuite lui-même
+// les deux voisins utiles (`EXIGENCES.json` pour les champs transcrits, `SURFACE.md` pour la
+// section 3). Le runner n'a donc toujours qu'un seul chemin à connaître. `EXIGENCES.md`
+// pas encore écrit -> exit 2 -> NON_JUGE motivé, jamais FAIL : aucune migration n'est due.
 const VOISIN_PAR_ORACLE = {
   "oracle-constitution.mjs": "CONSTITUTION.md",
   "oracle-delta.mjs": "DELTA.json",
   "oracle-etat.mjs": "ETAT.json",
+  "oracle-exigences-md.mjs": "EXIGENCES.md",
 };
 const cibleDe = (oracle) =>
   VOISIN_PAR_ORACLE[oracle] ? join(dirname(cible), VOISIN_PAR_ORACLE[oracle]) : cible;

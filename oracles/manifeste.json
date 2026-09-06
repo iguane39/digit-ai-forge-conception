@@ -7,7 +7,7 @@
   "verbes": [
     { "verbe": "qualifier l'entrant", "skill": "skills/qualifie-l-entrant", "produit": "ENTRANT.md", "mode_retro_modele": { "produit": "RETRO-MODELE.md", "oracle": "oracle-retro-modele.mjs" } },
     { "verbe": "énumérer la surface", "skill": "skills/enumere-la-surface", "produit": "SURFACE.md", "oracle": "oracle-surface.mjs" },
-    { "verbe": "rédiger les exigences", "skill": "skills/redige-les-exigences", "produit": "EXIGENCES.json scellé", "oracles": ["oracle-exigences.mjs", "oracle-ears.mjs", "oracle-tracabilite.mjs"] },
+    { "verbe": "rédiger les exigences", "skill": "skills/redige-les-exigences", "produit": "EXIGENCES.json scellé + EXIGENCES.md", "oracles": ["oracle-exigences.mjs", "oracle-ears.mjs", "oracle-tracabilite.mjs", "oracle-exigences-md.mjs"] },
     { "verbe": "dériver les vues", "skill": "skills/derive-les-vues", "produit": "vues docs/projet", "oracle": "oracle-delta.mjs", "mode_vues_par_profil": { "produit": "VUE-PO.md | VUE-CSM.md | VUE-UTILISATEUR.md", "oracle": "oracle-vues-profil.mjs" } }
   ],
   "oracles_transverses": ["oracle-claims.mjs", "oracle-constitution.mjs", "oracle-etat.mjs", "controle-s11.mjs"],

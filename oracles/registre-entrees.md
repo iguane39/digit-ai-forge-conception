@@ -25,6 +25,23 @@ il est jugé sur la seule présence de ses candidates. Aucune migration n'est du
 écart valide est le **même** que celui de `ecarts_surface_implicite` (S4) : un seul validateur,
 partagé au contrat commun `oracles/_contrat.mjs`.
 
+## `oracle-exigences-md` v1.0.0
+
+| | |
+|---|---|
+| **Domaine** | Le gabarit d'`EXIGENCES.md`, et la CORRESPONDANCE entre un champ transcrit de la prose et cette prose |
+| **Artefact jugé** | `EXIGENCES.md` (+ ses voisins `EXIGENCES.json` et `SURFACE.md`, lus seuls) |
+| **Invocation** | `node oracles/oracle-exigences-md.mjs <EXIGENCES.md> [--referentiel <EXIGENCES.json>] [--surface <SURFACE.md>]` |
+| **Règles** | P1 les sept sections du gabarit sont présentes · P2 les sections 4 (Hypothèses) et 7 (Ce que le référentiel ne dit pas) sont non vides · P3 chaque entrée d'`ecarts_exigences_socle` figure en section 7 d'`EXIGENCES.md`, clé **et** motif · P4 chaque entrée d'`ecarts_surface_implicite` figure en section 3 de `SURFACE.md`, clé **et** motif — une entrée du JSON absente de la prose est un FAIL qui la NOMME (TF-0822) |
+| **Fixtures** | `oracles/fixtures/exigences-md-verte` · `oracles/fixtures/exigences-md-rouge` (le MÊME `EXIGENCES.json` des deux côtés, seule la prose change) ; douze états isolés en branche éphémère du self-test |
+| **`non_juge`** | La pertinence du contenu d'une section · la validité d'un écart (E10 et S4 la jugent) · le sens INVERSE de la correspondance (prose sans JSON) · tout autre document de prose · l'orthographe exacte d'une transcription (diacritiques, apostrophes et tirets unifiés) |
+
+**L'existence n'est pas une règle jugée** : un `EXIGENCES.md` introuvable sort en **2**
+(ERREUR), comme `CONSTITUTION.md` et comme tout artefact absent de cette forge — jamais en FAIL.
+**Aucune migration n'est due** : `--referentiel` absent, champ d'écart absent ou `SURFACE.md`
+absent rendent un `SANS_OBJET` motivé. Ce qui est refusé, c'est l'entrée de JSON qui n'a pas de
+prose — jamais la prose qui n'a pas encore été écrite.
+
 ## `oracle-tracabilite` v1.1.0
 
 | | |

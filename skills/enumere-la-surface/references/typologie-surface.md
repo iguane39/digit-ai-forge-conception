@@ -167,6 +167,12 @@ Le champ est **facultatif à la lecture** : absent, il vaut « aucun écart déc
 référentiel écrit avant TF-0811 n'est donc jamais accusé d'un défaut de format — il est jugé sur
 la seule présence de ses candidats, exactement comme il l'aurait été.
 
+Depuis **TF-0822** (06/09/2026), la transcription elle-même est vérifiée : `oracle-exigences-md`
+règle **P4** confronte chaque entrée d'`ecarts_surface_implicite` à la section 3 ci-dessous — la
+clé **et** le motif doivent y figurer. Une entrée du JSON absente de la prose est un FAIL qui la
+nomme. `SURFACE.md` absent rend un `SANS_OBJET` motivé : ce qui est refusé, c'est l'écart écrit
+dans le JSON sans avoir été décidé, jamais la prose qui n'a pas encore été écrite.
+
 ## Identifiants
 
 `S-01`, `S-02`… Numérotation continue, jamais réaffectée.
