@@ -160,3 +160,12 @@ au 12/08 pour une cause **étrangère à cet ajout** : `oracle-tracabilite` T3 �
 fixture verte partagée par dérive d'encodage de fin de ligne (`core.autocrlf=true` sur ce poste
 Windows change le SHA-256 constaté de `EXIGENCES.json` entre le commit — LF — et le disque —
 CRLF au checkout). Constaté, prouvé, non corrigé : hors périmètre TF-0101, à traiter à part.
+
+État au 06/09/2026 : **15 entrées d'oracle, 55 règles**, self-test **vert**. Le self-test
+calcule en outre la **matrice complète** des verdicts fixture × oracle applicable (23 fixtures,
+11 oracles, 86 cellules), l'imprime, et la compare à `oracles/matrice-attendue.json` — donnée
+éditable, versionnée et datée. Un verdict qui diffère est un échec de recette **nommant la
+fixture et l'oracle** ; la mettre à jour est un geste explicite, dans le commit qui change la
+règle (`node oracles/matrice.mjs`). Sans elle, une règle neuve sur un oracle partagé faisait
+basculer une fixture voisine en silence — mesuré le 05/09 sur `delta-rouge` × `oracle-exigences`,
+et le 06/09 sur douze cellules que rien ne regardait (TF-0823).

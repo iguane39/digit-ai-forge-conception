@@ -1,0 +1,159 @@
+{
+  "matrice_attendue": "forge-conception",
+  "version": "1.0.0",
+  "date": "2026-09-06",
+  "etablie_par": "TF-0823, APRES la derniere regle ajoutee du jour (P1-P4, TF-0822)",
+  "pourquoi": "Le self-test associait un couple (fixture verte, fixture rouge) a un oracle et ne disait rien des autres verdicts qu'une fixture rend. Chaque regle neuve posee sur un oracle PARTAGE pouvait donc faire basculer une fixture voisine en silence. Cette donnee est la reference : `node oracles/self-test.mjs` recalcule la matrice complete et compare cellule a cellule ; un verdict qui differe est un echec de recette nommant la fixture et l'oracle.",
+  "comment_mettre_a_jour": "Mettre a jour cette donnee est un GESTE EXPLICITE, dans le commit qui change la regle — jamais un effet de bord. `node oracles/matrice.mjs` imprime la matrice courante et le bloc `cellules` pret a coller ; ajouter la ligne correspondante dans `bascules` avec sa date et sa cause, et avancer `version` et `date` ci-dessus.",
+  "legende": {
+    "PASS": "exit 0 — aucune regle en echec",
+    "FAIL": "exit 1 — au moins une regle en echec",
+    "ERREUR": "exit 2 — l'oracle n'a pas pu juger",
+    "cellule_absente": "l'oracle n'est pas applicable a cette fixture (artefact requis absent) — ce n'est pas un verdict, et cela ne s'ecrit pas ici"
+  },
+  "bascules": [
+    {
+      "fixture": "delta-rouge",
+      "oracle": "oracle-exigences",
+      "de": "PASS",
+      "vers": "FAIL",
+      "date": "2026-09-05",
+      "cause": "entree de la regle E10 (TF-0814) dans oracle-exigences : ce referentiel est la CIBLE d'un delta, juge par oracle-delta et jamais par oracle-exigences dans le self-test. Il n'est pas migre — c'est precisement le cas « referentiel anterieur au champ » que E10 doit accuser.",
+      "constate_par": "un balayage MANUEL des douze fixtures, faute de matrice : aucun cas du self-test ne branchait oracle-exigences sur cette fixture. C'est le defaut que TF-0823 corrige, et cette ligne en est la trace datee."
+    }
+  ],
+  "cellules": {
+    "constitution-rouge": {
+      "oracle-constitution": "FAIL"
+    },
+    "constitution-sans-promesse": {
+      "oracle-constitution": "FAIL"
+    },
+    "constitution-verte": {
+      "oracle-constitution": "PASS"
+    },
+    "corps-de-vue-rouge": {
+      "oracle-exigences": "PASS",
+      "oracle-tracabilite": "FAIL",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "corps-de-vue-verte": {
+      "oracle-exigences": "PASS",
+      "oracle-tracabilite": "PASS",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "delta-prose-verte": {
+      "oracle-exigences": "FAIL",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS",
+      "oracle-delta": "PASS"
+    },
+    "delta-rouge": {
+      "oracle-exigences": "FAIL",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS",
+      "oracle-delta": "FAIL"
+    },
+    "delta-verte": {
+      "oracle-exigences": "FAIL",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS",
+      "oracle-delta": "PASS"
+    },
+    "ears-rouge": {
+      "oracle-exigences": "FAIL",
+      "oracle-surface": "FAIL",
+      "oracle-claims": "FAIL",
+      "oracle-ears": "FAIL"
+    },
+    "ears-verte": {
+      "oracle-exigences": "FAIL",
+      "oracle-surface": "FAIL",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "exigences-md-rouge": {
+      "oracle-exigences": "PASS",
+      "oracle-exigences-md": "FAIL",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "exigences-md-verte": {
+      "oracle-exigences": "PASS",
+      "oracle-exigences-md": "PASS",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "exigences-socle-rouge": {
+      "oracle-exigences": "FAIL",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "exigences-socle-verte": {
+      "oracle-exigences": "PASS",
+      "oracle-tracabilite": "PASS",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "retro-modele-rouge": {
+      "oracle-retro-modele": "FAIL"
+    },
+    "retro-modele-verte": {
+      "oracle-retro-modele": "PASS"
+    },
+    "rouge": {
+      "oracle-exigences": "FAIL",
+      "oracle-tracabilite": "FAIL",
+      "oracle-surface": "FAIL",
+      "oracle-claims": "FAIL",
+      "oracle-etat": "FAIL",
+      "oracle-ears": "FAIL"
+    },
+    "seuil-rc1": {
+      "oracle-exigences": "FAIL",
+      "oracle-surface": "FAIL",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "surface-implicite-rouge": {
+      "oracle-exigences": "PASS",
+      "oracle-surface": "FAIL",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "surface-implicite-verte": {
+      "oracle-exigences": "PASS",
+      "oracle-tracabilite": "PASS",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "verte": {
+      "oracle-exigences": "PASS",
+      "oracle-tracabilite": "PASS",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-etat": "PASS",
+      "oracle-ears": "FAIL"
+    },
+    "vues-profil-rouge": {
+      "oracle-retro-modele": "PASS",
+      "oracle-vues-profil": "FAIL"
+    },
+    "vues-profil-verte": {
+      "oracle-retro-modele": "PASS",
+      "oracle-vues-profil": "PASS"
+    }
+  }
+}

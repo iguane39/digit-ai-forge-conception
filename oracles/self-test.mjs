@@ -14,6 +14,13 @@ import { dirname, join } from 'node:path'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
+// TF-0823 : le calcul de la matrice complete vit a part (`matrice.mjs`), pour qu'un humain
+// puisse l'imprimer sans jouer toute la recette -- `node oracles/matrice.mjs`. Ce module
+// CALCULE ; le jugement est ici, dans la branche TF-0823.
+import {
+  calculer as calculerMatrice, comparer as comparerMatrice, imprimer as imprimerMatrice,
+  CHEMIN_MATRICE_ATTENDUE
+} from './matrice.mjs'
 
 const ICI = dirname(fileURLToPath(import.meta.url))
 const VERTE = join(ICI, 'fixtures', 'verte')
@@ -1064,6 +1071,112 @@ for (const o of ORACLES) {
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-0823 : la matrice COMPLETE des verdicts, comparee a une matrice attendue ---
+// Tout ce qui precede associe un COUPLE (fixture verte, fixture rouge) a un oracle, et ne dit
+// rien des AUTRES verdicts qu'une fixture rend. Le defaut est structurel : chaque regle neuve
+// posee sur un oracle PARTAGE peut faire basculer une fixture voisine en silence.
+//   Mesure du 05/09/2026 : l'entree de E10 (TF-0814) dans oracle-exigences a fait passer
+//   fixtures/delta-rouge/EXIGENCES.json de exit 0 a exit 1 sur cet oracle. Le self-test ne
+//   branche jamais oracle-exigences sur cette fixture : il a fallu un balayage MANUEL des douze
+//   fixtures pour le voir. La bascule est portee dans matrice-attendue.json AVEC sa date.
+//   Mesure du 06/09/2026, avant cette branche : sur les 56 cellules des quatorze fixtures
+//   portant un EXIGENCES.json croisees avec les quatre oracles qui le jugent, DOUZE rendaient
+//   exit 1 sans qu'aucun cas du self-test ne les regarde.
+// Ce qui est prouve ici, dans les DEUX sens :
+//   1. la matrice courante est CONFORME a la matrice attendue -> PASS
+//   2. la matrice attendue ALTEREE d'une cellule -> un ecart, et un seul, NOMMANT la fixture et
+//      l'oracle (temoin : la comparaison discrimine, elle ne se contente pas de compter)
+//   3. une cellule RETIREE de la matrice attendue -> l'ecart dit qu'elle y est absente (c'est
+//      ce qui force le geste explicite quand une fixture ou un oracle neuf arrive)
+//   4. la bascule du 05/09 est portee, avec sa date, et la matrice attendue lui donne raison
+//   5. aucun `oracle-*.mjs` du dossier n'est hors de la table de la matrice
+// La matrice courante est IMPRIMEE, conformement au lot : un lecteur voit ce que chaque
+// fixture rend, pas seulement ce que la recette en dit.
+{
+  const RE_DATE = /^\d{4}-\d{2}-\d{2}$/
+  let attendue = null
+  let lecture = ''
+  try {
+    attendue = JSON.parse(readFileSync(CHEMIN_MATRICE_ATTENDUE, 'utf8'))
+  } catch (e) {
+    lecture = String(e.message ?? e)
+  }
+
+  const { matrice, horsTable, absentsDuDisque } = calculerMatrice()
+  console.log('matrice des verdicts fixture x oracle applicable (TF-0823)')
+  console.log(imprimerMatrice(matrice))
+
+  const cellules = attendue?.cellules ?? {}
+  const ecarts = attendue === null ? [] : comparerMatrice(matrice, cellules)
+
+  // (2) et (3) temoins d'alteration. Ils partent de la matrice REELLE, pas de la matrice
+  // attendue, et ce n'est pas un raccourci : une matrice attendue deja perimee produirait des
+  // ecarts etrangers a l'alteration, et le temoin cesserait de prouver que la comparaison
+  // DISCRIMINE -- exactement le defaut qu'une fixture rouge qui echoue partout ne prouve rien.
+  // Le cas 1, lui, juge bien la donnee versionnee.
+  const cible = Object.entries(matrice)
+    .flatMap(([f, l]) => Object.keys(l).map(o => ({ f, o })))
+    .find(({ f, o }) => matrice[f][o] === 'FAIL') ?? null
+  let temoinAltere = null
+  let temoinRetire = null
+  if (cible) {
+    const altere = JSON.parse(JSON.stringify(matrice))
+    altere[cible.f][cible.o] = altere[cible.f][cible.o] === 'FAIL' ? 'PASS' : 'FAIL'
+    temoinAltere = comparerMatrice(matrice, altere)
+    const ampute = JSON.parse(JSON.stringify(matrice))
+    delete ampute[cible.f][cible.o]
+    temoinRetire = comparerMatrice(matrice, ampute)
+  }
+  const nomme = (liste) => liste?.length === 1 &&
+    liste[0].fixture === cible.f && liste[0].oracle === cible.o
+
+  // (4) la bascule du 05/09 : portee, datee, et la matrice attendue lui donne raison.
+  const bascules = Array.isArray(attendue?.bascules) ? attendue.bascules : []
+  const basculeValide = (b) =>
+    RE_DATE.test(String(b?.date ?? '')) &&
+    typeof b?.cause === 'string' && b.cause.trim() !== '' &&
+    cellules?.[b?.fixture]?.[b?.oracle] === b?.vers
+  const bascule0509 = bascules.find(b =>
+    b?.fixture === 'delta-rouge' && b?.oracle === 'oracle-exigences' && b?.date === '2026-09-05')
+
+  const cas = [
+    ['1. la matrice courante est conforme a la matrice attendue (versionnee, datee)',
+      attendue !== null && ecarts.length === 0],
+    ['2. matrice attendue ALTEREE d\'une cellule -> un ecart, NOMMANT fixture et oracle',
+      cible !== null && nomme(temoinAltere)],
+    ['3. cellule RETIREE de la matrice attendue -> l\'ecart dit qu\'elle y est absente',
+      cible !== null && nomme(temoinRetire) &&
+      String(temoinRetire[0].attendu).includes('absente de la matrice attendue')],
+    ['4. bascule du 05/09 (delta-rouge x oracle-exigences) portee AVEC sa date et sa cause',
+      bascule0509 !== undefined && basculeValide(bascule0509) &&
+      bascule0509.de === 'PASS' && bascule0509.vers === 'FAIL'],
+    ['5. toutes les bascules declarees sont datees, motivees et conformes a la matrice',
+      bascules.length > 0 && bascules.every(basculeValide)],
+    ['6. aucun oracle-*.mjs du dossier hors de la table de la matrice, ni l\'inverse',
+      horsTable.length === 0 && absentsDuDisque.length === 0],
+    ['7. la matrice attendue porte sa version et sa date (donnee editable, pas un cache)',
+      typeof attendue?.version === 'string' && RE_DATE.test(String(attendue?.date ?? ''))]
+  ]
+  const ko = cas.filter(([, ok]) => !ok)
+  console.log('  --- recette de la matrice (branche TF-0823, 2 sens) ---')
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+  if (ko.length > 0) {
+    echecs++
+    if (attendue === null) {
+      console.log(`         matrice attendue illisible (${CHEMIN_MATRICE_ATTENDUE}) : ${lecture}`)
+    }
+    for (const e of ecarts) {
+      console.log(`         ECART DE RECETTE : ${e.fixture} x ${e.oracle} -- attendu ` +
+        `${e.attendu}, obtenu ${e.obtenu}`)
+    }
+    if (horsTable.length > 0) console.log(`         oracles hors table : ${horsTable.join(', ')}`)
+    if (absentsDuDisque.length > 0) console.log(`         oracles absents du disque : ${absentsDuDisque.join(', ')}`)
+    console.log('         mettre la matrice a jour est un GESTE EXPLICITE, dans le commit qui ' +
+      'change la regle : node oracles/matrice.mjs')
   }
 }
 

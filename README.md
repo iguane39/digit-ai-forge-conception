@@ -45,7 +45,7 @@ que personne d'autre ne fabrique**.
 
 ```
 corpus/            pratiques sourcées, statuts ok/todo — une entrée todo n'est pas servie
-oracles/           les 12 juges exécutés, leurs fixtures, le self-test
+oracles/           les 12 juges exécutés, leurs fixtures, le self-test et sa matrice attendue
 skills/            les quatre verbes
 scripts/           delta.mjs — cycle propose/apply/archive, seul endroit qui mute un référentiel
 ```
@@ -90,6 +90,34 @@ Entrées prêtes pour le registre global : [oracles/registre-entrees.md](oracles
 
 Le self-test vérifie les **deux sens** : la fixture verte passe, la rouge échoue *et déclenche
 chacune de ses règles*. Un oracle dont une règle ne se déclenche jamais ne juge rien.
+
+### La matrice des verdicts (TF-0823)
+
+Ce couplage — une fixture verte, une fixture rouge, **un** oracle — ne dit rien des autres
+verdicts qu'une fixture rend. Chaque règle neuve posée sur un oracle **partagé** peut donc faire
+basculer une fixture voisine en silence. Mesuré le 05/09/2026 : l'entrée d'E10 dans
+`oracle-exigences` a fait passer `fixtures/delta-rouge/EXIGENCES.json` de exit 0 à exit 1 sur cet
+oracle — le self-test ne branche jamais `oracle-exigences` sur cette fixture, et il a fallu un
+balayage **manuel** des douze fixtures pour le voir. Mesuré le 06/09/2026 : sur les 56 cellules
+des quatorze fixtures portant un `EXIGENCES.json`, croisées avec les quatre oracles qui le
+jugent, **douze** rendaient exit 1 sans qu'aucun cas ne les regarde.
+
+Le self-test calcule désormais la **matrice complète** — chaque fixture × chaque oracle
+applicable —, l'**imprime**, et la compare à `oracles/matrice-attendue.json` : une donnée
+éditable, **versionnée et datée** dans le dépôt. Un verdict qui diffère est un **échec de
+recette nommant la fixture et l'oracle** ; une cellule absente de la matrice attendue l'est
+aussi, ce qui rend une fixture ou un oracle neufs impossibles à glisser sans le dire. Mettre la
+matrice à jour est un **geste explicite, dans le commit qui change la règle** — jamais un effet
+de bord :
+
+```bash
+node oracles/matrice.mjs        # imprime la matrice courante + le bloc JSON prêt à coller
+```
+
+Une cellule **non applicable** (l'oracle n'a pas son artefact dans cette fixture) reste vide :
+elle ne s'écrit pas dans la matrice attendue, et ne se confond jamais avec un verdict. Les
+bascules connues y sont consignées avec leur **date** et leur **cause** — celle du 05/09 en
+premier lieu.
 
 ## La constitution du projet (TF-0101)
 
