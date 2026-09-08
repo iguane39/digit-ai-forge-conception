@@ -27,9 +27,29 @@ vue: profil
 profil: po | csm | utilisateur
 source: <chemin du RETRO-MODELE.md>
 source_sha256: <64 hex, contenu source normalisé LF>
+corps_sha256: <64 hex, sha256 de TOUT ce qui suit la ligne `---` de fermeture>
 date: AAAA-MM-JJ
 ---
 ```
+
+**Le double sceau (TF-0827).** `source_sha256` prouve **d'où vient** la vue ; il ne dit rien de
+**ce qu'elle contient**. Mesuré le 05/09/2026 sur `oracles/fixtures/vues-profil-verte` : la
+section « Règles de gestion » **vidée de son contenu, le titre laissé en place** — 161
+caractères de corps sur 598, plus du quart de la vue — rendait VP1, VP2, VP3 et VP4 tous PASS,
+exit 0. La règle qui vérifie les sections imposées (VP4) ne voit qu'un **titre** : la même
+section retirée AVEC son titre, elle, échoue — c'est la seule amputation qu'elle attrape, et ce
+n'est pas celle qui fait disparaître une décision.
+
+`corps_sha256` est donc la seconde empreinte, jumelle de `corps-sha256` sur les vues dérivées
+d'`EXIGENCES.json` (`vues.md`, TF-0818). Elle se calcule sur **tout ce qui suit la ligne `---`
+de fermeture du frontmatter**, fins de ligne normalisées LF — le sceau vit dans le frontmatter,
+il ne se hache donc jamais lui-même. `oracle-vues-profil` **VP5** la recalcule.
+
+Le champ est **facultatif à la lecture** : absent, VP5 rend un `SANS_OBJET` motivé et le dit —
+la vue a été scellée avant cette règle, sa provenance seule est jugée. **Aucune vue existante
+n'est migrée** ; la régénérer par ce verbe lui donne l'empreinte de son corps. Un `corps_sha256`
+présent mais qui n'est pas 64 hex est en revanche un **FAIL** : un sceau illisible n'est pas un
+sceau absent, il annonce un contrôle qui n'a pas lieu.
 
 ## Les trois profils pilotes (jeu fermé v0)
 
@@ -56,10 +76,11 @@ Règles d'écriture par profil (non jugées par l'oracle, tenues en revue) :
 
 ```
 1. Entrée        → RETRO-MODELE.md (oracle-retro-modele PASS exigé d'abord)
-2. Empreinte     → sha256 du source normalisé LF → frontmatter
+2. Empreintes    → sha256 de la source ET sha256 du corps, normalisés LF → frontmatter
 3. Vue           → sections du profil, chaque affirmation ancrée [RM-xxx]
 4. Contrôle      → node oracles/oracle-vues-profil.mjs <VUE.md> --modele <RETRO-MODELE.md>
 5. Péremption    → source modifiée ? régénérer la vue, jamais l'éditer
+6. Intégrité     → corps édité à la main ? VP5 le voit, même titres en place
 ```
 
 Nommage : `VUE-PO.md` · `VUE-CSM.md` · `VUE-UTILISATEUR.md` (ou

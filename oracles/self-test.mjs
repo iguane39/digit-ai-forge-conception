@@ -61,6 +61,14 @@ const CORPS_ROUGE = join(ICI, 'fixtures', 'corps-de-vue-rouge')
 // porte. C'est le defaut fondateur rejoue : l'ecart saisi dans le JSON que personne n'a decide.
 const EXMD_VERTE = join(ICI, 'fixtures', 'exigences-md-verte')
 const EXMD_ROUGE = join(ICI, 'fixtures', 'exigences-md-rouge')
+// TF-0827 : fixtures DEDIEES de VP5, jumelles de CORPS_VERTE/CORPS_ROUGE sur la SECONDE famille
+// de vues. Le MEME RETRO-MODELE.md et le MEME frontmatter des deux cotes -- source_sha256 ET
+// corps_sha256 identiques ; seul le corps change. La rouge est la verte dont la section
+// « Regles de gestion » est VIDEE de son contenu, LE TITRE LAISSE EN PLACE : VP1 a VP4 y
+// restent verts, VP4 compris, et le seul FAIL possible est celui du corps altere. C'est la
+// mesure du 05/09 sur les vues par profil, cette fois avec un juge.
+const CORPS_PROFIL_VERTE = join(ICI, 'fixtures', 'corps-de-vue-profil-verte')
+const CORPS_PROFIL_ROUGE = join(ICI, 'fixtures', 'corps-de-vue-profil-rouge')
 
 const ORACLES = [
   {
@@ -213,6 +221,21 @@ const ORACLES = [
     regles: ['VP1', 'VP2', 'VP3', 'VP4'],
     args: (dossier) => {
       const d = dossier === VERTE ? VUESP_VERTE : VUESP_ROUGE
+      return [join(d, 'VUE-PO.md'), '--modele', join(d, 'RETRO-MODELE.md')]
+    }
+  },
+  {
+    // TF-0827 : VP5 SEULE, sur ses fixtures dediees. Elle n'est pas dans l'entree VP1-VP4
+    // ci-dessus, et ce n'est pas un oubli : les vues des fixtures vues-profil ont ete scellees
+    // avant TF-0827, aucune n'a ete migree, VP5 y rend donc un SANS_OBJET motive et n'y
+    // jugerait rien. Ici la verte et la rouge portent le MEME frontmatter -- corps_sha256
+    // compris -- et le MEME modele ; seul le corps de la vue differe. Une fixture rouge qui
+    // echouerait aussi sur VP2 ou VP4 ne prouverait pas que VP5 attrape ce qu'elles laissent
+    // passer : la section y est VIDEE, son titre laisse en place.
+    fichier: 'oracle-vues-profil.mjs',
+    regles: ['VP5'],
+    args: (dossier) => {
+      const d = dossier === VERTE ? CORPS_PROFIL_VERTE : CORPS_PROFIL_ROUGE
       return [join(d, 'VUE-PO.md'), '--modele', join(d, 'RETRO-MODELE.md')]
     }
   }
@@ -1054,6 +1077,104 @@ for (const o of ORACLES) {
       echecs++
       console.log(`         exits obtenus : 1=${intacte.code} 2=${amputee.code} 3=${avant.code} ` +
         `4=${unMot.code} 5=${rescellee.code} ; citation retrouvee : ${citationTenue}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-0827 : la SECONDE famille de vues gardait le sceau de la source seul --------
+// TF-0818 a donne aux vues derivees d'EXIGENCES.json l'empreinte de leur propre corps. Les vues
+// par PROFIL, derivees d'un RETRO-MODELE.md, restaient scellees par source_sha256 seul --
+// exactement l'etat corrige la veille sur la premiere famille. Et l'oracle portait DEJA la
+// seconde variante que le lot avait laissee de cote : VP4 verifie une liste CLOSE de sections
+// imposees par profil. Elle ne voit pas l'amputation qui compte. Mesure du 05/09/2026 sur
+// fixtures/vues-profil-verte : la section « Regles de gestion » VIDEE de son contenu, le TITRE
+// LAISSE EN PLACE (161 caracteres de corps sur 598, plus du quart de la vue), rendait VP1, VP2,
+// VP3 et VP4 tous PASS, exit 0 -- la decision disparue etait indetectable. Contre-mesure du meme
+// banc : la meme section retiree AVEC son titre fait bien echouer VP4, et c'est la SEULE
+// amputation que la liste close attrape.
+// Ce qui est prouve ici, dans les deux sens, sur le patron eprouve de TF-0818 :
+//   1. vue intacte                                          -> PASS (VP2 et VP5)
+//   2. section VIDEE, titre garde                           -> FAIL VP5, VP2 ET VP4 restant PASS
+//                                                              (la mesure du 05/09, cette fois jugee)
+//   3. LA MESURE D'AVANT : videe ET sans corps_sha256       -> PASS, mais VP5 le DIT (SANS_OBJET)
+//   4. CONTRE-MESURE : section retiree AVEC son titre       -> VP4 FAIL (ce que la liste close
+//                                                              attrape) ET VP5 FAIL
+//   5. un seul mot change dans le corps                     -> FAIL (temoin : pas que l'amputation)
+//   6. la meme vue videe, RESCELLEE sur son corps           -> PASS (le sceau ne se hache pas
+//                                                              lui-meme : il vit dans le frontmatter)
+//   7. corps_sha256 present mais illisible (pas 64 hex)     -> FAIL, jamais SANS_OBJET
+// Fixtures ephemeres pour 3 a 7 ; fixtures dediees versionnees pour 1 et 2.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0827-'))
+  try {
+    const MODELE = readFileSync(join(CORPS_PROFIL_VERTE, 'RETRO-MODELE.md'), 'utf8')
+    const vueIntacte = readFileSync(join(CORPS_PROFIL_VERTE, 'VUE-PO.md'), 'utf8')
+      .replace(/\r\n/g, NL)
+    const vueVidee = readFileSync(join(CORPS_PROFIL_ROUGE, 'VUE-PO.md'), 'utf8')
+      .replace(/\r\n/g, NL)
+    const RE_SCEAU_CORPS = /^corps_sha256:.*\r?\n/m
+    const corpsDe = (texte) => {
+      const lignes = texte.split(NL)
+      return lignes.slice(lignes.indexOf('---', 1) + 1).join(NL)
+    }
+
+    const jouer = (nom, texte) => {
+      const dossier = join(tmp, nom)
+      mkdirSync(dossier)
+      const chemin = join(dossier, 'VUE-PO.md')
+      const modele = join(dossier, 'RETRO-MODELE.md')
+      writeFileSync(chemin, texte)
+      writeFileSync(modele, MODELE)
+      const r = lancer('oracle-vues-profil.mjs', [chemin, '--modele', modele])
+      const de = (regle) => (r.rapport?.constats ?? []).find(c => c.regle === regle)
+      return { code: r.code, vp2: de('VP2'), vp4: de('VP4'), vp5: de('VP5') }
+    }
+
+    const intacte = jouer('1-intacte', vueIntacte)
+    const videe = jouer('2-section-videe', vueVidee)
+    // 3. la mesure d'avant correctif, rejouee : meme amputation, mais vue NON MIGREE
+    const avant = jouer('3-avant-correctif', vueVidee.replace(RE_SCEAU_CORPS, ''))
+    // 4. la contre-mesure du meme banc : la section retiree AVEC son titre
+    const sansTitre = jouer('4-titre-retire', vueVidee.replace(`## Règles de gestion${NL}`, ''))
+    // 5. un seul mot du corps change -- l'amputation n'est pas le seul cas
+    const unMot = jouer('5-un-mot-change', vueIntacte.replace('panier unique', 'panier uniquE'))
+    // 6. la vue videe RESCELLEE sur son propre corps : le controle est calculable
+    const rescellee = jouer('6-rescellee', vueVidee.replace(RE_SCEAU_CORPS,
+      `corps_sha256: ${createHash('sha256').update(corpsDe(vueVidee), 'utf8').digest('hex')}${NL}`))
+    // 7. un sceau illisible n'est pas un sceau absent
+    const sceauIllisible = jouer('7-sceau-illisible',
+      vueIntacte.replace(RE_SCEAU_CORPS, `corps_sha256: pas-une-empreinte${NL}`))
+
+    const cas = [
+      ['1. vue intacte -> PASS, VP2 et VP5 verts',
+        intacte.code === 0 && intacte.vp2?.statut === 'PASS' && intacte.vp5?.statut === 'PASS'],
+      ['2. section VIDEE, titre garde -> FAIL VP5, VP2 ET VP4 restant PASS',
+        videe.code === 1 && videe.vp2?.statut === 'PASS' && videe.vp4?.statut === 'PASS' &&
+        videe.vp5?.statut === 'FAIL' && videe.vp5.message.includes('corps de la vue altéré')],
+      ['3. la mesure d\'avant : videe sans corps_sha256 -> PASS, mais VP5 le DIT (SANS_OBJET)',
+        avant.code === 0 && avant.vp4?.statut === 'PASS' &&
+        avant.vp5?.statut === 'SANS_OBJET' && avant.vp5.message.includes('corps_sha256')],
+      ['4. contre-mesure : section retiree AVEC son titre -> VP4 FAIL (et VP5 aussi)',
+        sansTitre.code === 1 && sansTitre.vp4?.statut === 'FAIL' &&
+        sansTitre.vp5?.statut === 'FAIL'],
+      ['5. un seul mot change dans le corps -> FAIL VP5 (temoin : pas que l\'amputation)',
+        unMot.code === 1 && unMot.vp5?.statut === 'FAIL'],
+      ['6. la meme vue videe, RESCELLEE sur son corps -> PASS (le sceau ne se hache pas lui-meme)',
+        rescellee.code === 0 && rescellee.vp5?.statut === 'PASS'],
+      ['7. corps_sha256 present mais illisible -> FAIL, jamais SANS_OBJET',
+        sceauIllisible.code === 1 && sceauIllisible.vp5?.statut === 'FAIL' &&
+        sceauIllisible.vp5.message.includes('64 hex')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-vues-profil.mjs (branche TF-0827, fixtures dediees + ephemeres, 4 etats + 3 temoins)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${intacte.code} 2=${videe.code} 3=${avant.code} ` +
+        `4=${sansTitre.code} 5=${unMot.code} 6=${rescellee.code} 7=${sceauIllisible.code}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })

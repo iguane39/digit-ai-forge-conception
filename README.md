@@ -69,7 +69,7 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 15 entrées d'oracle, 55 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 16 entrées d'oracle, 56 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
