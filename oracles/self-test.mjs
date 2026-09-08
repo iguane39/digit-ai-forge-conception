@@ -1181,6 +1181,72 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-0832 : la doctrine prescrit-elle le sceau que l'oracle exige ? --------------
+// Constat d'un produit (lot 20260905a) : `derive-les-vues` prescrivait l'en-tete source-sha256,
+// T5 attendait AUSSI corps-sha256 -- la vue produite selon la doctrine sortait SANS_OBJET sur
+// T5. Un artefact conforme au mode d'emploi qui echoue au controle est un defaut du mode
+// d'emploi, pas de l'artefact. Ce que cette branche tient, pour les DEUX familles de vues :
+// le nom du champ que l'oracle CHERCHE se trouve dans le document qui dit comment produire la
+// vue. Ce n'est pas une reformulation du texte, c'est le nom exact, lu dans le code de l'oracle
+// et cherche dans la prose -- meme patron que la branche TF-0854, applique a un champ.
+{
+  const contenu = (chemin) => readFileSync(join(ICI, '..', ...chemin.split('/')), 'utf8')
+  const srcTracabilite = readFileSync(join(ICI, 'oracle-tracabilite.mjs'), 'utf8')
+  const srcVuesProfil = readFileSync(join(ICI, 'oracle-vues-profil.mjs'), 'utf8')
+
+  // Les noms tels que les oracles les cherchent, LUS dans leur code -- jamais recopies ici :
+  // un champ renomme d'un cote ferait alors echouer cette recette, ce qui est le but.
+  const ligneDe = (src, nom) => src.split(NL).find(l => l.includes(nom)) ?? ''
+  const champT5 = ligneDe(srcTracabilite, 'const EN_TETE_CORPS')
+    .match(/([a-z0-9]+-sha256)/)?.[1] ?? null
+  const champVP5 = ligneDe(srcVuesProfil, 'const sceau = (champs.')
+    .match(/champs\.([a-z0-9_]+)/)?.[1] ?? null
+
+  const doctrines = [
+    { famille: 'vues derivees d\'EXIGENCES.json', champ: champT5,
+      documents: ['skills/derive-les-vues/references/vues.md', 'skills/derive-les-vues/SKILL.md'] },
+    { famille: 'vues par profil', champ: champVP5,
+      documents: ['skills/derive-les-vues/references/vues-par-profil.md',
+        'skills/derive-les-vues/SKILL.md'] }
+  ]
+  const mesures = doctrines.map(d => ({
+    ...d,
+    manquants: d.champ === null ? d.documents : d.documents.filter(f => !contenu(f).includes(d.champ))
+  }))
+
+  // Temoin : la meme confrontation sur un document PRIVE de la mention, en memoire. Sans lui,
+  // une recherche qui trouverait toujours (chaine vide, champ nul) passerait pour un controle.
+  const temoinDocument = contenu('skills/derive-les-vues/references/vues-par-profil.md')
+    .split(champVP5 ?? '@@@').join('')
+  const temoinVoit = champVP5 !== null && !temoinDocument.includes(champVP5)
+
+  const cas = [
+    ['1. le nom du champ cherche par T5 et par VP5 est LU dans le code des oracles',
+      champT5 === 'corps-sha256' && champVP5 === 'corps_sha256'],
+    ['2. chaque famille de vues : le champ est PRESCRIT par les documents qui la produisent',
+      mesures.every(m => m.manquants.length === 0)],
+    ['3. temoin : un document prive de la mention est vu (la recherche discrimine)', temoinVoit]
+  ]
+  const ko = cas.filter(([, ok]) => !ok)
+  console.log('doctrine vs sceau attendu (branche TF-0832, 2 familles de vues, 1 temoin)')
+  for (const m of mesures) {
+    console.log(`  ${m.famille} : champ « ${m.champ} », ${m.documents.length} document(s) ` +
+      `de doctrine, ${m.manquants.length} sans la mention`)
+  }
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+  if (ko.length > 0) {
+    echecs++
+    for (const m of mesures) {
+      for (const f of m.manquants) {
+        console.log(`         DOCTRINE MUETTE : ${f} ne prescrit pas « ${m.champ} », que ` +
+          `l'oracle exige pour ${m.famille} — une vue produite selon ce document sortirait ` +
+          'SANS_OBJET sur la regle du sceau de corps')
+      }
+    }
+  }
+}
+
 // --- branche TF-0822 : le champ transcrit de la prose a enfin une correspondance verifiee ---
 // Deux champs racine sont declares « transcrits de la prose et de nulle part ailleurs » :
 // `ecarts_surface_implicite` <- section 3 de SURFACE.md, `ecarts_exigences_socle` <- section 7

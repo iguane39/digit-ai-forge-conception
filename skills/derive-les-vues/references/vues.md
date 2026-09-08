@@ -167,8 +167,11 @@ reste manuel jusqu'à ce que la forge tourne.
 
 ## Régénération
 
-À chaque modification de `EXIGENCES.json` : **les trois vues sont refaites**, l'empreinte
-recalculée, et `oracle-tracabilite` relancé avec `--vue` sur chacune. Un écart de surface
+À chaque modification de `EXIGENCES.json` : **les trois vues sont refaites**, les **deux**
+empreintes recalculées — celle de la source ET celle du corps, dans cet ordre —, et
+`oracle-tracabilite` relancé avec `--vue` sur chacune. Une vue régénérée qui ne porterait que
+`source-sha256` sortirait `SANS_OBJET` sur T5 : la règle le dit, elle ne le reproche pas, mais
+le contrôle du contenu n'aurait alors pas eu lieu. Un écart de surface
 implicite ajouté ou retiré est une modification du référentiel comme une autre : la fiche de
 cadrage est régénérée, faute de quoi elle affirme un périmètre que la source ne dit plus.
 
