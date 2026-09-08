@@ -13,7 +13,7 @@ import {
   charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart
 } from './_contrat.mjs'
 
-const VERSION = '1.2.0'
+const VERSION = '1.3.0'
 const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 
 // S4 — la surface implicite : chaque candidat d'office est RETENU ou ÉCARTÉ explicitement.
@@ -24,7 +24,8 @@ const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 // n° 3 (« l'oubli n'existe pas »), et ce profil vaut pour TOUTE la liste close de la surface
 // implicite (`enumere-la-surface/references/typologie-surface.md`) : aide, onboarding, compte,
 // favicon, états vides, erreurs visibles, mentions légales, responsive, accessibilité, ses
-// livrables légaux, et la 404. La règle ne juge pas la page servie — cela relève de la MEP
+// livrables légaux, la 404 — et depuis TF-0874 le lien public partageable et les comptes
+// d'essai. La règle ne juge pas la page servie — cela relève de la MEP
 // (contrôle M-9) et de forge-tests — mais l'ÉNUMÉRATION : le candidat est-il entré dans la
 // surface, là où l'oubli est encore réparable ?
 //
@@ -108,6 +109,26 @@ const SURFACE_IMPLICITE = [
     cle: 'page-404',
     libelle: 'Page 404 par langue',
     motifs: ['404']
+  },
+  // TF-0874 — les deux candidats que la liste close n'avait pas, constatés par DEUX retours
+  // humains successifs sur un même produit (lots 20260906b et 20260906c) : une énumération de
+  // 58 éléments et 73 exigences toutes PASS n'avait proposé ni le partage du lien client depuis
+  // l'administration, ni des comptes d'essai vides pour le commanditaire. Deux exigences ont dû
+  // entrer en RUN DE VERSION (E-074, E-075) — c'est-à-dire après la MEP, au prix fort, alors que
+  // la place de cet arbitrage est l'énumération. Profil identique à celui de la 404 (TF-0804) :
+  // personne ne les conçoit, aucune revue ne les voit, et l'oubli reste indiscernable de la
+  // décision tant que la liste ne les porte pas.
+  {
+    cle: 'lien-public-partageable',
+    libelle: 'Lien public partageable (copie, QR)',
+    motifs: ['lien public', 'lien partageable', 'lien de partage', 'partage du lien',
+      'partager le lien', 'qr', 'code qr']
+  },
+  {
+    cle: 'comptes-essai',
+    libelle: "Comptes d'essai vides",
+    motifs: ["compte d'essai", "comptes d'essai", 'compte de test', 'comptes de test',
+      "compte d'évaluation", "comptes d'évaluation", 'bac à sable']
   }
 ]
 for (const c of SURFACE_IMPLICITE) c.re = lexique(c.motifs)
@@ -283,8 +304,11 @@ emettre({
       'ni sa véracité ni sa suffisance — un écart est opposable parce qu\'écrit, pas parce ' +
       'que vrai.',
     'Les conditions d\'applicabilité qu\'un candidat porte au-delà de la surface web — ' +
-      '« site public français » pour l\'accessibilité RGAA et ses livrables légaux notamment. ' +
-      'S4 ne les infère pas : le candidat est retenu ou écarté avec son motif, comme les autres.',
+      '« site public français » pour l\'accessibilité RGAA et ses livrables légaux, ' +
+      '« produit multi-tenant » pour le lien public partageable et les comptes d\'essai ' +
+      '(TF-0874). S4 ne les infère pas : le candidat est retenu ou écarté avec son motif, ' +
+      'comme les autres — un produit mono-tenant écarte les deux en deux lignes, et c\'est ' +
+      'moins cher que de rendre l\'omission indiscernable de la décision.',
     'Le contenu de la 404 elle-même — gabarit, statut HTTP conservé, `noindex`, préfixe de ' +
       'langue : les cinq critères de P-2 se vérifient sur la page servie (MEP, contrôle M-9 ; ' +
       'contrôle exécutable chez forge-tests), jamais sur un référentiel d\'exigences.'

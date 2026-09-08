@@ -19,6 +19,18 @@
       "motif": "corollaire de l'écart précédent : sans obligation RGAA, ni schéma pluriannuel ni déclaration d'accessibilité ne sont dus, et aucun n'est produit pour la forme",
       "decide_par": "le commanditaire du produit",
       "date": "2026-09-05"
+    },
+    {
+      "element": "lien-public-partageable",
+      "motif": "portail mono-tenant, servi sur une adresse unique pour l'entreprise : aucun espace client n'existe, donc aucun lien public par client n'a de sens",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-09-08"
+    },
+    {
+      "element": "comptes-essai",
+      "motif": "portail interne ouvert aux seuls collaborateurs authentifiés par l'annuaire : un compte d'essai vide n'y est ni créable ni utile au commanditaire",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-09-08"
     }
   ],
   "ecarts_exigences_socle": [

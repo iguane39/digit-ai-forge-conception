@@ -553,9 +553,14 @@ for (const o of ORACLES) {
       { id: 'S-08', type: 'point-entree', libelle: 'Mentions légales' },
       { id: 'S-09', type: 'regle', libelle: 'Responsive mobile' },
       { id: 'S-10', type: 'regle', libelle: 'Accessibilité RGAA' },
-      { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" }
+      { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" },
+      // TF-0874 : les deux candidats entres apres coup dans la liste close. Ils sont dans la
+      // BASE, et non en jeu, pour la meme raison que les neuf autres -- la mesure de CETTE
+      // branche porte sur la 404 SEULE, et un candidat absent de la base la brouillerait.
+      { id: 'S-12', type: 'point-entree', libelle: 'Lien public partageable du compte client' },
+      { id: 'S-13', type: 'objet', libelle: "Compte d'essai vide" }
     ]
-    const PAGE_404 = { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' }
+    const PAGE_404 = { id: 'S-14', type: 'point-entree', libelle: 'Page 404 par langue' }
     const LOT_NUIT = { id: 'S-01', type: 'point-entree', libelle: 'Import de nuit du fichier fournisseur' }
     const ECART_VALIDE = {
       element: 'page-404',
@@ -616,7 +621,7 @@ for (const o of ORACLES) {
 
     const cas = [
       ['1. candidat present, aucun champ d\'ecart -> PASS (referentiel anterieur au champ)',
-        complet.code === 0 && complet.fails.length === 0 && complet.s4.length === 11],
+        complet.code === 0 && complet.fails.length === 0 && complet.s4.length === 13],
       ['2. candidat absent + ecart valide -> PASS imprime « [ECARTE] »',
         ecarte.code === 0 && ecarte.fails.length === 0 &&
         (ecarte.sur('page-404')?.message ?? '').includes('[ÉCARTÉ]')],
@@ -650,6 +655,119 @@ for (const o of ORACLES) {
   }
 }
 
+
+// --- branche TF-0874 : les deux candidats que la liste close n'avait pas ------------------
+// Mesure du 06/09/2026, sur un produit reel : une enumeration de 58 elements et 73 exigences
+// TOUTES PASS n'avait propose ni le partage du lien client depuis l'administration, ni des
+// comptes d'essai vides pour le commanditaire. Deux retours humains successifs (lots 20260906b
+// et 20260906c) ont du les faire entrer en RUN DE VERSION -- E-074 et E-075, apres la MEP. Le
+// profil est celui de la 404 (TF-0804) : l'oubli reste indiscernable de la decision tant que la
+// liste close ne porte pas le candidat. Quatre etats, la 404 et les neuf autres candidats
+// restant PRESENTS dans la base pour que la mesure porte sur ces deux-la SEULS :
+//   1. les deux candidats presents                    -> PASS, 13 constats S4
+//   2. les deux absents, aucun ecart                  -> FAIL, les DEUX candidats NOMMES
+//                                                        (la mesure du 06/09, cette fois jugee)
+//   3. les deux absents + ecarts mono-tenant valides  -> PASS, deux messages « [ECARTE] »
+//   4. UN SEUL absent (temoin d'isolation)            -> FAIL nommant le seul absent, pas l'autre
+// Fixtures ephemeres, comme la branche TF-0811 dont celle-ci reprend l'idiome.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf0874-'))
+  try {
+    const BASE = [
+      { id: 'S-01', type: 'point-entree', libelle: "Page d'accueil du site" },
+      { id: 'S-02', type: 'point-entree', libelle: 'Aide utilisateur' },
+      { id: 'S-03', type: 'parcours', libelle: 'Onboarding de première connexion' },
+      { id: 'S-04', type: 'objet', libelle: 'Compte utilisateur' },
+      { id: 'S-05', type: 'objet', libelle: 'Favicon' },
+      { id: 'S-06', type: 'parcours', libelle: 'États vides guidés' },
+      { id: 'S-07', type: 'regle', libelle: 'Gestion des erreurs visible' },
+      { id: 'S-08', type: 'point-entree', libelle: 'Mentions légales' },
+      { id: 'S-09', type: 'regle', libelle: 'Responsive mobile' },
+      { id: 'S-10', type: 'regle', libelle: 'Accessibilité RGAA' },
+      { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" },
+      { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' }
+    ]
+    const LIEN = { id: 'S-13', type: 'point-entree', libelle: "Lien public partageable de l'espace client" }
+    const ESSAI = { id: 'S-14', type: 'objet', libelle: "Compte d'essai vide du commanditaire" }
+    const ECART = (element, motif) => ({
+      element,
+      motif,
+      decide_par: 'le commanditaire du produit',
+      date: '2026-09-08'
+    })
+    const ECARTS_MONO_TENANT = [
+      ECART('lien-public-partageable',
+        'produit mono-tenant : une seule instance pour un seul client, aucun espace client a partager'),
+      ECART('comptes-essai',
+        'produit mono-tenant livre peuple des donnees du client : aucun espace vide n\'est creable')
+    ]
+
+    const referentiel = (surface, ecarts) => {
+      const ref = {
+        projet: 'Fixture TF-0874 (lien public partageable, comptes d\'essai)',
+        besoins: [{ id: 'B-01', enonce: 'Un visiteur doit atteindre le produit depuis le web.' }],
+        surface,
+        exigences: surface.map((s, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: `Le produit sert ${s.libelle}.`,
+          critere: 'La ressource est affichee.',
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-0874' },
+          surface: [s.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_surface_implicite = ecarts
+      return ref
+    }
+
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-surface.mjs', [chemin])
+      const s4 = (r.rapport?.constats ?? []).filter(c => c.regle === 'S4')
+      return {
+        code: r.code,
+        s4,
+        fails: s4.filter(c => c.statut === 'FAIL'),
+        sur: (fragment) => s4.find(c => `${c.ou} ${c.message}`.includes(fragment))
+      }
+    }
+
+    const presents = jouer('1-deux-candidats-presents', referentiel([...BASE, LIEN, ESSAI]))
+    const oubli = jouer('2-la-mesure-du-06-09', referentiel(BASE))
+    const ecartes = jouer('3-ecarts-mono-tenant', referentiel(BASE, ECARTS_MONO_TENANT))
+    const unSeul = jouer('4-temoin-isolation', referentiel([...BASE, LIEN]))
+
+    const cas = [
+      ['1. les deux candidats presents -> PASS, 13 constats S4 (la liste close en compte 13)',
+        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 13],
+      ['2. la mesure du 06/09 : les deux absents, aucun ecart -> FAIL, les DEUX candidats NOMMES',
+        oubli.code === 1 && oubli.fails.length === 2 &&
+        oubli.fails.some(c => c.message.includes('Lien public partageable')) &&
+        oubli.fails.some(c => c.message.includes('Comptes d\'essai vides'))],
+      ['3. les deux absents + ecarts mono-tenant valides -> PASS, deux « [ECARTE] »',
+        ecartes.code === 0 && ecartes.fails.length === 0 &&
+        (ecartes.sur('lien-public-partageable')?.message ?? '').includes('[ÉCARTÉ]') &&
+        (ecartes.sur('comptes-essai')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['4. temoin d\'isolation : un seul absent -> FAIL nommant CE candidat, pas l\'autre',
+        unSeul.code === 1 && unSeul.fails.length === 1 &&
+        unSeul.fails[0].message.includes('Comptes d\'essai vides')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-surface.mjs (branche TF-0874, fixtures ephemeres, 3 etats + 1 temoin)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${presents.code} 2=${oubli.code} ` +
+        `3=${ecartes.code} 4=${unSeul.code} ; fails : 2=${oubli.fails.length} 4=${unSeul.fails.length}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
 
 // --- branche TF-0814 : E10 juge, et l'ecart d'une exigence socle a un lieu ou s'ecrire -----
 // Le schema du referentiel propose d'office TROIS exigences socle candidates -- donnees de

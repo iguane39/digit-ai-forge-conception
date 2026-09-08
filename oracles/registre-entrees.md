@@ -60,7 +60,7 @@ prose — jamais la prose qui n'a pas encore été écrite.
 | **Domaine** | Couverture de la surface fonctionnelle énumérée, et surface implicite retenue ou écartée |
 | **Artefact jugé** | `EXIGENCES.json` |
 | **Invocation** | `node oracles/oracle-surface.mjs <EXIGENCES.json> [--seuil 95]` |
-| **Règles** | S1 chaque élément non couvert est **nommé** · S2 ratio publié avec sa liste · S3 lien de surface valide ou raison `hors_surface` · S4 chacun des **onze candidats d'office** de la surface implicite est retenu, ou écarté dans `ecarts_surface_implicite` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, le candidat nommé (P-2 et TF-0804 pour la 404, TF-0811 pour le champ et le jugement) |
+| **Règles** | S1 chaque élément non couvert est **nommé** · S2 ratio publié avec sa liste · S3 lien de surface valide ou raison `hors_surface` · S4 chacun des **treize candidats d'office** de la surface implicite est retenu, ou écarté dans `ecarts_surface_implicite` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, le candidat nommé (P-2 et TF-0804 pour la 404, TF-0811 pour le champ et le jugement, TF-0874 pour le lien public partageable et les comptes d'essai) |
 | **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` pour S1-S3 · `oracles/fixtures/surface-implicite-verte` (avec sa vue `CADRAGE-DESIGN.md` scellée) · `oracles/fixtures/surface-implicite-rouge` pour S4 |
 | **`non_juge`** | La complétude de l'inventaire de surface lui-même · le caractère web du produit et la présence d'un candidat, inférés d'un lexique fermé · la pertinence du motif d'un écart · les conditions d'applicabilité hors surface web (« site public français ») · le contenu de la 404 servie (MEP M-9, forge-tests) |
 

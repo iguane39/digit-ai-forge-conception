@@ -73,12 +73,14 @@ proposée d'office en fin d'énumération, chacun retenu (→ exigence) ou écar
 `SURFACE.md` section 3. Liste complète : `references/typologie-surface.md`, section « Surface
 implicite SaaS ». Un candidat peut porter une **condition d'applicabilité** plutôt qu'un
 simple type suggéré : la **page 404 par langue** (P-2 — patron éprouvé du pilot, TF-0804)
-n'est proposée que si le produit a une surface web, avec ses cinq critères d'acceptation.
+n'est proposée que si le produit a une surface web, avec ses cinq critères d'acceptation ; le
+**lien public partageable (copie, QR)** et les **comptes d'essai vides** (TF-0874) visent les
+produits **multi-tenant** — un produit mono-tenant les écarte tous les deux, avec sa raison.
 
 **L'écart s'écrit dans le référentiel, pas seulement en prose (TF-0811).** La section 3 de
 `SURFACE.md` reste le lieu où l'écart se rédige ; elle est transcrite, sans reformulation, dans
 le champ racine `ecarts_surface_implicite` — `{ element, motif, decide_par, date }`, une entrée
-par candidat écarté, `element` pris dans les onze clés de la liste close. `oracle-surface`
+par candidat écarté, `element` pris dans les treize clés de la liste close. `oracle-surface`
 (règle **S4**) juge alors chaque candidat individuellement : présent → PASS, écarté avec un
 motif d'au moins vingt caractères → PASS imprimé « [ÉCARTÉ] », ni l'un ni l'autre → **FAIL**.
 Sans point d'entrée web énuméré, le bloc n'est pas dû et S4 rend un PASS motivé. C'est le seul

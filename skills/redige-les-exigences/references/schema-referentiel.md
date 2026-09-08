@@ -48,7 +48,7 @@ candidat de la surface implicite **écarté** : `{ element, motif, decide_par, d
 
 | Champ | Contrainte vérifiée par `oracle-surface` S4 |
 |---|---|
-| `element` | l'une des onze clés de la liste close (`enumere-la-surface/references/typologie-surface.md`, « Les clés de la liste close ») |
+| `element` | l'une des treize clés de la liste close (`enumere-la-surface/references/typologie-surface.md`, « Les clés de la liste close ») |
 | `motif` | chaîne d'au moins **20 caractères** — plus court, ce n'est pas une raison, c'est un mot |
 | `decide_par` | chaîne non vide — un écart est décidé par quelqu'un |
 | `date` | `AAAA-MM-JJ` |

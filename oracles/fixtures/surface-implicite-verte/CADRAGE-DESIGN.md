@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: 4b266217a7406f921b0e49ebecd42c5c2b3168e05d4610b13415c11f2364ddb3 -->
+<!-- source-sha256: 3386404a62db0c0867342b79bac477da911b014bbfcfe1f8e013ba5e074a2ad8 -->
 
 # Fiche de cadrage design — Portail de réservation de salles
 
@@ -41,6 +41,8 @@ transcrit de la section 3 « Écartés » de `SURFACE.md`. Un candidat d'office 
 |---|---|---|---|
 | `accessibilite-rgaa` | portail interne à l'entreprise, accessible par authentification seule : il n'entre pas dans le champ du site public français où le RGAA 4.1 est une obligation légale | le commanditaire du produit | 2026-09-05 |
 | `livrables-accessibilite` | corollaire de l'écart précédent : sans obligation RGAA, ni schéma pluriannuel ni déclaration d'accessibilité ne sont dus, et aucun n'est produit pour la forme | le commanditaire du produit | 2026-09-05 |
+| `lien-public-partageable` | portail mono-tenant, servi sur une adresse unique pour l'entreprise : aucun espace client n'existe, donc aucun lien public par client n'a de sens | le commanditaire du produit | 2026-09-08 |
+| `comptes-essai` | portail interne ouvert aux seuls collaborateurs authentifiés par l'annuaire : un compte d'essai vide n'y est ni créable ni utile au commanditaire | le commanditaire du produit | 2026-09-08 |
 
 Les neuf autres candidats de la liste close sont **retenus** : ils figurent au tableau
 ci-dessus, chacun porteur d'au moins une exigence.

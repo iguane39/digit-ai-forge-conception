@@ -174,7 +174,7 @@ cadrage est régénérée, faute de quoi elle affirme un périmètre que la sour
 
 Exemple travaillé, source et vue scellée ensemble :
 [oracles/fixtures/surface-implicite-verte](../../../oracles/fixtures/surface-implicite-verte)
-— onze candidats de la liste close, neuf retenus, deux écartés, la vue régénérée sur
+— treize candidats de la liste close, neuf retenus, quatre écartés, la vue régénérée sur
 l'empreinte de sa source.
 
 Second exemple travaillé, une candidate socle écartée et deux retenues :

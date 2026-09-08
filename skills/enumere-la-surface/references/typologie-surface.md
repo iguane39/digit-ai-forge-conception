@@ -63,8 +63,8 @@ API interne, produit tiers analysé de l'extérieur) écarte le bloc entier avec
 Côté machine, ce cas se reconnaît le plus souvent tout seul : sans aucun `point-entree` au
 libellé web, `oracle-surface` S4 rend un PASS motivé et ne réclame aucun écart. Si le produit a
 malgré tout une surface que le lexique lit comme web — une API interne exposée par des routes,
-par exemple —, la raison unique se recopie sur chacune des onze clés. Onze lignes est le prix de
-l'opposabilité : c'est délibérément moins cher que de rendre l'omission indiscernable.
+par exemple —, la raison unique se recopie sur chacune des treize clés. Treize lignes est le prix
+de l'opposabilité : c'est délibérément moins cher que de rendre l'omission indiscernable.
 
 | Candidat | Type suggéré | Origine |
 |---|---|---|
@@ -79,6 +79,14 @@ l'opposabilité : c'est délibérément moins cher que de rendre l'omission indi
 | Accessibilité RGAA — site public français | `regle` (RGAA 4.1/WCAG AA : obligation légale, pas un objectif) + `point-entree` (déclaration d'accessibilité publiée avec son taux) | RF-6, lot Produit-09 20260820a — retour littéral |
 | Livrables légaux d'accessibilité (si site public FR) | `objet` ×4 : schéma pluriannuel, plan d'action annuel, mécanisme de signalement, voie de recours | RF-6 — aucune forge ne les produisait, aucun CDC ne les demandait |
 | **Page 404 par langue** — proposée **si et seulement si** le produit a une surface web | `point-entree` (une page servie, atteignable par une adresse inconnue) | P-2 (`PATRONS-EPROUVES.md` du pilot), TF-0804 — retour d'un produit, 404 nu du serveur servi en production du 25/08 au 01/09/2026 |
+| **Lien public partageable (copie, QR)** — typiquement un produit **multi-tenant** | `point-entree` (une adresse publique par espace client) + `parcours` (copier le lien, afficher son QR depuis l'administration) | TF-0874, lots 20260906b et 20260906c — retour humain littéral : le partage du lien client depuis l'administration n'avait été proposé par personne |
+| **Comptes d'essai vides** — typiquement un produit **multi-tenant** | `objet` (un espace vide, sans donnée d'un autre client) + `parcours` (le commanditaire en ouvre un pour essayer le produit) | TF-0874, lots 20260906b et 20260906c — retour humain littéral, entré en run de version (E-074, E-075) faute d'avoir été proposé à l'énumération |
+
+Les deux derniers candidats portent, comme l'accessibilité RGAA, une condition d'applicabilité
+que `oracle-surface` **n'infère pas** : un produit **mono-tenant** (utilisateur unique, aucun
+espace client, aucune adresse publique par client) les écarte tous les deux, en deux lignes,
+avec sa raison. Deux lignes, pas un silence : c'est ce qui distingue l'arbitrage de l'oubli, et
+c'est précisément l'oubli qui a coûté deux exigences en run de version le 06/09/2026.
 
 **Critères d'acceptation précisés** (2ᵉ inspection utilisateur du premier produit, lot 03) —
 « exister » ne suffit pas, la perception de l'utilisateur fait foi ; ces critères s'écrivent
@@ -131,7 +139,7 @@ ailleurs (`redige-les-exigences/references/schema-referentiel.md`) :
 ]
 ```
 
-`element` prend l'une des onze **clés** de la liste close, dans cet ordre — c'est la même table
+`element` prend l'une des treize **clés** de la liste close, dans cet ordre — c'est la même table
 que celle ci-dessus, vue par la machine :
 
 | Clé | Candidat |
@@ -147,6 +155,8 @@ que celle ci-dessus, vue par la machine :
 | `accessibilite-rgaa` | Accessibilité RGAA — site public français |
 | `livrables-accessibilite` | Livrables légaux d'accessibilité |
 | `page-404` | Page 404 par langue |
+| `lien-public-partageable` | Lien public partageable (copie, QR) |
+| `comptes-essai` | Comptes d'essai vides |
 
 Ce que S4 juge alors, candidat par candidat, chacun **nommé** :
 

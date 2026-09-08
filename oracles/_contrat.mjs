@@ -102,7 +102,7 @@ export const lexique = (motifs) => new RegExp(`${AVANT}(${motifs.join('|')})s?${
 /**
  * TF-0811 puis TF-0814 — le format COMMUN d'un écart explicite, défini une seule fois.
  *
- * Deux champs racine portent désormais des écarts : `ecarts_surface_implicite` (les onze
+ * Deux champs racine portent désormais des écarts : `ecarts_surface_implicite` (les treize
  * candidats d'office de la surface implicite, `oracle-surface` S4) et `ecarts_exigences_socle`
  * (les trois exigences socle candidates, `oracle-exigences` E10). Ce qui fait qu'un écart
  * TIENT ne dépend pas de la liste close visée : deux définitions divergeraient au premier
