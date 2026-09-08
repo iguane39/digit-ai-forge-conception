@@ -55,7 +55,10 @@ const VERSION = '1.0.0'
 // --- Le gabarit, transcrit de sa source ------------------------------------
 //
 // `redige-les-exigences/references/schema-referentiel.md`, section « Gabarit de
-// `EXIGENCES.md` ». Cette table en est la transcription exécutable ; elle ne l'étend pas.
+// `EXIGENCES.md` ». Cette table en est la transcription exécutable ; elle ne l'étend pas —
+// et depuis TF-0854 la recette le VÉRIFIE dans les deux sens, ordre compris, au lieu de le
+// croire sur parole : cette table-ci a été écrite par le lot même qui refermait le trou de la
+// transcription d'un champ, et rien ne la reliait à sa source.
 // L'ordre est celui du gabarit ; le NUMÉRO écrit dans le titre n'est pas exigé (« ## Origine »
 // vaut « ## 1. Origine »), parce que ce qui est dû est la section, pas sa décoration.
 const SECTIONS_EXIGENCES_MD = [

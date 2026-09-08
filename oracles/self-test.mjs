@@ -1373,6 +1373,176 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-0854 : les TABLES CLOSES du code sont des transcriptions de prose ----------
+// TF-0822 a rendu verifiable la transcription d'un CHAMP de referentiel depuis la prose
+// (ecarts_exigences_socle <- section 7 d'EXIGENCES.md, ecarts_surface_implicite <- section 3 de
+// SURFACE.md). La MEME transcription existe dans la meme forge, du document de methode vers la
+// CONSTANTE DE CODE, et rien ne la verifiait. Trois tables portent en commentaire qu'elles sont
+// la « transcription executable » d'un document en prose et « ne l'etendent pas » :
+//   SURFACE_IMPLICITE      dans oracle-surface      <- typologie-surface.md, « Les cles de la liste close »
+//   EXIGENCES_SOCLE        dans oracle-exigences    <- schema-referentiel.md, « Les cles de la liste close »
+//   SECTIONS_EXIGENCES_MD  dans oracle-exigences-md <- schema-referentiel.md, « Gabarit de EXIGENCES.md »
+// La troisieme a ete ECRITE PAR LE LOT QUI REFERME LA PREMIERE INSTANCE : l'oracle prouvait que
+// la regle est ecrite, jamais qu'elle a ete decidee. Mesure du 06/09/2026 : un douzieme candidat
+// ajoute a dessein a la table close EN PROSE laissait oracle-surface a exit 0 sur sa fixture
+// verte et le self-test VERT — la table du code restait a onze, personne ne le disait.
+// Le patron a suivre existait deja et etait joue : le cas 6 de la branche TF-0818 extrait la
+// phrase citee dans un message d'echec et la confronte a `vues.md`, mot pour mot. Generalise
+// ici en une confrontation par table, DANS LES DEUX SENS -- chaque entree du code cherchee dans
+// la prose declaree, et chaque entree de la prose cherchee dans le code.
+// Corollaire porte a la doctrine : une transcription est une transcription, que la cible soit un
+// champ JSON ou une constante de code.
+// Les deux sens de la recette elle-meme sont joues en 4 et 5 : une derive introduite a dessein,
+// d'un cote puis de l'autre, DOIT etre vue et NOMMEE -- sans quoi cette branche serait
+// exactement le controle neuf, vert, joue par personne qu'elle denonce.
+{
+  // Meme normalisation que celle d'oracle-exigences-md pour ses titres de section : apostrophes,
+  // tirets, espaces, diacritiques. Une transcription se juge sur ce qu'elle DIT, pas sur la
+  // touche qui a produit l'accent -- et l'oracle qui lit ces titres normalise deja de meme.
+  const NORMALISER = (t) => String(t).normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[‘’ʼ`]/g, "'").replace(/[‐-―−]/g, '-').replace(/\s+/g, ' ').trim().toLowerCase()
+
+  /** Les entrees d'une table CLOSE du code : le bloc `const <NOM> = [ ... ]`, champ par champ. */
+  const tableDuCode = (fichier, nom, champ) => {
+    const src = readFileSync(join(ICI, fichier), 'utf8')
+    const debut = src.indexOf(`const ${nom} = [`)
+    if (debut === -1) return null
+    const fin = src.indexOf('\n]', debut)
+    const bloc = src.slice(debut, fin === -1 ? undefined : fin)
+    const re = new RegExp(`${champ}:\\s*(?:'([^']*)'|"([^"]*)")`, 'g')
+    return [...bloc.matchAll(re)].map(m => m[1] ?? m[2])
+  }
+
+  /**
+   * La table close d'une SECTION nommee : premiere colonne du PREMIER tableau markdown de la
+   * section, backticks, gras et numerotation de rang otes. « Premier tableau » et non « toutes
+   * les lignes de tableau » : ces sections en portent deux — la table close, puis la table des
+   * verdicts que la regle rend. Les confondre ferait entrer « Surface web + candidat present »
+   * dans une liste de cles, et la recette accuserait une derive qui n'existe pas.
+   */
+  const tableDeLaProse = (fichier, titreSection) => {
+    const src = readFileSync(join(ICI, '..', ...fichier.split('/')), 'utf8').replace(/\r\n/g, NL)
+    const morceaux = src.split(new RegExp(`${NL}(?=#{2,3} )`))
+    const bloc = morceaux.find(m => NORMALISER(m.split(NL)[0]).includes(NORMALISER(titreSection)))
+    if (bloc === undefined) return null
+    const lignes = bloc.split(NL)
+    const debut = lignes.findIndex(l => /^\|/.test(l.trim()))
+    if (debut === -1) return null
+    let fin = debut
+    while (fin < lignes.length && /^\|/.test(lignes[fin].trim())) fin++
+    return lignes.slice(debut, fin)
+      .filter(l => !/^\|[\s:|-]+\|?\s*$/.test(l.trim()))
+      .slice(1) // en-tete du tableau
+      .map(l => l.split('|')[1] ?? '')
+      // Le rang ecrit dans la prose (« 1. Origine ») n'est pas exige du code : oracle-exigences-md
+      // le dit noir sur blanc (« ce qui est du est la section, pas sa decoration »). Il est ote
+      // ici, et l'ORDRE des entrees est confronte a part -- ce qui le verifie mieux qu'un numero.
+      .map(c => c.replace(/`/g, '').replace(/\*\*/g, '').trim().replace(/^\d+\.\s*/, '').trim())
+      .filter(c => c !== '')
+  }
+
+  /** Les deux sens, d'un coup : ce que le code a en trop, ce que la prose a en trop. */
+  const confronter = (code, prose) => {
+    const p = new Set((prose ?? []).map(NORMALISER))
+    const c = new Set((code ?? []).map(NORMALISER))
+    return {
+      absentesDeLaProse: (code ?? []).filter(x => !p.has(NORMALISER(x))),
+      absentesDuCode: (prose ?? []).filter(x => !c.has(NORMALISER(x)))
+    }
+  }
+
+  const TABLES = [
+    {
+      nom: 'SURFACE_IMPLICITE',
+      code: ['oracle-surface.mjs', 'SURFACE_IMPLICITE', 'cle'],
+      prose: ['skills/enumere-la-surface/references/typologie-surface.md',
+        'Les cles de la liste close']
+    },
+    {
+      nom: 'EXIGENCES_SOCLE',
+      code: ['oracle-exigences.mjs', 'EXIGENCES_SOCLE', 'cle'],
+      prose: ['skills/redige-les-exigences/references/schema-referentiel.md',
+        'Les cles de la liste close']
+    },
+    {
+      nom: 'SECTIONS_EXIGENCES_MD',
+      code: ['oracle-exigences-md.mjs', 'SECTIONS_EXIGENCES_MD', 'titre'],
+      prose: ['skills/redige-les-exigences/references/schema-referentiel.md',
+        'Gabarit de `EXIGENCES.md`']
+    }
+  ]
+
+  const mesures = TABLES.map(t => {
+    const code = tableDuCode(...t.code)
+    const prose = tableDeLaProse(...t.prose)
+    return {
+      nom: t.nom,
+      ouCode: `${t.code[0]}`,
+      ouProse: `${t.prose[0]}, section « ${t.prose[1]} »`,
+      code,
+      prose,
+      ecart: confronter(code, prose)
+    }
+  })
+
+  // Temoins de la recette elle-meme : une derive introduite a dessein, d'un cote puis de
+  // l'autre. En memoire, sur des COPIES -- aucun fichier du depot n'est touche, exactement
+  // comme les temoins 2 et 3 de la branche TF-0823 alterent la matrice attendue en memoire.
+  const reference = mesures[0]
+  const deriveProse = confronter(reference.code, [...(reference.prose ?? []), 'bandeau-cookies'])
+  const deriveCode = confronter([...(reference.code ?? []), 'bandeau-cookies'], reference.prose)
+
+  const lues = mesures.filter(m => m.code !== null && m.prose !== null)
+  const alignees = lues.filter(m =>
+    m.ecart.absentesDeLaProse.length === 0 && m.ecart.absentesDuCode.length === 0)
+
+  const cas = [
+    ['1. les trois tables closes sont LUES, dans le code comme dans la prose declaree',
+      lues.length === TABLES.length && lues.every(m => m.code.length > 0 && m.prose.length > 0)],
+    ['2. chaque entree du CODE figure dans la table en prose dont elle est transcrite',
+      lues.every(m => m.ecart.absentesDeLaProse.length === 0)],
+    ['3. chaque entree de la PROSE figure dans la table du code (le sens que rien ne tenait)',
+      lues.every(m => m.ecart.absentesDuCode.length === 0)],
+    ['4. temoin : une entree ajoutee a la PROSE seule est vue, et NOMMEE',
+      deriveProse.absentesDuCode.length === 1 &&
+      deriveProse.absentesDuCode[0] === 'bandeau-cookies' &&
+      deriveProse.absentesDeLaProse.length === 0],
+    ['5. temoin : une entree ajoutee au CODE seul est vue, et NOMMEE',
+      deriveCode.absentesDeLaProse.length === 1 &&
+      deriveCode.absentesDeLaProse[0] === 'bandeau-cookies' &&
+      deriveCode.absentesDuCode.length === 0],
+    // « Ordre et libelles repris a l'identique » est ecrit dans la table du code : une
+    // transcription qui reordonne sa source cesse d'etre une transcription.
+    ['6. l\'ORDRE des entrees est le meme des deux cotes, table par table',
+      lues.every(m => m.code.map(NORMALISER).join('|') === m.prose.map(NORMALISER).join('|'))]
+  ]
+  const ko = cas.filter(([, ok]) => !ok)
+  console.log('tables closes vs prose (branche TF-0854, 3 tables, 2 sens + 2 temoins)')
+  for (const m of mesures) {
+    const nb = (v, quoi) => v === null ? `${quoi} INTROUVABLE` : `${v.length} entree(s)`
+    console.log(`  ${m.nom} : ${nb(m.code, 'TABLE')} dans ${m.ouCode}, ` +
+      `${nb(m.prose, 'SECTION')} dans ${m.ouProse}`)
+  }
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec, ` +
+    `${alignees.length}/${TABLES.length} tables alignees`)
+  if (ko.length > 0) {
+    echecs++
+    for (const m of mesures) {
+      if (m.code === null) console.log(`         ${m.nom} : table introuvable dans ${m.ouCode}`)
+      if (m.prose === null) console.log(`         ${m.nom} : source introuvable — ${m.ouProse}`)
+      for (const x of m.ecart.absentesDeLaProse) {
+        console.log(`         TRANSCRIPTION SANS SOURCE : ${m.nom} porte « ${x} », absent de sa table en prose`)
+      }
+      for (const x of m.ecart.absentesDuCode) {
+        console.log(`         SOURCE SANS TRANSCRIPTION : la prose porte « ${x} », absent de ${m.nom}`)
+      }
+    }
+    console.log('         une table close est une TRANSCRIPTION : la changer d\'un cote seulement ' +
+      'fait mentir l\'autre. Les deux se modifient dans le meme commit.')
+  }
+}
+
 // --- branche TF-0823 : la matrice COMPLETE des verdicts, comparee a une matrice attendue ---
 // Tout ce qui precede associe un COUPLE (fixture verte, fixture rouge) a un oracle, et ne dit
 // rien des AUTRES verdicts qu'une fixture rend. Le defaut est structurel : chaque regle neuve

@@ -186,6 +186,11 @@ function normaliserReste (texte, predicat) {
 // Le champ est FACULTATIF à la lecture : absent = aucun écart déclaré. Un référentiel scellé
 // avant ce champ n'est donc jamais accusé d'un défaut de FORMAT — il est jugé sur la seule
 // présence de ses candidates, exactement comme il l'aurait été. Aucune migration n'est due.
+//
+// TF-0854 : cette table est la transcription exécutable de la liste close en prose, et cette
+// correspondance est désormais VÉRIFIÉE par la recette — dans les deux sens, ordre compris.
+// Jusqu'au 06/09/2026 elle n'était qu'AFFIRMÉE en commentaire : l'oracle prouvait que la règle
+// est écrite, jamais qu'elle a été décidée.
 const EXIGENCES_SOCLE = [
   {
     cle: 'donnees-demonstration',

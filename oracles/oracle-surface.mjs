@@ -53,6 +53,10 @@ const RE_WEB = lexique(MARQUEURS_WEB)
 // `enumere-la-surface/references/typologie-surface.md`, section « Surface implicite SaaS » :
 // cette table en est la transcription exécutable, elle ne l'étend pas. L'élargir est une
 // décision (delta du référentiel de la forge), jamais une commodité.
+// TF-0854 : cette correspondance est désormais VÉRIFIÉE — la recette confronte, dans les deux
+// sens, chaque clé de cette table à la table close en prose (« Les clés de la liste close »),
+// ordre compris. Jusqu'au 06/09/2026 elle était seulement AFFIRMÉE ici : un candidat ajouté
+// d'un seul côté laissait l'oracle vert et le self-test vert, et personne ne le disait.
 const SURFACE_IMPLICITE = [
   {
     cle: 'aide-utilisateur',

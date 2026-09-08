@@ -119,6 +119,22 @@ elle ne s'écrit pas dans la matrice attendue, et ne se confond jamais avec un v
 bascules connues y sont consignées avec leur **date** et leur **cause** — celle du 05/09 en
 premier lieu.
 
+### Les tables closes du code, confrontées à leur prose (TF-0854)
+
+Trois constantes de ce dépôt portent en commentaire qu'elles sont la « transcription exécutable »
+d'un document de méthode et « ne l'étendent pas » : `SURFACE_IMPLICITE` (`oracle-surface`),
+`EXIGENCES_SOCLE` (`oracle-exigences`) et `SECTIONS_EXIGENCES_MD` (`oracle-exigences-md`). Cette
+affirmation n'était tenue par rien — l'oracle prouvait que la règle est **écrite**, jamais
+qu'elle a été **décidée**. Mesuré le 06/09/2026 : un douzième candidat ajouté à dessein à la
+table close **en prose** laissait `oracle-surface` à exit 0 sur sa fixture verte et le self-test
+**vert**, la table du code restant à onze — et personne ne le disait.
+
+La recette confronte désormais chaque table **dans les deux sens** — chaque entrée du code
+cherchée dans la table en prose déclarée, chaque entrée de la prose cherchée dans le code — plus
+leur **ordre**, qui fait partie de ce que la transcription promet. Un écart nomme la table,
+l'entrée, et le côté qui l'a. Corollaire de doctrine : **une transcription est une transcription,
+que la cible soit un champ JSON ou une constante de code.**
+
 ## La constitution du projet (TF-0101)
 
 `EXIGENCES.json` change à chaque itération de palier. Certains invariants ne doivent, eux,
