@@ -438,6 +438,66 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-0885 / TF-0831 : le POINT D'ENTREE declare au manifeste rend un verdict ----
+// `manifeste.json` designe `run-oracles-conception.mjs <EXIGENCES.json>` comme point d'entree
+// de la forge. Mesure du 05/09/2026, des deux cotes (RC-9 du lot de la forge, TF-0831 sur un
+// produit) : sept des dix oracles ne jugent pas EXIGENCES.json ; six le disaient proprement en
+// exit 2, `oracle-retro-modele` le lisait comme du Markdown et rendait FAIL -- donc l'agrege
+// valait FAIL sur TOUTE cible, y compris entierement verte. Un produit qui joue le point
+// d'entree de la forge ne pouvait obtenir AUCUN verdict, et le contournement (`--seulement`)
+// n'est lisible que dans le code du lanceur.
+// La recette joue donc ce que la demande exige, litteralement : une cible VERTE, exit 0.
+//   1. cible verte, SANS --seulement -> exit 0 et verdict PASS (la demande de TF-0885)
+//   2. `oracle-retro-modele` y est NON_JUGE (exit 2), jamais FAIL -- hors domaine, il le DIT
+//   3. la mesure d'avant, rejouee a nu : l'oracle appele DIRECTEMENT sur EXIGENCES.json
+//      sort en 2, plus jamais en 1 (temoin du garde de domaine, TF-0831)
+//   4. temoin de non-emoussage : la fixture ROUGE du retro-modele echoue toujours (exit 1),
+//      la verte passe toujours (exit 0) -- le garde ecarte un artefact, jamais une regle
+//   5. temoin d'agregation : une cible ROUGE reste FAIL (exit 1) -- les NON_JUGE ne masquent rien
+{
+  const RUNNER = join(ICI, 'run-oracles-conception.mjs')
+  const lancerRunner = (exigences) => {
+    const r = spawnSync(process.execPath, [RUNNER, exigences, '--json-only'],
+      { encoding: 'utf8', windowsHide: true })
+    let rapport = null
+    try { rapport = JSON.parse(r.stdout) } catch { /* laisse a null */ }
+    return { code: r.status, rapport, brut: r.stdout + r.stderr }
+  }
+  const verdictDe = (rapport, nom) => rapport?.oracles?.find(o => o.oracle === nom)?.verdict
+
+  // La cible verte est `exigences-md-verte` : c'est la seule fixture versionnee dont TOUS les
+  // oracles applicables sont verts, prose comprise -- donc la seule qui prouve un exit 0 du
+  // point d'entree sans rien retrancher.
+  const vert = lancerRunner(join(EXMD_VERTE, 'EXIGENCES.json'))
+  const rouge = lancerRunner(join(ROUGE, 'EXIGENCES.json'))
+  const nu = lancer('oracle-retro-modele.mjs', [join(EXMD_VERTE, 'EXIGENCES.json')])
+  const rtmRouge = lancer('oracle-retro-modele.mjs', [RETROM_ROUGE])
+  const rtmVerte = lancer('oracle-retro-modele.mjs', [RETROM_VERTE])
+
+  const cas = [
+    ['1. cible verte, sans --seulement -> exit 0 et verdict PASS',
+      vert.code === 0 && vert.rapport?.verdict === 'PASS'],
+    ['2. `oracle-retro-modele` y est NON_JUGE (exit 2), jamais FAIL',
+      verdictDe(vert.rapport, 'oracle-retro-modele') === 'NON_JUGE'],
+    ['3. la mesure d\'avant : l\'oracle appele a nu sur EXIGENCES.json sort en 2, plus en 1',
+      nu.code === 2 && String(nu.rapport?.message ?? '').includes('hors du domaine')],
+    ['4. temoin : la fixture rouge du retro-modele echoue toujours, la verte passe toujours',
+      rtmRouge.code === 1 && rtmVerte.code === 0],
+    ['5. temoin d\'agregation : une cible rouge reste FAIL (exit 1)',
+      rouge.code === 1 && rouge.rapport?.verdict === 'FAIL']
+  ]
+  const ko = cas.filter(([, ok]) => !ok)
+  console.log('run-oracles-conception.mjs (branche TF-0885/TF-0831, fixtures versionnees, 3 etats + 2 temoins)')
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+  if (ko.length > 0) {
+    echecs++
+    console.log(`         exits obtenus : vert=${vert.code} (${vert.rapport?.verdict}) ` +
+      `rouge=${rouge.code} nu=${nu.code} rtm-rouge=${rtmRouge.code} rtm-verte=${rtmVerte.code}`)
+    if (vert.code !== 0) console.log(`         verte brute : ${vert.brut.slice(0, 400)}`)
+  }
+}
+
 // --- branche TF-0799 : frontieres de mot Unicode dans les gardes lexicales ---------------
 // `\b` est ASCII dans le moteur de Node : un accent y vaut frontiere de mot. Le defaut a DEUX
 // sens, et une fixture ne prouve jamais que le sien -- les deux sont donc joues ici :

@@ -53,11 +53,19 @@ const oracles = readdirSync(ICI)
 // les deux voisins utiles (`EXIGENCES.json` pour les champs transcrits, `SURFACE.md` pour la
 // section 3). Le runner n'a donc toujours qu'un seul chemin à connaître. `EXIGENCES.md`
 // pas encore écrit -> exit 2 -> NON_JUGE motivé, jamais FAIL : aucune migration n'est due.
+// TF-0885 : `oracle-retro-modele` rejoint la table, dernier des voisins à y entrer. Il juge le
+// RETRO-MODELE.md du verbe 1 (mode rétro-modèle), pas `EXIGENCES.json` — qu'il lisait comme du
+// Markdown, dont il ne trouvait aucune des huit sections, et qu'il rendait donc FAIL. Le verdict
+// agrégé valait FAIL sur TOUTE cible, y compris entièrement verte : le point d'entrée déclaré au
+// manifeste ne pouvait rendre aucun verdict. Routé vers son vrai voisin, il retrouve le exit 2
+// (NON_JUGE motivé) quand ce voisin n'existe pas ; et depuis le même lot, l'oracle lui-même
+// refuse de juger un artefact hors de son domaine, quel que soit le chemin par lequel on l'appelle.
 const VOISIN_PAR_ORACLE = {
   "oracle-constitution.mjs": "CONSTITUTION.md",
   "oracle-delta.mjs": "DELTA.json",
   "oracle-etat.mjs": "ETAT.json",
   "oracle-exigences-md.mjs": "EXIGENCES.md",
+  "oracle-retro-modele.mjs": "RETRO-MODELE.md",
 };
 const cibleDe = (oracle) =>
   VOISIN_PAR_ORACLE[oracle] ? join(dirname(cible), VOISIN_PAR_ORACLE[oracle]) : cible;

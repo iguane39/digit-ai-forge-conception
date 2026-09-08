@@ -16,7 +16,7 @@
 import { readFileSync } from 'node:fs'
 import { constat, emettre, erreur, PASS, FAIL } from './_contrat.mjs'
 
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 
 const cible = process.argv[2]
 if (!cible) erreur('argument manquant : chemin du RETRO-MODELE.md')
@@ -25,6 +25,35 @@ try { brut = readFileSync(cible, 'utf8') } catch (e) {
   erreur(`artefact illisible : ${cible} (${e.code ?? e.message})`)
 }
 const texte = brut.split('\r\n').join('\n')
+
+// TF-0885 / TF-0831 — LE DOMAINE, avant les règles. `manifeste.json` désigne
+// `run-oracles-conception.mjs <EXIGENCES.json>` comme point d'entrée de la forge. Sept des dix
+// oracles ne jugent pas `EXIGENCES.json` ; six l'annonçaient proprement en exit 2 (ERREUR :
+// « je n'ai pas jugé »), celui-ci le lisait comme du Markdown, n'y trouvait aucune des huit
+// sections, et rendait FAIL. Le verdict agrégé valait donc FAIL sur TOUTE cible, y compris
+// entièrement verte — mesuré des deux côtés, ici et sur un produit (TF-0831). Un oracle hors
+// de son domaine ne juge pas : il le DIT. Deux signaux, chacun suffisant, tous deux tenant à
+// la NATURE de l'artefact et jamais à son contenu :
+//   — il se parse comme du JSON : c'est un référentiel structuré (`EXIGENCES.json`,
+//     `DELTA.json`, `ETAT.json`), pas un document de prose ;
+//   — il ne porte aucun titre Markdown, d'aucun niveau : un RETRO-MODELE.md amputé de sept de
+//     ses huit sections garde son titre, un fichier qui n'en a AUCUN est un autre artefact.
+// Le contraire — accuser huit sections absentes dans un fichier qui n'en aura jamais — n'est
+// pas un diagnostic, c'est du bruit qui rend le point d'entrée inutilisable.
+{
+  let estJson = false
+  try { JSON.parse(brut); estJson = true } catch { /* pas du JSON : suite du contrôle */ }
+  const sansTitre = !/^\s{0,3}#{1,6}\s+\S/m.test(texte)
+  if (estJson || sansTitre) {
+    erreur(`artefact hors du domaine de oracle-retro-modele : ${cible} — ` +
+      (estJson
+        ? 'document JSON (référentiel structuré), quand cet oracle juge un RETRO-MODELE.md ' +
+          'en Markdown'
+        : 'document sans aucun titre Markdown, quand cet oracle juge un RETRO-MODELE.md et ' +
+          'ses huit sections') +
+      '. NON_JUGE (exit 2), jamais FAIL : hors de son domaine, un oracle ne juge pas, il le dit.')
+  }
+}
 
 const constats = []
 
@@ -138,6 +167,8 @@ emettre({
   non_juge: [
     "la véracité de chaque ancre — seul l'échantillon de confrontation (RM3) est rejoué, le reste relève de la revue",
     "l'exhaustivité du modèle — un volet peut être incomplet sans être faux",
-    "la légalité d'accès au projet analysé (garde-fou juridique du type « produit tiers ») — mandat humain requis"
+    "la légalité d'accès au projet analysé (garde-fou juridique du type « produit tiers ») — mandat humain requis",
+    "un artefact hors du domaine de cet oracle (JSON, ou document sans aucun titre Markdown) : " +
+      "il sort en 2 sans juger, et le motif le nomme — jamais FAIL, jamais PASS (TF-0885)"
   ]
 })
