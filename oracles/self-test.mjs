@@ -1715,6 +1715,84 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-1026 : la typologie des entrants, ecrite DEUX fois, se lit une seule ---
+// `qualifie-l-entrant` porte sa typologie dans SKILL.md (table courte) et dans
+// references/entrants.md (table normative), et l'annonce en toutes lettres (« six entrants »,
+// « table des 6 entrants », « Un des six »). Le 21/09/2026, l'entree du sixieme type (dossier
+// d'appel d'offres) a demande SEPT retouches de prose sur trois fichiers, et aucune recette ne
+// regardait qu'elles se tiennent : une ligne ajoutee d'un seul cote aurait ete verte.
+// Ce qui est prouve ici, dans les DEUX sens :
+//   1. les deux tables nomment les MEMES entrants, dans le meme ordre
+//   2. chaque nombre annonce (SKILL.md x3, gabarit x1) est le nombre de lignes des tables
+//   3. temoin rouge : une ligne retiree de la table courte -> l'ecart NOMME l'entrant absent
+//   4. temoin rouge : un nombre annonce reste a « cinq » -> l'ecart NOMME le fichier
+{
+  const SKILL_ENTRANT = join(ICI, '..', 'skills', 'qualifie-l-entrant')
+  const EN_LETTRES = { un: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10 }
+  const lire = (...p) => readFileSync(join(SKILL_ENTRANT, ...p), 'utf8')
+  const nu = (s) => s.replace(/\*\*/g, '').trim().toLowerCase()
+  // Premiere colonne des lignes de la PREMIERE table dont l'en-tete commence par « Entrant ».
+  const entrantsDe = (texte) => {
+    const lignes = texte.split(/\r?\n/)
+    const debut = lignes.findIndex(l => /^\|\s*Entrant\s*\|/.test(l))
+    if (debut < 0) return []
+    const sortie = []
+    for (const l of lignes.slice(debut + 2)) {
+      if (!l.startsWith('|')) break
+      sortie.push(nu(l.split('|')[1]))
+    }
+    return sortie
+  }
+  const nombre = (s) => /^\d+$/.test(s) ? Number(s) : (EN_LETTRES[s.toLowerCase()] ?? NaN)
+  const annonces = (skill, gabarit) => [
+    ['SKILL.md « typologie a N entrants »', skill.match(/typologie à (\S+) entrants/)?.[1]],
+    ['SKILL.md « table des N entrants »', skill.match(/table des (\S+) entrants/)?.[1]],
+    ['SKILL.md « ## Les N entrants »', skill.match(/^## Les (\S+) entrants/m)?.[1]],
+    ['gabarit-entrant.md « Un des N »', gabarit.match(/^Un des (\S+)\./m)?.[1]]
+  ].map(([ou, brut]) => ({ ou, n: brut === undefined ? NaN : nombre(brut) }))
+  const juger = (skill, normatif, gabarit) => {
+    const court = entrantsDe(skill)
+    const long = entrantsDe(normatif)
+    const ecarts = []
+    for (const e of long) if (!court.includes(e)) ecarts.push(`absent de SKILL.md : « ${e} »`)
+    for (const e of court) if (!long.includes(e)) ecarts.push(`absent de entrants.md : « ${e} »`)
+    if (ecarts.length === 0 && court.join('|') !== long.join('|')) ecarts.push('ordre different entre les deux tables')
+    for (const a of annonces(skill, gabarit)) {
+      if (a.n !== long.length) ecarts.push(`${a.ou} annonce ${a.n}, la table normative en porte ${long.length}`)
+    }
+    return { court, long, ecarts }
+  }
+
+  const skill = lire('SKILL.md')
+  const normatif = lire('references', 'entrants.md')
+  const gabarit = lire('references', 'gabarit-entrant.md')
+  const reel = juger(skill, normatif, gabarit)
+  const derniere = reel.long[reel.long.length - 1] ?? ''
+  const skillAmpute = skill.split(/\r?\n/)
+    .filter(l => !(l.startsWith('|') && nu(l.split('|')[1] ?? '') === derniere)).join(NL)
+  const temoinLigne = juger(skillAmpute, normatif, gabarit)
+  const temoinNombre = juger(skill, normatif, gabarit.replace(/^Un des \S+\./m, 'Un des cinq.'))
+
+  const cas = [
+    ['1. SKILL.md et entrants.md nomment les memes entrants, dans le meme ordre',
+      reel.long.length > 0 && !reel.ecarts.some(e => e.startsWith('absent') || e.startsWith('ordre'))],
+    ['2. chaque nombre annonce est le nombre de lignes de la table normative',
+      reel.long.length > 0 && !reel.ecarts.some(e => e.includes('annonce'))],
+    ['3. temoin : ligne retiree de la table courte -> l\'ecart NOMME l\'entrant absent',
+      derniere !== '' && temoinLigne.ecarts.length === 1 && temoinLigne.ecarts[0].includes(derniere)],
+    ['4. temoin : nombre reste a « cinq » au gabarit -> l\'ecart NOMME le fichier',
+      reel.long.length !== 5 && temoinNombre.ecarts.length === 1 && temoinNombre.ecarts[0].includes('gabarit-entrant.md')]
+  ]
+  const ko = cas.filter(([, ok]) => !ok)
+  console.log(`typologie des entrants de qualifie-l-entrant (branche TF-1026, 2 sens) -- ${reel.long.length} entrants`)
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+  if (ko.length > 0) {
+    echecs++
+    for (const e of reel.ecarts) console.log(`         ECART : ${e}`)
+  }
+}
+
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)

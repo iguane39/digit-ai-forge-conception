@@ -1,7 +1,7 @@
 ---
 name: qualifie-l-entrant
-description: Qualifie ce qui entre dans une conception produit — idée, cahier des charges, produit à reprendre, produit à faire évoluer, produit tiers à répliquer — en déterminant son type, le protocole d'extraction, ce qui en est extractible ou hors de portée, et si le seuil de suffisance est atteint. Produit un ENTRANT.md, ou rend la main avec des questions indicées si la matière ne suffit pas. Use when / déclencher dès que l'utilisateur arrive avec une matière produit à transformer en spécification (« voici le CDC », « on repart de ce produit existant », « j'ai une idée d'appli »), demande si sa matière suffit pour lancer une conception, ou demande un rétro-engineering / la reconstruction d'un modèle complet d'un projet existant (mode rétro-modèle → RETRO-MODELE.md). Ne pas déclencher pour clarifier une idée encore floue et non instrumentée (→ clarifie-une-idee, que ce skill appelle lui-même), pour énumérer la surface fonctionnelle (→ enumere-la-surface), ni pour rédiger des exigences (→ redige-les-exigences).
-version: 1.2.1
+description: Qualifie ce qui entre dans une conception produit — idée, cahier des charges, produit à reprendre, produit à faire évoluer, produit tiers à répliquer, dossier d'appel d'offres — en déterminant son type, le protocole d'extraction, ce qui en est extractible ou hors de portée, et si le seuil de suffisance est atteint. Produit un ENTRANT.md, ou rend la main avec des questions indicées sous le seuil. Use when / déclencher dès que l'utilisateur arrive avec une matière produit à transformer en spécification (« voici le CDC », « voici le dossier de consultation », « on repart de ce produit existant », « j'ai une idée d'appli »), demande si sa matière suffit pour lancer une conception, ou demande le rétro-engineering d'un projet (mode rétro-modèle → RETRO-MODELE.md). Ne pas déclencher pour clarifier une idée encore floue et non instrumentée (→ clarifie-une-idee, que ce skill appelle lui-même), pour énumérer la surface fonctionnelle (→ enumere-la-surface), ni pour rédiger des exigences (→ redige-les-exigences).
+version: 1.3.0
 ---
 
 # Qualifie l'entrant
@@ -15,13 +15,16 @@ Clarification d'une idée brute → `clarifie-une-idee`, appelé, jamais réimpl
 Énumération de ce qui existe → `enumere-la-surface`.
 Cotation → grille ICE de `digit-ai-prospection`.
 
-Reste en propre : **la typologie à cinq entrants**, le seuil de suffisance par type, et le
+Construction du référentiel d'un appel d'offres → `construire-referentiel-ao.mjs` de
+`digit-ai-propale` (forge-agents), appelé, jamais réimplémenté.
+
+Reste en propre : **la typologie à six entrants**, le seuil de suffisance par type, et le
 garde-fou juridique du cinquième.
 
 ## Quick start
 
 ```
-1. Type          → references/entrants.md, table des 5 entrants
+1. Type          → references/entrants.md, table des 6 entrants
 2. Protocole     → celui de la ligne retenue, pas un autre
 3. Seuil         → atteint ? sinon questions a/b/c et ARRÊT
 4. Artefact      → references/gabarit-entrant.md → ENTRANT.md
@@ -29,7 +32,7 @@ garde-fou juridique du cinquième.
 6. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs
 ```
 
-## Les cinq entrants
+## Les six entrants
 
 | Entrant | Ce qui le distingue | Seuil de suffisance |
 |---|---|---|
@@ -38,6 +41,7 @@ garde-fou juridique du cinquième.
 | Produit à reprendre | Du code lisible | dépôt lisible **et** ≥ 1 point d'entrée énuméré |
 | Produit à faire évoluer | Du code lisible **et** un delta demandé | surface existante **et** delta en ≥ 1 exigence candidate |
 | Produit tiers à répliquer | Observé de l'extérieur, sans accès | fonctions **et** parcours observés **et** garde-fou accepté |
+| Dossier d'appel d'offres | Plusieurs pièces d'un acheteur, qui imposent la forme de la réponse et la notent | règlement lisible en texte **et** date limite relevée **et** référentiel construit non vide |
 
 Protocoles, extractibles et hors-de-portée : `references/entrants.md`.
 

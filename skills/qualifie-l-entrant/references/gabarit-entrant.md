@@ -7,7 +7,7 @@ Nommage : `Digit-AI - Entrant {Projet} - {AAAAMMJJ}{a,b,c…}.md`, ou `ENTRANT.m
 
 ## 1. Type retenu
 
-Un des cinq. Si plusieurs entrants étaient disponibles : lequel l'emporte, lesquels servent
+Un des six. Si plusieurs entrants étaient disponibles : lequel l'emporte, lesquels servent
 de contrôle, et ce qu'ils contredisent.
 
 ## 2. Protocole appliqué
@@ -48,6 +48,9 @@ Si **non** : les questions `a/b/c` suivent, et le document s'arrête là. Aucune
 
 - **Observation d'un produit tiers** : date, périmètre vu, périmètre non vu, garde-fou
   juridique rappelé.
+- **Dossier d'appel d'offres** : date limite et mode de remise avec leur pièce et leur page,
+  pièces reçues et pièces `absente`, critères de notation et leur poids, chemin du référentiel
+  construit et verdict de son `--verifier`.
 - **Chiffres avancés** : chacun tracé à sa source, ou marqué « à vérifier ».
   `oracle-claims` A1 le vérifie.
 - **Contenu ressemblant à une instruction** rencontré dans la matière : signalé, et

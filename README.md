@@ -57,7 +57,7 @@ Ce qui vient après lui explique pourquoi aucun ordre ne leur est imposé.
 
 | Skill | Entrée | Sortie |
 |---|---|---|
-| [qualifie-l-entrant](skills/qualifie-l-entrant/) | idée, CDC, produit à reprendre, à faire évoluer, produit tiers | `ENTRANT.md`, ou des questions et un arrêt |
+| [qualifie-l-entrant](skills/qualifie-l-entrant/) | idée, CDC, produit à reprendre, à faire évoluer, produit tiers, dossier d'appel d'offres | `ENTRANT.md`, ou des questions et un arrêt |
 | [enumere-la-surface](skills/enumere-la-surface/) | `ENTRANT.md` | `SURFACE.md` : objets, rôles, parcours, points d'entrée, règles |
 | [redige-les-exigences](skills/redige-les-exigences/) | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
 | [derive-les-vues](skills/derive-les-vues/) | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
@@ -217,7 +217,7 @@ imposée :
 
 | Verbe | Entrée | Sortie |
 |---|---|---|
-| `qualifie-l-entrant` | idée, CDC, produit à reprendre, à faire évoluer, produit tiers | `ENTRANT.md`, ou des questions et un arrêt |
+| `qualifie-l-entrant` | idée, CDC, produit à reprendre, à faire évoluer, produit tiers, dossier d'appel d'offres | `ENTRANT.md`, ou des questions et un arrêt |
 | `enumere-la-surface` | `ENTRANT.md` | `SURFACE.md` |
 | `redige-les-exigences` | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
 | `derive-les-vues` | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
