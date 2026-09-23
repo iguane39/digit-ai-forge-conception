@@ -15,10 +15,14 @@
 //   node run-oracles-conception.mjs <EXIGENCES.json> --seulement exigences,ears
 // Le manifeste des verbes (skills → oracles) : oracles\manifeste.json.
 
-import { readdirSync } from "node:fs";
 import { dirname, join, basename } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+// TF-1319 (23/09/2026) : la règle de découverte vit dans `decouvrir-oracles.mjs`, que le juge
+// d'enclenchement du pilot appelle aussi. Une seule règle, deux lecteurs : ce que la forge DÉCLARE
+// porter est exactement ce que ce lanceur LANCE — deux copies du motif auraient divergé au premier
+// renommage, et le juge aurait attendu au ledger un oracle que ce lanceur ne joue pas.
+import { nomsDesOracles } from "./decouvrir-oracles.mjs";
 
 const ICI = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -33,10 +37,8 @@ if (!cible) {
   process.exit(2);
 }
 
-const oracles = readdirSync(ICI)
-  .filter((f) => /^oracle-[\w-]+\.mjs$/.test(f))
-  .filter((f) => !seulement || seulement.some((s) => f.includes(s)))
-  .sort();
+const oracles = nomsDesOracles(ICI)
+  .filter((f) => !seulement || seulement.some((s) => f.includes(s)));
 
 // TF-0255 : trois oracles transverses (constitution, delta, etat) ne jugent PAS EXIGENCES.json —
 // ils jugent un fichier voisin, à côté d'EXIGENCES.json (README §« Constitution projet »,

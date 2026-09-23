@@ -11,7 +11,7 @@
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
 // TF-0823 : le calcul de la matrice complete vit a part (`matrice.mjs`), pour qu'un humain
@@ -1791,6 +1791,72 @@ for (const o of ORACLES) {
     echecs++
     for (const e of reel.ecarts) console.log(`         ECART : ${e}`)
   }
+}
+
+// ---- TF-1319 : la decouverte des oracles LIT LE DISQUE, et c'est la liste que le lanceur JOUE ----
+// Le juge d'enclenchement du pilot confronte ce que cette forge DECOUVRE aux verdicts consignes au
+// ledger d'un run. Deux sens : un oracle pose est decouvert, un script qui n'en est pas un ne l'est
+// jamais. Et une propriete propre a cette forge : la liste decouverte est EXACTEMENT celle que
+// run-oracles-conception.mjs lance -- le lanceur importe la regle, et ce cas le verifie en le
+// jouant, pas en relisant son code.
+{
+  const DECOUVRIR = join(ICI, 'decouvrir-oracles.mjs')
+  const decouvre = (racine) => {
+    const r = spawnSync(process.execPath, [DECOUVRIR, ...(racine ? ['--racine', racine] : [])], { encoding: 'utf8' })
+    let j = null
+    try { j = JSON.parse(r.stdout) } catch { /* sortie illisible : les cas ci-dessous la disent */ }
+    return { code: r.status, j }
+  }
+  const reel = decouvre(null)
+  const noms = (reel.j?.oracles || []).map(o => o.nom)
+  const lance = spawnSync(process.execPath, [join(ICI, 'run-oracles-conception.mjs'), join(VERTE, 'EXIGENCES.json'), '--json-only'], { encoding: 'utf8' })
+  let joues = []
+  try { joues = JSON.parse(lance.stdout).oracles.map(o => o.oracle) } catch { joues = [] }
+
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-decouverte-'))
+  const poser = (rel) => {
+    const p = join(tmp, rel)
+    mkdirSync(dirname(p), { recursive: true })
+    writeFileSync(p, '// fixture de decouverte\n')
+  }
+  const leurres = ['oracles/oracle-alpha.test.mjs', 'oracles/controle-s11.mjs', 'oracles/self-test.mjs',
+    'oracles/_contrat.mjs', 'oracles/sous-dossier/oracle-profond.mjs', 'oracles/fixtures/oracle-faux.mjs']
+  let vert, apres, absente
+  try {
+    ;['oracles/oracle-alpha.mjs', 'oracles/oracle-beta.mjs'].forEach(poser)
+    leurres.forEach(poser)
+    vert = decouvre(tmp)
+    poser('oracles/oracle-gamma.mjs')
+    apres = decouvre(tmp)
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+  absente = decouvre(join(tmpdir(), 'forge-conception-racine-qui-n-existe-pas'))
+  const nomsVert = (vert.j?.oracles || []).map(o => o.nom)
+
+  const cas = [
+    ['1. vert : la forge decouvre ses oracles sur son propre disque, contrat digit-ai/decouverte-oracles@1, chaque chemin existe',
+      reel.code === 0 && reel.j?.contrat === 'digit-ai/decouverte-oracles@1' && reel.j?.forge === 'digit-ai-forge-conception' &&
+      noms.length > 0 && reel.j.oracles.every(o => existsSync(join(ICI, '..', o.chemin)))],
+    [`2. la liste decouverte (${noms.length}) est EXACTEMENT celle que run-oracles-conception.mjs lance (${joues.length})`,
+      noms.length > 0 && JSON.stringify([...noms].sort()) === JSON.stringify([...joues].sort())],
+    ['3. l\'ecart du manifeste est DIT : controle-s11.mjs, range en oracles_transverses, n\'est pas decouvert et le non_juge le nomme',
+      !noms.includes('controle-s11') && (reel.j?.non_juge || []).some(n => n.includes('controle-s11.mjs'))],
+    [`4. vert : un oracle pose sur un arbre jetable est decouvert (obtenu ${JSON.stringify(nomsVert)})`,
+      vert.code === 0 && JSON.stringify(nomsVert) === JSON.stringify(['oracle-alpha', 'oracle-beta'])],
+    [`5. rouge : recette, controle, lanceur, contrat, sous-dossier et fixture ne sont JAMAIS pris pour des oracles (${leurres.length} leurres)`,
+      vert.code === 0 && !(vert.j?.oracles || []).some(o => leurres.includes(o.chemin))],
+    ['6. un oracle AJOUTE est decouvert au passage suivant, sans liste a tenir',
+      (apres.j?.oracles || []).some(o => o.chemin === 'oracles/oracle-gamma.mjs')],
+    [`7. rouge : une racine sans dossier oracles/ sort en 2 avec son motif, jamais en liste vide muette (obtenu exit ${absente.code})`,
+      absente.code === 2 && absente.j?.oracles?.length === 0 && /introuvable/.test(absente.j?.motif || '')]
+  ]
+  const ko = cas.filter(([, ok]) => !ok)
+  console.log('')
+  console.log(`decouverte des oracles (branche TF-1319, 2 sens) -- ${noms.length} oracles decouverts`)
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+  if (ko.length > 0) echecs++
 }
 
 console.log('')
