@@ -21,8 +21,11 @@
 //
 // LA REGLE est celle du lanceur, au caractere pres : tout fichier de `oracles/` (premier niveau)
 // dont le nom repond a /^oracle-[\w-]+\.mjs$/. `controle-s11.mjs` n'y entre pas, et c'est son
-// propre en-tete qui le dit (« Ce n'est PAS un oracle de la forge ») -- alors que `manifeste.json`
-// le range parmi les `oracles_transverses` : l'ecart est DECLARE en non_juge, pas tranche ici.
+// propre en-tete qui le dit (« Ce n'est PAS un oracle de la forge ») -- accord que `manifeste.json`
+// a rejoint le 26/09/2026 (TF-1335) : il le rangeait a tort parmi les `oracles_transverses`,
+// l'ecart avait ete DECLARE en non_juge sans etre tranche ici : TF-1335 l'a tranche en corrigeant
+// le manifeste. Si un manifeste redevient hors regle, le non_juge le nomme toujours -- preuve :
+// la fixture dediee de `self-test.mjs`, branche « decouverte des oracles ».
 //
 // Recette a double sens : `oracles/self-test.mjs`, branche « decouverte des oracles (TF-1319) ».
 

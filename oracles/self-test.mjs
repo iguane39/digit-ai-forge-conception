@@ -1825,6 +1825,11 @@ for (const o of ORACLES) {
   try {
     ;['oracles/oracle-alpha.mjs', 'oracles/oracle-beta.mjs'].forEach(poser)
     leurres.forEach(poser)
+    // TF-1335 : manifeste FICTIF, dans le seul arbre jetable -- l'ecart « declare hors regle » se
+    // prouve sur une fixture qu'on controle, jamais plus sur le manifeste REEL de cette forge (le
+    // 26/09/2026, controle-s11.mjs y etait a tort range en oracles_transverses ; corrige, ce cas
+    // aurait perdu son temoin s'il etait reste adosse au disque reel).
+    writeFileSync(join(tmp, 'oracles', 'manifeste.json'), JSON.stringify({ oracles_transverses: ['controle-s11.mjs'] }))
     vert = decouvre(tmp)
     poser('oracles/oracle-gamma.mjs')
     apres = decouvre(tmp)
@@ -1840,8 +1845,8 @@ for (const o of ORACLES) {
       noms.length > 0 && reel.j.oracles.every(o => existsSync(join(ICI, '..', o.chemin)))],
     [`2. la liste decouverte (${noms.length}) est EXACTEMENT celle que run-oracles-conception.mjs lance (${joues.length})`,
       noms.length > 0 && JSON.stringify([...noms].sort()) === JSON.stringify([...joues].sort())],
-    ['3. l\'ecart du manifeste est DIT : controle-s11.mjs, range en oracles_transverses, n\'est pas decouvert et le non_juge le nomme',
-      !noms.includes('controle-s11') && (reel.j?.non_juge || []).some(n => n.includes('controle-s11.mjs'))],
+    ['3. fixture : un manifeste qui range controle-s11.mjs en oracles_transverses est DIT hors regle, pas decouvert, et le non_juge le nomme',
+      !nomsVert.includes('controle-s11') && (vert.j?.non_juge || []).some(n => n.includes('controle-s11.mjs'))],
     [`4. vert : un oracle pose sur un arbre jetable est decouvert (obtenu ${JSON.stringify(nomsVert)})`,
       vert.code === 0 && JSON.stringify(nomsVert) === JSON.stringify(['oracle-alpha', 'oracle-beta'])],
     [`5. rouge : recette, controle, lanceur, contrat, sous-dossier et fixture ne sont JAMAIS pris pour des oracles (${leurres.length} leurres)`,

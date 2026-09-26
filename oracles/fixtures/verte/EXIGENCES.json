@@ -176,7 +176,7 @@
     {
       "id": "E-007",
       "besoin": "B-02",
-      "enonce": "Les responsables sont notifiés lorsque plusieurs demandes se chevauchent pour leur équipe.",
+      "enonce": "Les responsables sont notifiés lorsque des demandes se chevauchent pour leur équipe.",
       "critere": "Les demandes concernées sont présentes dans la notification envoyée au responsable.",
       "palier": "V1",
       "statut_epistemique": {

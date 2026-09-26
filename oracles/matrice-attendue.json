@@ -1,8 +1,8 @@
 {
   "matrice_attendue": "forge-conception",
-  "version": "1.1.0",
-  "date": "2026-09-08",
-  "etablie_par": "TF-0827, APRES l'entree de la regle VP5 et de ses deux fixtures dediees (corps-de-vue-profil-verte, corps-de-vue-profil-rouge)",
+  "version": "1.2.0",
+  "date": "2026-09-26",
+  "etablie_par": "TF-1335, APRES la correction de l'enonce E-007 dans fixtures/verte/EXIGENCES.json (terme ambigu EA2 retire)",
   "pourquoi": "Le self-test associait un couple (fixture verte, fixture rouge) a un oracle et ne disait rien des autres verdicts qu'une fixture rend. Chaque regle neuve posee sur un oracle PARTAGE pouvait donc faire basculer une fixture voisine en silence. Cette donnee est la reference : `node oracles/self-test.mjs` recalcule la matrice complete et compare cellule a cellule ; un verdict qui differe est un echec de recette nommant la fixture et l'oracle.",
   "comment_mettre_a_jour": "Mettre a jour cette donnee est un GESTE EXPLICITE, dans le commit qui change la regle — jamais un effet de bord. `node oracles/matrice.mjs` imprime la matrice courante et le bloc `cellules` pret a coller ; ajouter la ligne correspondante dans `bascules` avec sa date et sa cause, et avancer `version` et `date` ci-dessus.",
   "legende": {
@@ -20,6 +20,15 @@
       "date": "2026-09-05",
       "cause": "entree de la regle E10 (TF-0814) dans oracle-exigences : ce referentiel est la CIBLE d'un delta, juge par oracle-delta et jamais par oracle-exigences dans le self-test. Il n'est pas migre — c'est precisement le cas « referentiel anterieur au champ » que E10 doit accuser.",
       "constate_par": "un balayage MANUEL des douze fixtures, faute de matrice : aucun cas du self-test ne branchait oracle-exigences sur cette fixture. C'est le defaut que TF-0823 corrige, et cette ligne en est la trace datee."
+    },
+    {
+      "fixture": "verte",
+      "oracle": "oracle-ears",
+      "de": "FAIL",
+      "vers": "PASS",
+      "date": "2026-09-26",
+      "cause": "TF-1335 : l'enonce de E-007 employait « plusieurs », terme de la liste fermee EA2 (ambiguite lexicale, portee non bornee — le mot meme cite en exemple dans le commentaire d'EA2). La fixture date du 04/08/2026, huit jours avant l'ajout d'oracle-ears (12/08/2026, TF-0101) : jamais reconciliee depuis. Enonce reformule sans le terme ambigu, sens inchange (« se chevauchent » porte deja la pluralite) ; CADRAGE-DESIGN.md rescelle (source-sha256) en consequence, sans rien changer a son contenu.",
+      "constate_par": "campagne d'agent du 26/09/2026 (TF-1335, decision D-19 (a)) : la fixture generique « verte » est la seule des neuf paires <oracle>-verte/<oracle>-rouge de ce dossier a ne pas passer tous ses oracles applicables — l'ecart n'etait porte par aucune bascule datee."
     }
   ],
   "cellules": {
@@ -153,7 +162,7 @@
       "oracle-surface": "PASS",
       "oracle-claims": "PASS",
       "oracle-etat": "PASS",
-      "oracle-ears": "FAIL"
+      "oracle-ears": "PASS"
     },
     "vues-profil-rouge": {
       "oracle-retro-modele": "PASS",
