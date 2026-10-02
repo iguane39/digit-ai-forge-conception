@@ -41,7 +41,7 @@ Les deux autres candidates sont **retenues** : la donnée volatile par E-003, qu
 le tarif servi, et l'effet observable par E-004. Le design hérite donc des deux, et n'a aucun
 écran de démonstration à prévoir.
 
-## Ce que cette vue ne dit pas
+## Hors du champ de cette vue
 
 Le champ `ton` et les contraintes reprises ne se déduisent d'aucune exigence. Ils sont
 **demandés**, jamais remplis par défaut — c'est le point où la Conception rend la main,

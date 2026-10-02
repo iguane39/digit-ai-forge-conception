@@ -1,6 +1,6 @@
 <!-- source: EXIGENCES.json -->
 <!-- source-sha256: 0b4d70263d9d6a06c39ff64e890edbdb16df6cee73472abf0ce24aecae6ea355 -->
-<!-- corps-sha256: 9e5008ec666780a3ca139961ca192fae124e9c9ea6fae1f3c4fc140976a5d8e8 -->
+<!-- corps-sha256: f3ce90a5c8875e0d42788191d1f86deb2f9ed5b2a613670c491ca7fd5600c11e -->
 
 # Fiche de cadrage design — Catalogue de formations internes
 
@@ -42,7 +42,7 @@ Les deux autres candidates sont **retenues** : la donnée volatile par E-003, qu
 le tarif servi, et l'effet observable par E-004. Le design hérite donc des deux, et n'a aucun
 écran de démonstration à prévoir.
 
-## Ce que cette vue ne dit pas
+## Hors du champ de cette vue
 
 Le champ `ton` et les contraintes reprises ne se déduisent d'aucune exigence. Ils sont
 **demandés**, jamais remplis par défaut — c'est le point où la Conception rend la main,

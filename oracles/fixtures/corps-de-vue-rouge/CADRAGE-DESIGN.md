@@ -27,7 +27,7 @@ puis la vue est régénérée. Une vue éditée est détectée par `oracle-traca
 | Inscription à une session ouverte | parcours | E-002, E-004 |
 | Recherche du catalogue | point d'entrée | E-001 |
 
-## Ce que cette vue ne dit pas
+## Hors du champ de cette vue
 
 Le champ `ton` et les contraintes reprises ne se déduisent d'aucune exigence. Ils sont
 **demandés**, jamais remplis par défaut — c'est le point où la Conception rend la main,

@@ -18,7 +18,7 @@ chaque itération de palier ; ce fichier ne change que par ratification explicit
 3. Toute donnée volatile (barèmes, taux, catalogues) vit en base, éditable, datée et sourcée —
    jamais en dur dans le code.
 
-## Ce que cette constitution ne couvre pas
+## Hors du champ de la constitution
 
 Les arbitrages de palier (MVP/V1/V2) et le contenu fonctionnel : ce sont des décisions produit,
 pas des invariants — ils vivent dans `EXIGENCES.json`.

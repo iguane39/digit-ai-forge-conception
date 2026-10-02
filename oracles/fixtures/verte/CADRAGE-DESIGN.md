@@ -43,7 +43,7 @@ Les trois candidates du schéma sont écartées : le design n'a donc à prévoir
 démonstration, ni écran d'édition de référentiel périssable, et hérite de l'effet observable
 exigence par exigence.
 
-## Ce que cette vue ne dit pas
+## Hors du champ de cette vue
 
 Le champ `ton` et les contraintes reprises ne se déduisent d'aucune exigence. Ils sont
 **demandés**, jamais remplis par défaut — c'est le point où la Conception rend la main,
