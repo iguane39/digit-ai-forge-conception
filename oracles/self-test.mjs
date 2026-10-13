@@ -183,6 +183,13 @@ const ORACLES = [
     args: (dossier) => [dossier === VERTE ? CONSTIT_VERTE : CONSTIT_SANS_PROMESSE]
   },
   {
+    // TF-1564 (13/10/2026) : le modele du metier (processus + glossaire) de CADRAGE-METIER.md.
+    // Fixtures dediees ; la rouge plante CM1 et CM3, CM2 est prouvee par la branche TF-1564 plus bas.
+    fichier: 'oracle-cadrage-metier.mjs',
+    regles: ['CM1', 'CM3'],
+    args: (dossier) => [join(ICI, 'fixtures', dossier === VERTE ? 'cadrage-metier-verte' : 'cadrage-metier-rouge', 'CADRAGE-METIER.md')]
+  },
+  {
     // TF-0101 (3/3) : format d'un delta de référentiel (cycle propose/apply/archive façon
     // OpenSpec), confronté à un référentiel cible via --referentiel. Fixtures dédiées.
     fichier: 'oracle-delta.mjs',
@@ -1862,6 +1869,171 @@ for (const o of ORACLES) {
   for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
   console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
   if (ko.length > 0) echecs++
+}
+
+// --- branche TF-1619 : EM4, le nom d'un ETAT dit son verbe (avertissement non bloquant) --------
+// Retour Produit-79 du 07/10/2026 : quatre verbes ecrivent dans le meme dossier d'etape, ETAT.json
+// ne porte qu'un verbe, le nommage etait improvise. Regle NEUVE opposable a tous les produits :
+// AVERTISSEMENT (SANS_OBJET, exit 0), jamais FAIL. Fixtures ephemeres, deux sens + le remede joue.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'em4-'))
+  try {
+    const ecrire = (dossier, nom, verbe) => {
+      mkdirSync(join(tmp, dossier), { recursive: true })
+      writeFileSync(join(tmp, dossier, nom), JSON.stringify({
+        verbe, statut: 'produit', artefacts: ['ENTRANT.md'], questions: []
+      }), 'utf8')
+      return join(tmp, dossier, nom)
+    }
+    const em4 = (chemin) => {
+      const r = lancer('oracle-etat.mjs', [chemin])
+      return { code: r.code, c: (r.rapport?.constats ?? []).find(x => x.regle === 'EM4') }
+    }
+    const seul = em4(ecrire('seul', 'ETAT.json', 'qualifie-l-entrant'))
+    const nomme = em4(ecrire('nomme', 'ETAT-qualifie-l-entrant.json', 'qualifie-l-entrant'))
+    const faux = em4(ecrire('faux', 'ETAT-derive-les-vues.json', 'qualifie-l-entrant'))
+    ecrire('mixte', 'ETAT-enumere-la-surface.json', 'enumere-la-surface')
+    const mixte = em4(ecrire('mixte', 'ETAT.json', 'qualifie-l-entrant'))
+    const libre = em4(ecrire('libre', 'mon-etat.json', 'qualifie-l-entrant'))
+    const remede = em4(ecrire('faux', 'ETAT-qualifie-l-entrant.json', 'qualifie-l-entrant'))
+    const cas = [
+      ['1. vert : ETAT.json seul dans son dossier -> EM4 PASS', seul.code === 0 && seul.c?.statut === 'PASS'],
+      ['2. vert : ETAT-<verbe>.json dont le verbe correspond -> EM4 PASS', nomme.code === 0 && nomme.c?.statut === 'PASS'],
+      ['3. rouge : ETAT-<autre verbe>.json -> avertissement SANS_OBJET, exit 0 (jamais FAIL)',
+        faux.code === 0 && faux.c?.statut === 'SANS_OBJET' && /non bloquant/.test(faux.c.message)],
+      ['4. rouge : ETAT.json qui coexiste avec ETAT-<verbe>.json -> avertissement, exit 0',
+        mixte.code === 0 && mixte.c?.statut === 'SANS_OBJET' && /coexiste/.test(mixte.c.message)],
+      ['5. rouge : nom hors convention -> avertissement, exit 0',
+        libre.code === 0 && libre.c?.statut === 'SANS_OBJET' && /hors convention/.test(libre.c.message)],
+      ['6. remede joue : le nom corrige propose par l\'avertissement du cas 3 -> EM4 PASS',
+        remede.code === 0 && remede.c?.statut === 'PASS']
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-etat.mjs (branche TF-1619, EM4 : nommage ETAT-<verbe>.json, fixtures ephemeres, 2 sens + remede)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-1625 : E11, la tete d'un enonce ne se repete pas (avertissement non bloquant) ----
+// Retour humain du 07/10/2026 : « Le gestionnaire doit » ouvrait 9 besoins sur 9. Regle NEUVE
+// opposable a tous les produits : AVERTISSEMENT (SANS_OBJET, exit inchange), jamais FAIL.
+// Le referentiel de depart est la fixture verte ; la rouge ne change QUE les enonces des besoins.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'e11-'))
+  try {
+    const base = JSON.parse(readFileSync(join(VERTE, 'EXIGENCES.json'), 'utf8'))
+    const juger = (nom, maj) => {
+      const ref = JSON.parse(JSON.stringify(base))
+      maj(ref)
+      const chemin = join(tmp, `${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref), 'utf8')
+      const r = lancer('oracle-exigences.mjs', [chemin])
+      return { code: r.code, c: (r.rapport?.constats ?? []).filter(x => x.regle === 'E11') }
+    }
+    const besoinsDe = (enonces) => (ref) => {
+      ref.besoins = enonces.map((enonce, i) => ({ id: `B-${i + 1}`, enonce }))
+    }
+    const temoin = lancer('oracle-exigences.mjs', [join(VERTE, 'EXIGENCES.json')])
+    const verte = juger('verte', () => {})
+    const repete = juger('repete', besoinsDe(Array.from({ length: 9 }, (_, i) => `Le gestionnaire doit traiter le cas ${i + 1}`)))
+    const varie = juger('varie', besoinsDe([
+      'Déclarer une absence sans passer par le responsable', 'Savoir qui est absent à une date donnée',
+      'Conserver les données pendant 60 mois', 'Notifier le responsable des demandes de son équipe',
+      'Exporter le récapitulatif mensuel', 'Consulter le solde de congés', 'Annuler une demande en attente',
+      'Valider ou refuser une demande', 'Retrouver l\'historique d\'une demande']))
+    const sousSeuil = juger('sous-seuil', besoinsDe(['Le gestionnaire doit saisir A', 'Le gestionnaire doit saisir B', 'Le gestionnaire doit saisir C']))
+    const cas = [
+      ['1. vert : la fixture verte ne declenche aucun avertissement E11 (et son exit reste celui de la recette)',
+        verte.c.length === 2 && verte.c.every(x => x.statut === 'PASS') && verte.code === temoin.code],
+      ['2. rouge : 9 besoins ouverts par « Le gestionnaire doit » -> avertissement SANS_OBJET qui nomme la tete, exit inchange',
+        repete.c.some(x => x.statut === 'SANS_OBJET' && /le gestionnaire doit/.test(x.message) && x.ou === 'besoins[].enonce') &&
+        repete.code === temoin.code],
+      ['3. remede joue : les memes 9 besoins reformules a l\'infinitif -> E11 PASS',
+        varie.c.length === 2 && varie.c.every(x => x.statut === 'PASS') && varie.code === temoin.code],
+      ['4. limite declaree : sous 4 enonces la tete n\'est pas jugee (3 besoins identiques -> PASS)',
+        sousSeuil.c.every(x => x.statut === 'PASS')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences.mjs (branche TF-1625, E11 : tete d\'enonce repetee, fixtures ephemeres, 2 sens + remede)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-1564 : CM2 (processus) et C5 (invariants du metier, avertissement non bloquant) ----
+// Retour Produit-12 du 01/10/2026 (RC-6) : aucun artefact de conception ne portait le modele du
+// metier. CM2 n'est pas jouee par la rouge generale (sa section « Processus » manque, CM1 la dit) :
+// elle a sa branche. C5 est une regle NEUVE opposable a tous les produits : AVERTISSEMENT
+// (SANS_OBJET, exit inchange), jamais FAIL. Fixtures ephemeres, deux sens + remede joue.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'metier-'))
+  try {
+    const ecrire = (nom, contenu) => { const f = join(tmp, nom); writeFileSync(f, contenu, 'utf8'); return f }
+    const cadre = (processus) => `# Cadrage
+
+## Processus
+
+${processus}
+
+## Glossaire
+
+| Terme | Définition |
+|---|---|
+| Solde | Nombre de jours restants à une date. |
+`
+    const cm2 = (nom, processus) => {
+      const r = lancer('oracle-cadrage-metier.mjs', [ecrire(nom, cadre(processus))])
+      return { code: r.code, c: (r.rapport?.constats ?? []).find(x => x.regle === 'CM2') }
+    }
+    const nom = cm2('c1.md', '- Demande : le salarié dépose, le responsable valide ou refuse.')
+    const vide = cm2('c2.md', '- TODO')
+    const sansDesc = cm2('c3.md', '- Demande')
+    const constit = readFileSync(CONSTIT_VERTE, 'utf8').replace(/\r\n/g, '\n')
+    const c5 = (nomF, ajout) => {
+      const r = lancer('oracle-constitution.mjs', [ecrire(nomF, constit + ajout)])
+      return { code: r.code, c: (r.rapport?.constats ?? []).find(x => x.regle === 'C5') }
+    }
+    const absente = c5('k1.md', '')
+    const complet = c5('k2.md', `
+## Invariants du métier
+
+- Une date de bail vient du contrat signé. Source de vérité : le contrat PDF ; fenêtre de validité : de la signature à la résiliation ; exceptions : avenant daté ; contrôle : tests/invariants/test_dates_bail.py
+`)
+    const incomplet = c5('k3.md', `
+## Invariants du métier
+
+- Une date de bail vient du contrat signé. Source de vérité : le contrat PDF
+`)
+    const remede = c5('k4.md', `
+## Invariants du métier
+
+- Une date de bail vient du contrat signé. Source de vérité : le contrat PDF ; fenêtre de validité : de la signature à la résiliation ; exceptions : aucune ; contrôle : tests/invariants/test_dates_bail.py
+`)
+    const cas = [
+      ['1. vert : un processus « nom : description » -> CM2 PASS', nom.code === 0 && nom.c?.statut === 'PASS'],
+      ['2. rouge : un processus placeholder -> CM2 FAIL', vide.code === 1 && vide.c?.statut === 'FAIL'],
+      ['3. rouge : un nom de processus sans description -> CM2 FAIL', sansDesc.code === 1 && sansDesc.c?.statut === 'FAIL'],
+      ['4. C5 : constitution sans section -> avertissement SANS_OBJET, exit 0', absente.code === 0 && absente.c?.statut === 'SANS_OBJET'],
+      ['5. C5 vert : un invariant aux quatre rubriques -> PASS', complet.code === 0 && complet.c?.statut === 'PASS'],
+      ['6. C5 rouge : un invariant sans fenetre, exceptions ni controle -> avertissement qui les nomme, exit 0',
+        incomplet.code === 0 && incomplet.c?.statut === 'SANS_OBJET' && /fenêtre de validité, exceptions, contrôle/.test(incomplet.c.message)],
+      ['7. remede joue : les rubriques manquantes ajoutees (exceptions : aucune) -> C5 PASS', remede.code === 0 && remede.c?.statut === 'PASS']
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-cadrage-metier.mjs + oracle-constitution.mjs (branche TF-1564, CM2 et C5, fixtures ephemeres, 2 sens + remede)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
 }
 
 console.log('')

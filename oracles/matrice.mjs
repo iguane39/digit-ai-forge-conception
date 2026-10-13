@@ -56,6 +56,7 @@ export const ORACLES_MATRICE = [
   { oracle: 'oracle-etat', code: 'ETA', requiert: ['ETAT.json'], args: (d) => [join(d, 'ETAT.json')] },
   { oracle: 'oracle-ears', code: 'EAR', requiert: ['EXIGENCES.json'], args: (d) => [join(d, 'EXIGENCES.json')] },
   { oracle: 'oracle-constitution', code: 'CON', requiert: ['CONSTITUTION.md'], args: (d) => [join(d, 'CONSTITUTION.md')] },
+  { oracle: 'oracle-cadrage-metier', code: 'CAM', requiert: ['CADRAGE-METIER.md'], args: (d) => [join(d, 'CADRAGE-METIER.md')] },
   {
     oracle: 'oracle-delta',
     code: 'DEL',

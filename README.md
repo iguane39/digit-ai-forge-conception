@@ -69,18 +69,19 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 16 entrées d'oracle, 56 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 17 entrées d'oracle, 58 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
 |---|---|---|
-| `oracle-exigences` | E1–E10 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9). Gardes lexicales à frontières de mot **Unicode** depuis TF-0799 : `\b` est ASCII, et un accent y valait frontière — « elle » se lisait dans « réelle ». **E10** : chacune des **trois exigences socle candidates** (données de démonstration invisibles en production, données volatiles éditables/datées/sourcées, effet observable de tout élément interactif) est **portée** par une exigence ou **écartée** dans `ecarts_exigences_socle`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, la candidate nommée (TF-0814) |
+| `oracle-exigences` | E1–E11 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9). Gardes lexicales à frontières de mot **Unicode** depuis TF-0799 : `\b` est ASCII, et un accent y valait frontière — « elle » se lisait dans « réelle ». **E10** : chacune des **trois exigences socle candidates** (données de démonstration invisibles en production, données volatiles éditables/datées/sourcées, effet observable de tout élément interactif) est **portée** par une exigence ou **écartée** dans `ecarts_exigences_socle`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, la candidate nommée (TF-0814) |
 | `oracle-tracabilite` | T1–T5 | orphelins des deux côtés, statut épistémique, vues régénérables. **T5** : la vue porte l'empreinte SHA-256 de **son propre corps** en plus de celle de sa source, et T5 la recalcule — T3 prouvait d'où vient la vue, jamais ce qu'elle contient, et une vue amputée d'un tiers gardait un en-tête valide (TF-0818). Une vue scellée avant ce contrôle n'est pas migrée : T5 y rend `SANS_OBJET` et le dit |
 | `oracle-surface` | S1–S4 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio ; **S4** : dès que le produit a une surface web, chacun des **treize candidats d'office** de la surface implicite (aide, onboarding, compte, favicon, états vides, erreurs visibles, mentions légales, responsive, accessibilité RGAA et ses livrables, 404 par langue — patron P-2 du pilot, TF-0804 — lien public partageable et comptes d'essai vides, TF-0874) est **retenu** ou **écarté** dans `ecarts_surface_implicite`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, le candidat nommé (TF-0811) |
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
-| `oracle-etat` | EM1–EM3 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) |
+| `oracle-etat` | EM1–EM4 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) ; **EM4** : le nom du fichier dit son verbe, `ETAT.json` (un seul verbe dans le dossier) ou `ETAT-<verbe>.json` (plusieurs), en avertissement non bloquant (TF-1619) |
 | `oracle-ears` | EA1–EA5 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) ; **EA4/EA5** : les deux sujets qu un cahier laisse vides sans que rien ne le signale — traitement asynchrone et cycle de vie de session, quatre réponses dues chacun (TF-0376) |
-| `oracle-constitution` | C1–C3 | existence (exit 2 sinon) et format de `CONSTITUTION.md`, les invariants non négociables séparés d'`EXIGENCES.json` (TF-0101) |
+| `oracle-constitution` | C1–C5 | existence (exit 2 sinon) et format de `CONSTITUTION.md`, les invariants non négociables séparés d'`EXIGENCES.json` (TF-0101) ; **C5** : la section « Invariants du métier » déclare, par invariant, source de vérité, fenêtre de validité, exceptions et contrôle exécutable, en avertissement non bloquant (TF-1564) |
+| `oracle-cadrage-metier` | CM1–CM3 | format de `CADRAGE-METIER.md`, le modèle du métier : sections « Processus » et « Glossaire », processus décrits, glossaire à un sens par terme (TF-1564). Dû au niveau Complexe ; artefact absent = NON_JUGE, jamais FAIL. Gabarit : `skills/redige-les-exigences/references/cadrage-metier.md` |
 | `oracle-delta` | D1–D5 | format d'un delta d'évolution de référentiel et sa cohérence avec la cible (TF-0101) ; **D5** : un delta issu d'un retour d'usage **en prose** porte, par opération, sa section de référentiel et sa cause racine en ensemble fermé — dont `evolution-de-doctrine`, pour que ce qui change soit un AVIS ne soit pas compté comme un défaut du code (TF-0374) |
 | `oracle-exigences-md` | P1–P4 | **`EXIGENCES.md` est un artefact jugé**, comme `CONSTITUTION.md` : existence (exit 2 sinon), **P1** les sept sections du gabarit, **P2** les sections 4 (Hypothèses) et 7 (Ce que le référentiel ne dit pas) non vides. Et la **correspondance** d'un champ transcrit avec la prose dont il est transcrit : **P3** chaque entrée d'`ecarts_exigences_socle` figure en section 7 d'`EXIGENCES.md`, **P4** chaque entrée d'`ecarts_surface_implicite` en section 3 de `SURFACE.md` — clé **et** motif ; une entrée du JSON absente de la prose est un FAIL qui la nomme. Jusqu'au 06/09/2026, sur onze oracles, zéro ne lisait ces deux documents : un écart saisi dans le JSON sans avoir été décidé passait tout (TF-0822). Prose absente : `SANS_OBJET` motivé — aucune migration n'est due |
 
@@ -279,6 +280,15 @@ node oracles/oracle-etat.mjs <chemin/ETAT.json>
 
 Un orchestrateur lit `ETAT.json` avant de lire quoi que ce soit d'autre sur le disque : c'est
 la seule information dont la lecture ne nécessite pas de deviner ce que le verbe a voulu dire.
+
+**Nommage quand plusieurs verbes écrivent dans le même dossier** (TF-1619, retour Produit-79 du
+07/10/2026). Un `ETAT.json` ne porte qu'un verbe. Si un seul verbe écrit dans le dossier d'étape,
+le fichier s'appelle `ETAT.json`. Si plusieurs y écrivent (les quatre verbes dans un même dossier),
+chacun écrit `ETAT-<verbe>.json`, où `<verbe>` est la valeur de son champ `verbe`
+(`ETAT-qualifie-l-entrant.json`, `ETAT-redige-les-exigences.json`…) ; `ETAT.json` n'est alors plus
+écrit. `oracle-etat` **EM4** le vérifie, en avertissement non bloquant : règle neuve opposable à
+tous les produits, elle n'échoue jamais. Limite : l'agrégateur `run-oracles-conception` ne cherche
+que `ETAT.json` ; un `ETAT-<verbe>.json` se juge en appelant `oracle-etat` sur son chemin.
 
 ## Les trois interfaces aval
 

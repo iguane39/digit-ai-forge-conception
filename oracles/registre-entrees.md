@@ -8,14 +8,14 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 
 ---
 
-## `oracle-exigences` v1.2.0
+## `oracle-exigences` v1.3.0
 
 | | |
 |---|---|
 | **Domaine** | Testabilité d'un énoncé d'exigence, et exigences socle candidates retenues ou écartées |
 | **Artefact jugé** | `EXIGENCES.json` |
 | **Invocation** | `node oracles/oracle-exigences.mjs <EXIGENCES.json>` |
-| **Règles** | E1 champs obligatoires · E2 identifiant unique et non réaffecté · E3 critère chiffré ou binaire · E4 liste noire de termes subjectifs · E5 palier valide · E6 énoncé atomique · E7 forme EARS non orpheline · E8 absolus/pronoms non vérifiables · E9 caractéristiques d'ensemble (contradiction, complétude) · E10 chacune des **trois exigences socle candidates** est portée par une exigence, ou écartée dans `ecarts_exigences_socle` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, la candidate nommée (TF-0814) |
+| **Règles** | E1 champs obligatoires · E2 identifiant unique et non réaffecté · E3 critère chiffré ou binaire · E4 liste noire de termes subjectifs · E5 palier valide · E6 énoncé atomique · E7 forme EARS non orpheline · E8 absolus/pronoms non vérifiables · E9 caractéristiques d'ensemble (contradiction, complétude) · E10 chacune des **trois exigences socle candidates** est portée par une exigence, ou écartée dans `ecarts_exigences_socle` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, la candidate nommée (TF-0814) · E11 la tête de trois mots d'un énoncé n'ouvre pas au moins 4 énoncés et 40 % d'une colonne (`besoins[]`, `exigences[]`) : AVERTISSEMENT non bloquant (SANS_OBJET), jamais FAIL (TF-1625) |
 | **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` pour E1-E9 · `oracles/fixtures/exigences-socle-verte` (avec sa vue `CADRAGE-DESIGN.md` scellée) · `oracles/fixtures/exigences-socle-rouge` pour E10 |
 | **`non_juge`** | La pertinence produit de l'exigence · l'atomicité sémantique sans marqueur · la justesse d'une condition EARS reconnue · la contradiction hors du lexique antonyme surveillé · la présence d'une candidate socle, inférée d'un lexique fermé · la pertinence du motif d'un écart · le respect effectif d'une candidate retenue par le produit livré |
 
@@ -79,16 +79,29 @@ format — il est jugé sur la seule présence de ses candidats. Aucune migratio
 | **Fixtures** | idem |
 | **`non_juge`** | La véracité de la source · les affirmations non chiffrées |
 
-## `oracle-etat` v1.0.0
+## `oracle-etat` v1.1.0
 
 | | |
 |---|---|
 | **Domaine** | Protocole machine de sortie des verbes — distinguer « bloqué sous le seuil » de « produit » (TF-0014, R-C3) |
 | **Artefact jugé** | `ETAT.json` |
 | **Invocation** | `node oracles/oracle-etat.mjs <ETAT.json>` |
-| **Règles** | EM1 statut dans l'ensemble fermé `produit`\|`bloque_question` · EM2 aucun signal contradictoire (artefacts et questions ne cohabitent jamais) · EM3 verbe émetteur reconnu |
+| **Règles** | EM1 statut dans l'ensemble fermé `produit`\|`bloque_question` · EM2 aucun signal contradictoire (artefacts et questions ne cohabitent jamais) · EM3 verbe émetteur reconnu · EM4 le nom du fichier dit son verbe, `ETAT.json` (un seul verbe dans le dossier) ou `ETAT-<verbe>.json` : AVERTISSEMENT non bloquant, jamais FAIL (TF-1619) |
 | **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` |
 | **`non_juge`** | La pertinence des questions posées · l'écriture effective du fichier par le verbe |
+
+## `oracle-cadrage-metier` v1.0.0
+
+| | |
+|---|---|
+| **Domaine** | Format de `CADRAGE-METIER.md`, le modèle du métier d'un produit : carte des processus et glossaire (TF-1564, RC-6 du lot Produit-12 du 01/10/2026) |
+| **Artefact jugé** | `CADRAGE-METIER.md` |
+| **Invocation** | `node oracles/oracle-cadrage-metier.mjs <CADRAGE-METIER.md>` |
+| **Règles** | CM1 sections « Processus » et « Glossaire » présentes · CM2 au moins un processus « nom : description » · CM3 glossaire « Terme \| Définition » sans définition vide ni terme défini deux fois |
+| **Fixtures** | `oracles/fixtures/cadrage-metier-verte` · `oracles/fixtures/cadrage-metier-rouge` (CM1, CM3) ; CM2 en branche éphémère du self-test |
+| **`non_juge`** | La justesse du modèle vis-à-vis du métier réel · la complétude de la carte · les invariants du métier (jugés par `oracle-constitution` C5) · leur traduction en contrôle exécutable chez le produit |
+
+Dû au niveau Complexe : artefact absent = exit 2 (NON_JUGE chez l'agrégateur), jamais FAIL.
 
 ## `oracle-ears` v1.0.0
 
@@ -101,16 +114,16 @@ format — il est jugé sur la seule présence de ses candidats. Aucune migratio
 | **Fixtures** | `oracles/fixtures/ears-verte` · `oracles/fixtures/ears-rouge` (dédiées, pas les fixtures partagées) |
 | **`non_juge`** | La justesse du déclencheur reconnu · la désambiguïsation optional/unwanted reste une heuristique lexicale, pas sémantique · l'ambiguïté lexicale hors liste fermée |
 
-## `oracle-constitution` v1.0.0
+## `oracle-constitution` v1.1.0
 
 | | |
 |---|---|
 | **Domaine** | Existence et format de `CONSTITUTION.md` — les invariants non négociables du projet, séparés d'`EXIGENCES.json` (TF-0101) |
 | **Artefact jugé** | `CONSTITUTION.md` |
 | **Invocation** | `node oracles/oracle-constitution.mjs <CONSTITUTION.md>` |
-| **Règles** | C1 frontmatter bien formé (`--- clé: valeur ... ---`) · C2 `version` semver strict X.Y.Z · C3 au moins un principe non vide et non placeholder sous « Principes non négociables » |
+| **Règles** | C1 frontmatter bien formé (`--- clé: valeur ... ---`) · C2 `version` semver strict X.Y.Z · C3 au moins un principe non vide et non placeholder sous « Principes non négociables » · C4 promesse au client (une phrase) · C5 la section « Invariants du métier » déclare, par invariant, source de vérité, fenêtre de validité, exceptions et contrôle exécutable : AVERTISSEMENT non bloquant, jamais FAIL (TF-1564) |
 | **Fixtures** | `oracles/fixtures/constitution-verte` · `oracles/fixtures/constitution-rouge` (dédiées) |
-| **`non_juge`** | La pertinence des principes déclarés · la cohérence avec le contenu réel d'`EXIGENCES.json` · le respect effectif des principes par le produit livré |
+| **`non_juge`** | La pertinence des principes déclarés · la cohérence avec le contenu réel d'`EXIGENCES.json` · le respect effectif des principes par le produit livré · la justesse d'un invariant du métier et l'existence du contrôle qu'il nomme |
 
 ## `oracle-delta` v1.0.0
 

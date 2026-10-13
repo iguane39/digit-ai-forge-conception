@@ -15,9 +15,9 @@
 // n'a pas jugé, elle n'a pas pu juger. Ici, c'est le FORMAT du fichier présent qui est jugé.
 
 import { readFileSync } from 'node:fs'
-import { constat, emettre, erreur, PASS, FAIL } from './_contrat.mjs'
+import { constat, emettre, erreur, PASS, FAIL, SANS_OBJET } from './_contrat.mjs'
 
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 
 const SEMVER = /^\d+\.\d+\.\d+$/
 const RE_TITRE_PRINCIPES = /^#{1,6}\s*Principes non n[ée]gociables\s*$/i
@@ -161,6 +161,59 @@ if (!promesse.sectionTrouvee) {
   constats.push(constat('C4', PASS, 'corps', `promesse ratifiee, ${promesse.texte.length} caracteres`))
 }
 
+// C5 — LES INVARIANTS DU MÉTIER (TF-1564, retour Produit-12 du 01/10/2026, RC-6).
+//
+// Un invariant du métier est un fait que le produit dérive ou suppose (une date, un rôle, un
+// rattachement, le contexte d'une réponse) et qui doit rester vrai. Chez un produit, 290 dates de
+// bail sur 298 étaient tirées de la date de modification des fichiers : la CONSTITUTION portait
+// des principes, aucun invariant n'y avait de source de vérité ni de fenêtre de validité, donc
+// aucun contrôle ne voyait l'erreur. Section facultative « ## Invariants du métier » : une puce par
+// invariant, sur une ligne, qui déclare quatre rubriques `rubrique : valeur` séparées par « ; » —
+// source de vérité, fenêtre de validité, exceptions (« aucune » est une réponse), contrôle (le test
+// ou le script exécutable chez le produit). Pendant de la carte des processus et du glossaire,
+// jugés dans CADRAGE-METIER.md par oracle-cadrage-metier.
+//
+// Règle NEUVE opposable à tous les produits : AVERTISSEMENT non bloquant (SANS_OBJET), jamais un
+// FAIL. La section n'est DUE qu'au niveau Complexe ; absente, elle est signalée, pas refusée.
+const RE_TITRE_INVARIANTS = /^#{1,6}\s*Invariants du m[ée]tier\s*$/i
+const RUBRIQUES_C5 = [
+  ['source de vérité', /source de v[ée]rit[ée]\s*:\s*[^;\n]*\S/i],
+  ['fenêtre de validité', /fen[êe]tre de validit[ée]\s*:\s*[^;\n]*\S/i],
+  ['exceptions', /exceptions?\s*:\s*[^;\n]*\S/i],
+  ['contrôle', /contr[ôo]le\s*:\s*[^;\n]*\S/i]
+]
+{
+  const lignesC5 = fm.corps.split(/\r?\n/)
+  const debut = lignesC5.findIndex(l => RE_TITRE_INVARIANTS.test(l.trim()))
+  if (debut === -1) {
+    constats.push(constat('C5', SANS_OBJET, 'corps',
+      'avertissement non bloquant : section "## Invariants du métier" absente — due au niveau Complexe : ' +
+      'un fait métier dérivé par le produit (date, rôle, rattachement) y déclare sa source de vérité, ' +
+      'sa fenêtre de validité, ses exceptions et le contrôle exécutable qui le garde (TF-1564)'))
+  } else {
+    const puces = []
+    for (let i = debut + 1; i < lignesC5.length; i++) {
+      if (RE_TITRE.test(lignesC5[i].trim())) break
+      const m = lignesC5[i].match(RE_PUCE)
+      if (m) puces.push(m[1].trim())
+    }
+    const incomplets = puces
+      .map(p => ({ p, manque: RUBRIQUES_C5.filter(([, re]) => !re.test(p)).map(([n]) => n) }))
+      .filter(x => x.manque.length > 0)
+    if (puces.length === 0) {
+      constats.push(constat('C5', SANS_OBJET, 'corps',
+        'avertissement non bloquant : section "## Invariants du métier" présente mais sans aucun invariant (puce)'))
+    } else if (incomplets.length > 0) {
+      constats.push(constat('C5', SANS_OBJET, 'corps',
+        'avertissement non bloquant : invariant(s) sans toutes leurs rubriques — ' +
+        incomplets.map(x => `« ${x.p.slice(0, 50)} » manque ${x.manque.join(', ')}`).join(' ; ') +
+        ' (attendu : source de vérité : … ; fenêtre de validité : … ; exceptions : … ; contrôle : …)'))
+    } else {
+      constats.push(constat('C5', PASS, 'corps', `${puces.length} invariant(s) du métier complet(s)`))
+    }
+  }
+}
+
 emettre({
   oracle: 'oracle-constitution',
   version: VERSION,
@@ -174,6 +227,7 @@ emettre({
       'oracle-tracabilite entre EXIGENCES.json et ses vues.',
     'Que la promesse soit ECRITE DANS LES MOTS DU CLIENT et non du produit : C4 verifie qu\'elle existe, qu\'elle est ratifiee et qu\'elle tient en une phrase, jamais qu\'elle parle du gain du client plutot que des moyens du fournisseur. Ce jugement se fait a la lecture, par un humain — et selon TF-0577 lui-meme, un controle n\'a pas besoin d\'etre automatique pour etre opposable, il a besoin d\'EXISTER et d\'avoir un porteur.',
     'La COHERENCE entre cette promesse et ce que la page d\'accueil affiche : c\'est le retour jumeau vers forge-design (TF-0578), qui met la une, la liste des services et ce champ cote a cote.',
+    'Que l\'invariant du métier soit JUSTE, que sa source soit la bonne ou que le contrôle nommé existe : C5 vérifie les quatre rubriques écrites (avertissement), jamais leur vérité.',
     'Le respect effectif des principes par le produit livré — c\'est un contrôle de forme du ' +
       'document, pas un audit de conformité du code ou de l\'infrastructure.'
   ]

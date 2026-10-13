@@ -62,7 +62,11 @@ const oracles = nomsDesOracles(ICI)
 // manifeste ne pouvait rendre aucun verdict. Routé vers son vrai voisin, il retrouve le exit 2
 // (NON_JUGE motivé) quand ce voisin n'existe pas ; et depuis le même lot, l'oracle lui-même
 // refuse de juger un artefact hors de son domaine, quel que soit le chemin par lequel on l'appelle.
+// TF-1564 : `oracle-cadrage-metier` rejoint la table pour la même raison que ses voisins — il juge
+// CADRAGE-METIER.md, pas EXIGENCES.json. Le volet n'est dû qu'au niveau Complexe : fichier absent
+// -> exit 2 -> NON_JUGE motivé, jamais FAIL.
 const VOISIN_PAR_ORACLE = {
+  "oracle-cadrage-metier.mjs": "CADRAGE-METIER.md",
   "oracle-constitution.mjs": "CONSTITUTION.md",
   "oracle-delta.mjs": "DELTA.json",
   "oracle-etat.mjs": "ETAT.json",

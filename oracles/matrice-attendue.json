@@ -32,6 +32,12 @@
     }
   ],
   "cellules": {
+    "cadrage-metier-rouge": {
+      "oracle-cadrage-metier": "FAIL"
+    },
+    "cadrage-metier-verte": {
+      "oracle-cadrage-metier": "PASS"
+    },
     "constitution-rouge": {
       "oracle-constitution": "FAIL"
     },

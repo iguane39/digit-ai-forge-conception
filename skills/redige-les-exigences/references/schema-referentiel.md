@@ -91,6 +91,20 @@ le délai de 30 % ») sans qu'aucun champ n'existe pour le sourcer : `source` co
 `oracle-claims` A1 l'accepte comme preuve suffisante, non vide, au même titre que la mention
 « à vérifier » dans l'énoncé. Un besoin sans chiffre n'a pas besoin de `source`.
 
+## Forme d'un besoin (TF-1625)
+
+Un `besoin.enonce` se rédige **à l'infinitif, sans sujet répété** : « Déclarer une absence sans
+passer par son responsable », jamais « Le gestionnaire doit déclarer… » neuf fois de suite. Le
+sujet est connu du produit (c'est le persona du besoin), le répéter n'apprend rien au lecteur et
+use l'attention sur la seule partie qui varie. Retour humain du 07/10/2026 : « La répétition sur
+"Le gestionnaire doit" doit être reformulée » (9 besoins, et le même motif sur 54 exigences).
+
+`oracle-exigences` **E11** compte les têtes de trois mots d'une même colonne (`besoins[].enonce`,
+puis `exigences[].enonce`) : une tête portée par au moins 4 énoncés et par au moins 40 % de la
+colonne est signalée en **avertissement non bloquant** (SANS_OBJET), jamais en FAIL. Une exigence
+EARS peut légitimement ouvrir par le même sujet : l'avertissement invite à varier, il ne condamne
+pas.
+
 ## Les deux formes du statut épistémique
 
 | Nature | Champ requis | Ce qu'il signifie |
