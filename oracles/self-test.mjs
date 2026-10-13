@@ -1911,6 +1911,55 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-1625 : E11, la tete d'un enonce ne se repete pas (avertissement non bloquant) ----
+// Retour humain du 07/10/2026 : « Le gestionnaire doit » ouvrait 9 besoins sur 9. Regle NEUVE
+// opposable a tous les produits : AVERTISSEMENT (SANS_OBJET, exit inchange), jamais FAIL.
+// Le referentiel de depart est la fixture verte ; la rouge ne change QUE les enonces des besoins.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'e11-'))
+  try {
+    const base = JSON.parse(readFileSync(join(VERTE, 'EXIGENCES.json'), 'utf8'))
+    const juger = (nom, maj) => {
+      const ref = JSON.parse(JSON.stringify(base))
+      maj(ref)
+      const chemin = join(tmp, `${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref), 'utf8')
+      const r = lancer('oracle-exigences.mjs', [chemin])
+      return { code: r.code, c: (r.rapport?.constats ?? []).filter(x => x.regle === 'E11') }
+    }
+    const besoinsDe = (enonces) => (ref) => {
+      ref.besoins = enonces.map((enonce, i) => ({ id: `B-${i + 1}`, enonce }))
+    }
+    const temoin = lancer('oracle-exigences.mjs', [join(VERTE, 'EXIGENCES.json')])
+    const verte = juger('verte', () => {})
+    const repete = juger('repete', besoinsDe(Array.from({ length: 9 }, (_, i) => `Le gestionnaire doit traiter le cas ${i + 1}`)))
+    const varie = juger('varie', besoinsDe([
+      'Déclarer une absence sans passer par le responsable', 'Savoir qui est absent à une date donnée',
+      'Conserver les données pendant 60 mois', 'Notifier le responsable des demandes de son équipe',
+      'Exporter le récapitulatif mensuel', 'Consulter le solde de congés', 'Annuler une demande en attente',
+      'Valider ou refuser une demande', 'Retrouver l\'historique d\'une demande']))
+    const sousSeuil = juger('sous-seuil', besoinsDe(['Le gestionnaire doit saisir A', 'Le gestionnaire doit saisir B', 'Le gestionnaire doit saisir C']))
+    const cas = [
+      ['1. vert : la fixture verte ne declenche aucun avertissement E11 (et son exit reste celui de la recette)',
+        verte.c.length === 2 && verte.c.every(x => x.statut === 'PASS') && verte.code === temoin.code],
+      ['2. rouge : 9 besoins ouverts par « Le gestionnaire doit » -> avertissement SANS_OBJET qui nomme la tete, exit inchange',
+        repete.c.some(x => x.statut === 'SANS_OBJET' && /le gestionnaire doit/.test(x.message) && x.ou === 'besoins[].enonce') &&
+        repete.code === temoin.code],
+      ['3. remede joue : les memes 9 besoins reformules a l\'infinitif -> E11 PASS',
+        varie.c.length === 2 && varie.c.every(x => x.statut === 'PASS') && varie.code === temoin.code],
+      ['4. limite declaree : sous 4 enonces la tete n\'est pas jugee (3 besoins identiques -> PASS)',
+        sousSeuil.c.every(x => x.statut === 'PASS')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences.mjs (branche TF-1625, E11 : tete d\'enonce repetee, fixtures ephemeres, 2 sens + remede)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)

@@ -4,11 +4,11 @@
 // INCOSE GtWR v4), TF-0015 — 3 contrôles proposés à l'état d'étude, ici rendus exécutables.
 
 import {
-  charger, constat, emettre, erreur, PASS, FAIL, PALIERS, NATURES, AVANT, APRES, lexique,
+  charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, PALIERS, NATURES, AVANT, APRES, lexique,
   defautDEcart
 } from './_contrat.mjs'
 
-const VERSION = '1.2.0'
+const VERSION = '1.3.0'
 
 // --- Checklist versionnée ---------------------------------------------------
 
@@ -423,6 +423,46 @@ if (surfaceRefE9.length === 0) {
   }
 }
 
+// --- E11 : la tête d'un énoncé ne se répète pas d'une ligne à l'autre ------
+
+// TF-1625 (retour humain du 07/10/2026 sur Produit-79 : « La répétition sur "Le gestionnaire doit"
+// doit être reformulée ») — neuf besoins répétaient le même sujet, et le même motif touchait 54
+// exigences : le schéma ne disait rien de la forme d'un besoin, aucun contrôle ne voyait la
+// colonne. E11 compare le DÉBUT (trois premiers mots) des énoncés d'une même colonne, besoins puis
+// exigences : une tête portée par au moins QUATRE énoncés et au moins 40 % de la colonne est
+// signalée. AVERTISSEMENT non bloquant (SANS_OBJET), règle neuve opposable à tous les produits :
+// jamais un FAIL. Forme prescrite pour un besoin : un infinitif, sans sujet répété
+// (`redige-les-exigences/references/schema-referentiel.md`, « Forme d'un besoin »).
+const E11_MOTS = 3
+const E11_MIN = 4
+const E11_PART = 0.4
+function teteRepetee (enonces) {
+  const textes = enonces.filter(t => typeof t === 'string' && t.trim() !== '')
+  if (textes.length < E11_MIN) return null
+  const compte = new Map()
+  for (const t of textes) {
+    const mots = t.toLowerCase().split(/[^\p{L}\p{N}']+/u).filter(Boolean)
+    if (mots.length < E11_MOTS) continue
+    const tete = mots.slice(0, E11_MOTS).join(' ')
+    compte.set(tete, (compte.get(tete) ?? 0) + 1)
+  }
+  const [tete, n] = [...compte.entries()].sort((a, b) => b[1] - a[1])[0] ?? [null, 0]
+  return n >= E11_MIN && n / textes.length >= E11_PART
+    ? { tete, n, total: textes.length, part: Math.round((n / textes.length) * 100) }
+    : null
+}
+for (const [colonne, lignes] of [
+  ['besoins[].enonce', Array.isArray(ref.besoins) ? ref.besoins.map(b => b?.enonce) : []],
+  ['exigences[].enonce', exigences.map(e => e?.enonce)]
+]) {
+  const r = teteRepetee(lignes)
+  constats.push(r
+    ? constat('E11', SANS_OBJET, colonne,
+      `avertissement non bloquant : la tête « ${r.tete} … » ouvre ${r.n} énoncés sur ${r.total} (${r.part} %) — ` +
+      'reformuler (un besoin à l\'infinitif, sans sujet répété ; une exigence qui varie son ouverture)')
+    : constat('E11', PASS, colonne, 'aucune tête d\'énoncé répétée au-delà du seuil'))
+}
+
 emettre({
   oracle: 'oracle-exigences',
   version: VERSION,
@@ -444,6 +484,9 @@ emettre({
     'La PERTINENCE du motif d\'un écart. E10 exige qu\'il soit écrit, daté et signé ; il ne juge ' +
       'ni sa véracité ni sa suffisance — un écart est opposable parce qu\'écrit, pas parce que ' +
       'vrai.',
+    'La REFORMULATION qui convient à E11 : il compte les têtes de trois mots répétées, il ne juge ' +
+      'ni que le sujet est superflu (une exigence EARS peut légitimement ouvrir par le même sujet) ' +
+      'ni que l\'infinitif choisi est le bon. Avertissement, jamais un FAIL.',
     'Le RESPECT effectif d\'une candidate retenue par le produit livré : E10 juge que le ' +
       'référentiel la porte, jamais que le code la tient. Cela relève de forge-tests et de la ' +
       'MEP, jamais d\'un référentiel d\'exigences.'

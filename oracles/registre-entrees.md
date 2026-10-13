@@ -8,14 +8,14 @@ exit `0` PASS / `1` FAIL / `2` l'oracle n'a pas pu juger, `non_juge` déclaré.
 
 ---
 
-## `oracle-exigences` v1.2.0
+## `oracle-exigences` v1.3.0
 
 | | |
 |---|---|
 | **Domaine** | Testabilité d'un énoncé d'exigence, et exigences socle candidates retenues ou écartées |
 | **Artefact jugé** | `EXIGENCES.json` |
 | **Invocation** | `node oracles/oracle-exigences.mjs <EXIGENCES.json>` |
-| **Règles** | E1 champs obligatoires · E2 identifiant unique et non réaffecté · E3 critère chiffré ou binaire · E4 liste noire de termes subjectifs · E5 palier valide · E6 énoncé atomique · E7 forme EARS non orpheline · E8 absolus/pronoms non vérifiables · E9 caractéristiques d'ensemble (contradiction, complétude) · E10 chacune des **trois exigences socle candidates** est portée par une exigence, ou écartée dans `ecarts_exigences_socle` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, la candidate nommée (TF-0814) |
+| **Règles** | E1 champs obligatoires · E2 identifiant unique et non réaffecté · E3 critère chiffré ou binaire · E4 liste noire de termes subjectifs · E5 palier valide · E6 énoncé atomique · E7 forme EARS non orpheline · E8 absolus/pronoms non vérifiables · E9 caractéristiques d'ensemble (contradiction, complétude) · E10 chacune des **trois exigences socle candidates** est portée par une exigence, ou écartée dans `ecarts_exigences_socle` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, la candidate nommée (TF-0814) · E11 la tête de trois mots d'un énoncé n'ouvre pas au moins 4 énoncés et 40 % d'une colonne (`besoins[]`, `exigences[]`) : AVERTISSEMENT non bloquant (SANS_OBJET), jamais FAIL (TF-1625) |
 | **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` pour E1-E9 · `oracles/fixtures/exigences-socle-verte` (avec sa vue `CADRAGE-DESIGN.md` scellée) · `oracles/fixtures/exigences-socle-rouge` pour E10 |
 | **`non_juge`** | La pertinence produit de l'exigence · l'atomicité sémantique sans marqueur · la justesse d'une condition EARS reconnue · la contradiction hors du lexique antonyme surveillé · la présence d'une candidate socle, inférée d'un lexique fermé · la pertinence du motif d'un écart · le respect effectif d'une candidate retenue par le produit livré |
 
