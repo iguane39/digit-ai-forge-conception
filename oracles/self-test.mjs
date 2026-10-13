@@ -1864,6 +1864,53 @@ for (const o of ORACLES) {
   if (ko.length > 0) echecs++
 }
 
+// --- branche TF-1619 : EM4, le nom d'un ETAT dit son verbe (avertissement non bloquant) --------
+// Retour Produit-79 du 07/10/2026 : quatre verbes ecrivent dans le meme dossier d'etape, ETAT.json
+// ne porte qu'un verbe, le nommage etait improvise. Regle NEUVE opposable a tous les produits :
+// AVERTISSEMENT (SANS_OBJET, exit 0), jamais FAIL. Fixtures ephemeres, deux sens + le remede joue.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'em4-'))
+  try {
+    const ecrire = (dossier, nom, verbe) => {
+      mkdirSync(join(tmp, dossier), { recursive: true })
+      writeFileSync(join(tmp, dossier, nom), JSON.stringify({
+        verbe, statut: 'produit', artefacts: ['ENTRANT.md'], questions: []
+      }), 'utf8')
+      return join(tmp, dossier, nom)
+    }
+    const em4 = (chemin) => {
+      const r = lancer('oracle-etat.mjs', [chemin])
+      return { code: r.code, c: (r.rapport?.constats ?? []).find(x => x.regle === 'EM4') }
+    }
+    const seul = em4(ecrire('seul', 'ETAT.json', 'qualifie-l-entrant'))
+    const nomme = em4(ecrire('nomme', 'ETAT-qualifie-l-entrant.json', 'qualifie-l-entrant'))
+    const faux = em4(ecrire('faux', 'ETAT-derive-les-vues.json', 'qualifie-l-entrant'))
+    ecrire('mixte', 'ETAT-enumere-la-surface.json', 'enumere-la-surface')
+    const mixte = em4(ecrire('mixte', 'ETAT.json', 'qualifie-l-entrant'))
+    const libre = em4(ecrire('libre', 'mon-etat.json', 'qualifie-l-entrant'))
+    const remede = em4(ecrire('faux', 'ETAT-qualifie-l-entrant.json', 'qualifie-l-entrant'))
+    const cas = [
+      ['1. vert : ETAT.json seul dans son dossier -> EM4 PASS', seul.code === 0 && seul.c?.statut === 'PASS'],
+      ['2. vert : ETAT-<verbe>.json dont le verbe correspond -> EM4 PASS', nomme.code === 0 && nomme.c?.statut === 'PASS'],
+      ['3. rouge : ETAT-<autre verbe>.json -> avertissement SANS_OBJET, exit 0 (jamais FAIL)',
+        faux.code === 0 && faux.c?.statut === 'SANS_OBJET' && /non bloquant/.test(faux.c.message)],
+      ['4. rouge : ETAT.json qui coexiste avec ETAT-<verbe>.json -> avertissement, exit 0',
+        mixte.code === 0 && mixte.c?.statut === 'SANS_OBJET' && /coexiste/.test(mixte.c.message)],
+      ['5. rouge : nom hors convention -> avertissement, exit 0',
+        libre.code === 0 && libre.c?.statut === 'SANS_OBJET' && /hors convention/.test(libre.c.message)],
+      ['6. remede joue : le nom corrige propose par l\'avertissement du cas 3 -> EM4 PASS',
+        remede.code === 0 && remede.c?.statut === 'PASS']
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-etat.mjs (branche TF-1619, EM4 : nommage ETAT-<verbe>.json, fixtures ephemeres, 2 sens + remede)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)

@@ -79,14 +79,14 @@ format — il est jugé sur la seule présence de ses candidats. Aucune migratio
 | **Fixtures** | idem |
 | **`non_juge`** | La véracité de la source · les affirmations non chiffrées |
 
-## `oracle-etat` v1.0.0
+## `oracle-etat` v1.1.0
 
 | | |
 |---|---|
 | **Domaine** | Protocole machine de sortie des verbes — distinguer « bloqué sous le seuil » de « produit » (TF-0014, R-C3) |
 | **Artefact jugé** | `ETAT.json` |
 | **Invocation** | `node oracles/oracle-etat.mjs <ETAT.json>` |
-| **Règles** | EM1 statut dans l'ensemble fermé `produit`\|`bloque_question` · EM2 aucun signal contradictoire (artefacts et questions ne cohabitent jamais) · EM3 verbe émetteur reconnu |
+| **Règles** | EM1 statut dans l'ensemble fermé `produit`\|`bloque_question` · EM2 aucun signal contradictoire (artefacts et questions ne cohabitent jamais) · EM3 verbe émetteur reconnu · EM4 le nom du fichier dit son verbe, `ETAT.json` (un seul verbe dans le dossier) ou `ETAT-<verbe>.json` : AVERTISSEMENT non bloquant, jamais FAIL (TF-1619) |
 | **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` |
 | **`non_juge`** | La pertinence des questions posées · l'écriture effective du fichier par le verbe |
 

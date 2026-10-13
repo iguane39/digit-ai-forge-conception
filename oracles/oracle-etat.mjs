@@ -6,9 +6,11 @@
 // termine, produit ou rend la main, en écrit un à côté de son artefact (ou de ses questions).
 // Convention documentée au README, section « Invocation par un orchestrateur ».
 
-import { charger, constat, emettre, PASS, FAIL } from './_contrat.mjs'
+import { basename, dirname } from 'node:path'
+import { readdirSync } from 'node:fs'
+import { charger, constat, emettre, PASS, FAIL, SANS_OBJET } from './_contrat.mjs'
 
-const VERSION = '1.0.0'
+const VERSION = '1.1.0'
 
 const VERBES = ['qualifie-l-entrant', 'enumere-la-surface', 'redige-les-exigences', 'derive-les-vues']
 const STATUTS = ['produit', 'bloque_question']
@@ -58,6 +60,34 @@ for (const [i, q] of questions.entries()) {
 constats.push(problemes.length === 0
   ? constat('EM2', PASS, 'artefacts/questions', 'cohérence produit/bloqué respectée')
   : constat('EM2', FAIL, 'artefacts/questions', problemes.join(' ; ')))
+
+// EM4 — le NOM du fichier dit qui l'a écrit (TF-1619, retour Produit-79 du 07/10/2026). Un ETAT.json
+// ne porte qu'UN verbe ; quand les quatre verbes écrivent dans le même dossier d'étape, la session
+// improvisait le nommage. Convention : `ETAT.json` quand un seul verbe écrit dans le dossier,
+// `ETAT-<verbe>.json` (verbe = celui du champ `verbe`) quand plusieurs y écrivent. AVERTISSEMENT
+// non bloquant (SANS_OBJET), règle neuve opposable à tous les produits : jamais un FAIL.
+{
+  const nom = basename(String(cible))
+  const m = /^ETAT-(.+)\.json$/.exec(nom)
+  let voisins = []
+  try { voisins = readdirSync(dirname(String(cible))).filter(f => /^ETAT-.+\.json$/.test(f)) } catch { /* dossier illisible : aucun voisin vu */ }
+  if (m) {
+    constats.push(m[1] === etat?.verbe
+      ? constat('EM4', PASS, 'nom du fichier', `${nom} porte le verbe ${etat.verbe}`)
+      : constat('EM4', SANS_OBJET, 'nom du fichier',
+        `avertissement non bloquant : ${nom} annonce le verbe « ${m[1]} » mais le champ verbe vaut ${JSON.stringify(etat?.verbe)} — ` +
+        'le nom doit être ETAT-<verbe>.json avec le verbe du fichier'))
+  } else if (nom === 'ETAT.json') {
+    constats.push(voisins.length === 0
+      ? constat('EM4', PASS, 'nom du fichier', 'ETAT.json, seul état du dossier')
+      : constat('EM4', SANS_OBJET, 'nom du fichier',
+        `avertissement non bloquant : ETAT.json coexiste avec ${voisins.join(', ')} dans le même dossier — ` +
+        'plusieurs verbes écrivent ici : chacun écrit ETAT-<verbe>.json, ETAT.json est réservé au cas d\'un seul verbe'))
+  } else {
+    constats.push(constat('EM4', SANS_OBJET, 'nom du fichier',
+      `avertissement non bloquant : nom ${JSON.stringify(nom)} hors convention — attendu ETAT.json (un seul verbe) ou ETAT-<verbe>.json (plusieurs verbes dans le dossier)`))
+  }
+}
 
 emettre({
   oracle: 'oracle-etat',
