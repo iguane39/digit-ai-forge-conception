@@ -183,6 +183,13 @@ const ORACLES = [
     args: (dossier) => [dossier === VERTE ? CONSTIT_VERTE : CONSTIT_SANS_PROMESSE]
   },
   {
+    // TF-1564 (13/10/2026) : le modele du metier (processus + glossaire) de CADRAGE-METIER.md.
+    // Fixtures dediees ; la rouge plante CM1 et CM3, CM2 est prouvee par la branche TF-1564 plus bas.
+    fichier: 'oracle-cadrage-metier.mjs',
+    regles: ['CM1', 'CM3'],
+    args: (dossier) => [join(ICI, 'fixtures', dossier === VERTE ? 'cadrage-metier-verte' : 'cadrage-metier-rouge', 'CADRAGE-METIER.md')]
+  },
+  {
     // TF-0101 (3/3) : format d'un delta de référentiel (cycle propose/apply/archive façon
     // OpenSpec), confronté à un référentiel cible via --referentiel. Fixtures dédiées.
     fichier: 'oracle-delta.mjs',
@@ -1952,6 +1959,75 @@ for (const o of ORACLES) {
     ]
     const ko = cas.filter(([, ok]) => !ok)
     console.log('oracle-exigences.mjs (branche TF-1625, E11 : tete d\'enonce repetee, fixtures ephemeres, 2 sens + remede)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-1564 : CM2 (processus) et C5 (invariants du metier, avertissement non bloquant) ----
+// Retour Produit-12 du 01/10/2026 (RC-6) : aucun artefact de conception ne portait le modele du
+// metier. CM2 n'est pas jouee par la rouge generale (sa section « Processus » manque, CM1 la dit) :
+// elle a sa branche. C5 est une regle NEUVE opposable a tous les produits : AVERTISSEMENT
+// (SANS_OBJET, exit inchange), jamais FAIL. Fixtures ephemeres, deux sens + remede joue.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'metier-'))
+  try {
+    const ecrire = (nom, contenu) => { const f = join(tmp, nom); writeFileSync(f, contenu, 'utf8'); return f }
+    const cadre = (processus) => `# Cadrage
+
+## Processus
+
+${processus}
+
+## Glossaire
+
+| Terme | Définition |
+|---|---|
+| Solde | Nombre de jours restants à une date. |
+`
+    const cm2 = (nom, processus) => {
+      const r = lancer('oracle-cadrage-metier.mjs', [ecrire(nom, cadre(processus))])
+      return { code: r.code, c: (r.rapport?.constats ?? []).find(x => x.regle === 'CM2') }
+    }
+    const nom = cm2('c1.md', '- Demande : le salarié dépose, le responsable valide ou refuse.')
+    const vide = cm2('c2.md', '- TODO')
+    const sansDesc = cm2('c3.md', '- Demande')
+    const constit = readFileSync(CONSTIT_VERTE, 'utf8').replace(/\r\n/g, '\n')
+    const c5 = (nomF, ajout) => {
+      const r = lancer('oracle-constitution.mjs', [ecrire(nomF, constit + ajout)])
+      return { code: r.code, c: (r.rapport?.constats ?? []).find(x => x.regle === 'C5') }
+    }
+    const absente = c5('k1.md', '')
+    const complet = c5('k2.md', `
+## Invariants du métier
+
+- Une date de bail vient du contrat signé. Source de vérité : le contrat PDF ; fenêtre de validité : de la signature à la résiliation ; exceptions : avenant daté ; contrôle : tests/invariants/test_dates_bail.py
+`)
+    const incomplet = c5('k3.md', `
+## Invariants du métier
+
+- Une date de bail vient du contrat signé. Source de vérité : le contrat PDF
+`)
+    const remede = c5('k4.md', `
+## Invariants du métier
+
+- Une date de bail vient du contrat signé. Source de vérité : le contrat PDF ; fenêtre de validité : de la signature à la résiliation ; exceptions : aucune ; contrôle : tests/invariants/test_dates_bail.py
+`)
+    const cas = [
+      ['1. vert : un processus « nom : description » -> CM2 PASS', nom.code === 0 && nom.c?.statut === 'PASS'],
+      ['2. rouge : un processus placeholder -> CM2 FAIL', vide.code === 1 && vide.c?.statut === 'FAIL'],
+      ['3. rouge : un nom de processus sans description -> CM2 FAIL', sansDesc.code === 1 && sansDesc.c?.statut === 'FAIL'],
+      ['4. C5 : constitution sans section -> avertissement SANS_OBJET, exit 0', absente.code === 0 && absente.c?.statut === 'SANS_OBJET'],
+      ['5. C5 vert : un invariant aux quatre rubriques -> PASS', complet.code === 0 && complet.c?.statut === 'PASS'],
+      ['6. C5 rouge : un invariant sans fenetre, exceptions ni controle -> avertissement qui les nomme, exit 0',
+        incomplet.code === 0 && incomplet.c?.statut === 'SANS_OBJET' && /fenêtre de validité, exceptions, contrôle/.test(incomplet.c.message)],
+      ['7. remede joue : les rubriques manquantes ajoutees (exceptions : aucune) -> C5 PASS', remede.code === 0 && remede.c?.statut === 'PASS']
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-cadrage-metier.mjs + oracle-constitution.mjs (branche TF-1564, CM2 et C5, fixtures ephemeres, 2 sens + remede)')
     for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
     console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
     if (ko.length > 0) echecs++

@@ -90,6 +90,19 @@ format — il est jugé sur la seule présence de ses candidats. Aucune migratio
 | **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` |
 | **`non_juge`** | La pertinence des questions posées · l'écriture effective du fichier par le verbe |
 
+## `oracle-cadrage-metier` v1.0.0
+
+| | |
+|---|---|
+| **Domaine** | Format de `CADRAGE-METIER.md`, le modèle du métier d'un produit : carte des processus et glossaire (TF-1564, RC-6 du lot Produit-12 du 01/10/2026) |
+| **Artefact jugé** | `CADRAGE-METIER.md` |
+| **Invocation** | `node oracles/oracle-cadrage-metier.mjs <CADRAGE-METIER.md>` |
+| **Règles** | CM1 sections « Processus » et « Glossaire » présentes · CM2 au moins un processus « nom : description » · CM3 glossaire « Terme \| Définition » sans définition vide ni terme défini deux fois |
+| **Fixtures** | `oracles/fixtures/cadrage-metier-verte` · `oracles/fixtures/cadrage-metier-rouge` (CM1, CM3) ; CM2 en branche éphémère du self-test |
+| **`non_juge`** | La justesse du modèle vis-à-vis du métier réel · la complétude de la carte · les invariants du métier (jugés par `oracle-constitution` C5) · leur traduction en contrôle exécutable chez le produit |
+
+Dû au niveau Complexe : artefact absent = exit 2 (NON_JUGE chez l'agrégateur), jamais FAIL.
+
 ## `oracle-ears` v1.0.0
 
 | | |
@@ -101,16 +114,16 @@ format — il est jugé sur la seule présence de ses candidats. Aucune migratio
 | **Fixtures** | `oracles/fixtures/ears-verte` · `oracles/fixtures/ears-rouge` (dédiées, pas les fixtures partagées) |
 | **`non_juge`** | La justesse du déclencheur reconnu · la désambiguïsation optional/unwanted reste une heuristique lexicale, pas sémantique · l'ambiguïté lexicale hors liste fermée |
 
-## `oracle-constitution` v1.0.0
+## `oracle-constitution` v1.1.0
 
 | | |
 |---|---|
 | **Domaine** | Existence et format de `CONSTITUTION.md` — les invariants non négociables du projet, séparés d'`EXIGENCES.json` (TF-0101) |
 | **Artefact jugé** | `CONSTITUTION.md` |
 | **Invocation** | `node oracles/oracle-constitution.mjs <CONSTITUTION.md>` |
-| **Règles** | C1 frontmatter bien formé (`--- clé: valeur ... ---`) · C2 `version` semver strict X.Y.Z · C3 au moins un principe non vide et non placeholder sous « Principes non négociables » |
+| **Règles** | C1 frontmatter bien formé (`--- clé: valeur ... ---`) · C2 `version` semver strict X.Y.Z · C3 au moins un principe non vide et non placeholder sous « Principes non négociables » · C4 promesse au client (une phrase) · C5 la section « Invariants du métier » déclare, par invariant, source de vérité, fenêtre de validité, exceptions et contrôle exécutable : AVERTISSEMENT non bloquant, jamais FAIL (TF-1564) |
 | **Fixtures** | `oracles/fixtures/constitution-verte` · `oracles/fixtures/constitution-rouge` (dédiées) |
-| **`non_juge`** | La pertinence des principes déclarés · la cohérence avec le contenu réel d'`EXIGENCES.json` · le respect effectif des principes par le produit livré |
+| **`non_juge`** | La pertinence des principes déclarés · la cohérence avec le contenu réel d'`EXIGENCES.json` · le respect effectif des principes par le produit livré · la justesse d'un invariant du métier et l'existence du contrôle qu'il nomme |
 
 ## `oracle-delta` v1.0.0
 

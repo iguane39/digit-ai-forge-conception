@@ -69,7 +69,7 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 16 entrées d'oracle, 56 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 17 entrées d'oracle, 58 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
@@ -80,7 +80,8 @@ node oracles/self-test.mjs        # 16 entrées d'oracle, 56 règles, fixtures v
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
 | `oracle-etat` | EM1–EM4 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) ; **EM4** : le nom du fichier dit son verbe, `ETAT.json` (un seul verbe dans le dossier) ou `ETAT-<verbe>.json` (plusieurs), en avertissement non bloquant (TF-1619) |
 | `oracle-ears` | EA1–EA5 | scoring EARS par patron strict (ubiquitous, event-driven, state-driven, optional, unwanted) et ambiguïté lexicale (TF-0101) ; **EA4/EA5** : les deux sujets qu un cahier laisse vides sans que rien ne le signale — traitement asynchrone et cycle de vie de session, quatre réponses dues chacun (TF-0376) |
-| `oracle-constitution` | C1–C3 | existence (exit 2 sinon) et format de `CONSTITUTION.md`, les invariants non négociables séparés d'`EXIGENCES.json` (TF-0101) |
+| `oracle-constitution` | C1–C5 | existence (exit 2 sinon) et format de `CONSTITUTION.md`, les invariants non négociables séparés d'`EXIGENCES.json` (TF-0101) ; **C5** : la section « Invariants du métier » déclare, par invariant, source de vérité, fenêtre de validité, exceptions et contrôle exécutable, en avertissement non bloquant (TF-1564) |
+| `oracle-cadrage-metier` | CM1–CM3 | format de `CADRAGE-METIER.md`, le modèle du métier : sections « Processus » et « Glossaire », processus décrits, glossaire à un sens par terme (TF-1564). Dû au niveau Complexe ; artefact absent = NON_JUGE, jamais FAIL. Gabarit : `skills/redige-les-exigences/references/cadrage-metier.md` |
 | `oracle-delta` | D1–D5 | format d'un delta d'évolution de référentiel et sa cohérence avec la cible (TF-0101) ; **D5** : un delta issu d'un retour d'usage **en prose** porte, par opération, sa section de référentiel et sa cause racine en ensemble fermé — dont `evolution-de-doctrine`, pour que ce qui change soit un AVIS ne soit pas compté comme un défaut du code (TF-0374) |
 | `oracle-exigences-md` | P1–P4 | **`EXIGENCES.md` est un artefact jugé**, comme `CONSTITUTION.md` : existence (exit 2 sinon), **P1** les sept sections du gabarit, **P2** les sections 4 (Hypothèses) et 7 (Ce que le référentiel ne dit pas) non vides. Et la **correspondance** d'un champ transcrit avec la prose dont il est transcrit : **P3** chaque entrée d'`ecarts_exigences_socle` figure en section 7 d'`EXIGENCES.md`, **P4** chaque entrée d'`ecarts_surface_implicite` en section 3 de `SURFACE.md` — clé **et** motif ; une entrée du JSON absente de la prose est un FAIL qui la nomme. Jusqu'au 06/09/2026, sur onze oracles, zéro ne lisait ces deux documents : un écart saisi dans le JSON sans avoir été décidé passait tout (TF-0822). Prose absente : `SANS_OBJET` motivé — aucune migration n'est due |
 
