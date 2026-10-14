@@ -69,13 +69,13 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 17 entrées d'oracle, 58 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 18 entrées d'oracle, 59 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
 |---|---|---|
 | `oracle-exigences` | E1–E11 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9). Gardes lexicales à frontières de mot **Unicode** depuis TF-0799 : `\b` est ASCII, et un accent y valait frontière — « elle » se lisait dans « réelle ». **E10** : chacune des **trois exigences socle candidates** (données de démonstration invisibles en production, données volatiles éditables/datées/sourcées, effet observable de tout élément interactif) est **portée** par une exigence ou **écartée** dans `ecarts_exigences_socle`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, la candidate nommée (TF-0814) |
-| `oracle-tracabilite` | T1–T5 | orphelins des deux côtés, statut épistémique, vues régénérables. **T5** : la vue porte l'empreinte SHA-256 de **son propre corps** en plus de celle de sa source, et T5 la recalcule — T3 prouvait d'où vient la vue, jamais ce qu'elle contient, et une vue amputée d'un tiers gardait un en-tête valide (TF-0818). Une vue scellée avant ce contrôle n'est pas migrée : T5 y rend `SANS_OBJET` et le dit |
+| `oracle-tracabilite` | T1–T6 | orphelins des deux côtés, statut épistémique, vues régénérables. **T5** : la vue porte l'empreinte SHA-256 de **son propre corps** en plus de celle de sa source, et T5 la recalcule — T3 prouvait d'où vient la vue, jamais ce qu'elle contient, et une vue amputée d'un tiers gardait un en-tête valide (TF-0818). Une vue scellée avant ce contrôle n'est pas migrée : T5 y rend `SANS_OBJET` et le dit. **T6** (`--cascade <CASCADE.json>`) : chaque exigence remonte à une seule tactique active de la cascade ISTO du pilot (format `pilot/cascade-isto@1`), à une stratégie active, à une intention citée ; le champ facultatif `tactique` d'une exigence doit dire la même tactique que la cascade. Sans cascade ni champ : `SANS_OBJET`, aucune migration (TF-1680) |
 | `oracle-surface` | S1–S5 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio ; **S4** : dès que le produit a une surface web, chacun des **treize candidats d'office** de la surface implicite (aide, onboarding, compte, favicon, états vides, erreurs visibles, mentions légales, responsive, accessibilité RGAA et ses livrables, 404 par langue — patron P-2 du pilot, TF-0804 — lien public partageable et comptes d'essai vides, TF-0874) est **retenu** ou **écarté** dans `ecarts_surface_implicite`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, le candidat nommé (TF-0811). **S5** : dès qu'un `objet` énuméré est un registre, un inventaire ou un catalogue, chacun des trois candidats d'un registre (vue transverse, comparaison d'éléments, inventaire hiérarchique) est retenu ou écarté au même champ ; sinon un avertissement non bloquant le nomme (TF-1655) |
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
 | `oracle-etat` | EM1–EM4 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) ; **EM4** : le nom du fichier dit son verbe, `ETAT.json` (un seul verbe dans le dossier) ou `ETAT-<verbe>.json` (plusieurs), en avertissement non bloquant (TF-1619) |
@@ -228,7 +228,7 @@ imposée :
 ```bash
 node oracles/self-test.mjs                                   # fixtures verte/rouge, 55 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
-node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md>
+node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md> [--cascade <chemin/cascade/CASCADE.json>]
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
 node oracles/oracle-claims.mjs      <chemin/EXIGENCES.json>
 node oracles/oracle-etat.mjs        <chemin/ETAT.json>

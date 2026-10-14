@@ -1,8 +1,8 @@
 {
   "matrice_attendue": "forge-conception",
-  "version": "1.2.0",
-  "date": "2026-09-26",
-  "etablie_par": "TF-1335, APRES la correction de l'enonce E-007 dans fixtures/verte/EXIGENCES.json (terme ambigu EA2 retire)",
+  "version": "1.3.0",
+  "date": "2026-10-14",
+  "etablie_par": "TF-1335, APRES la correction de l'enonce E-007 dans fixtures/verte/EXIGENCES.json (terme ambigu EA2 retire) ; fixture cascade-verte ajoutee par TF-1680 (2026-10-14), quatre cellules neuves toutes PASS, aucune cellule existante changee",
   "pourquoi": "Le self-test associait un couple (fixture verte, fixture rouge) a un oracle et ne disait rien des autres verdicts qu'une fixture rend. Chaque regle neuve posee sur un oracle PARTAGE pouvait donc faire basculer une fixture voisine en silence. Cette donnee est la reference : `node oracles/self-test.mjs` recalcule la matrice complete et compare cellule a cellule ; un verdict qui differe est un echec de recette nommant la fixture et l'oracle.",
   "comment_mettre_a_jour": "Mettre a jour cette donnee est un GESTE EXPLICITE, dans le commit qui change la regle — jamais un effet de bord. `node oracles/matrice.mjs` imprime la matrice courante et le bloc `cellules` pret a coller ; ajouter la ligne correspondante dans `bascules` avec sa date et sa cause, et avancer `version` et `date` ci-dessus.",
   "legende": {
@@ -37,6 +37,12 @@
     },
     "cadrage-metier-verte": {
       "oracle-cadrage-metier": "PASS"
+    },
+    "cascade-verte": {
+      "oracle-exigences": "PASS",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
     },
     "constitution-rouge": {
       "oracle-constitution": "FAIL"

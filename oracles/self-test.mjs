@@ -69,6 +69,11 @@ const EXMD_ROUGE = join(ICI, 'fixtures', 'exigences-md-rouge')
 // mesure du 05/09 sur les vues par profil, cette fois avec un juge.
 const CORPS_PROFIL_VERTE = join(ICI, 'fixtures', 'corps-de-vue-profil-verte')
 const CORPS_PROFIL_ROUGE = join(ICI, 'fixtures', 'corps-de-vue-profil-rouge')
+// TF-1680 : fixtures DEDIEES de T6. Le MEME EXIGENCES.json des deux cotes (celui de la verte) ;
+// seule la cascade change -- la rouge cite E-002 sous TAC-2 alors que le champ `tactique` de
+// l'exigence dit TAC-1, et ne cite plus E-006 nulle part. T1 a T4 y restent verts.
+const CASCADE_VERTE = join(ICI, 'fixtures', 'cascade-verte')
+const CASCADE_ROUGE = join(ICI, 'fixtures', 'cascade-rouge')
 
 const ORACLES = [
   {
@@ -103,6 +108,15 @@ const ORACLES = [
     regles: ['T5'],
     args: (dossier) => [join(CORPS_VERTE, 'EXIGENCES.json'), '--vue',
       join(dossier === VERTE ? CORPS_VERTE : CORPS_ROUGE, 'CADRAGE-DESIGN.md')]
+  },
+  {
+    // TF-1680 : T6 SEULE, sur ses fixtures dediees. Sans --cascade, T6 rend un SANS_OBJET motive
+    // sur toutes les autres fixtures : aucun referentiel existant n'est accuse. Ici la verte et la
+    // rouge jugent le MEME referentiel ; seule la cascade differe.
+    fichier: 'oracle-tracabilite.mjs',
+    regles: ['T6'],
+    args: (dossier) => [join(CASCADE_VERTE, 'EXIGENCES.json'), '--cascade',
+      join(dossier === VERTE ? CASCADE_VERTE : CASCADE_ROUGE, 'CASCADE.json')]
   },
   {
     // TF-0070 : la verte passe au seuil PAR DEFAUT (S-06 couvert par E-008, palier V2) —
@@ -956,6 +970,92 @@ for (const o of ORACLES) {
       console.log(`         exits obtenus : 1=${presents.code} 2=${oubli.code} 3=${ecartes.code} ` +
         `4=${motifCourt.code} 5=${sansRegistre.code} 6=${unSeul.code}`)
     }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-1680 : T6, la remontee ISTO exigence -> tactique -> strategie -> intention ---
+// Retour du 02/10/2026 sur un produit reel : le referentiel ne remontait qu'a des besoins, et le
+// rattachement aux tactiques a du vivre hors de lui. La cascade ISTO du pilot (INTENTION.md 2.0.0,
+// format pilot/cascade-isto@1) est l'artefact compagnon ; l'exigence porte un champ FACULTATIF
+// `tactique`. La verte et la rouge dediees jouent les deux sens dans la boucle ; ici, les etats
+// que ni l'une ni l'autre ne portent, plus le remede du message de divergence, joue.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf1680-'))
+  try {
+    const refVerte = JSON.parse(readFileSync(join(CASCADE_VERTE, 'EXIGENCES.json'), 'utf8'))
+    const casVerte = JSON.parse(readFileSync(join(CASCADE_VERTE, 'CASCADE.json'), 'utf8'))
+    const casRouge = JSON.parse(readFileSync(join(CASCADE_ROUGE, 'CASCADE.json'), 'utf8'))
+    const copie = (o) => JSON.parse(JSON.stringify(o))
+    const ecrire = (nom, objet) => {
+      const chemin = join(tmp, nom)
+      writeFileSync(chemin, typeof objet === 'string' ? objet : JSON.stringify(objet, null, 2) + NL)
+      return chemin
+    }
+    const jouer = (nom, ref, cascade) => {
+      const args = [ecrire(`EXIGENCES-${nom}.json`, ref)]
+      if (cascade !== undefined) args.push('--cascade', ecrire(`CASCADE-${nom}.json`, cascade))
+      const r = lancer('oracle-tracabilite.mjs', args)
+      const t6 = (r.rapport?.constats ?? []).filter(c => c.regle === 'T6')
+      return { code: r.code, t6, fails: t6.filter(c => c.statut === 'FAIL'), brut: r.brut }
+    }
+    const avec = (modifier) => { const c = copie(casVerte); modifier(c); return c }
+    const tac = (c, id) => c.tactiques.find(t => t.id === id)
+
+    const anterieur = (() => {
+      const r = lancer('oracle-tracabilite.mjs', [join(VERTE, 'EXIGENCES.json')])
+      const t6 = (r.rapport?.constats ?? []).filter(c => c.regle === 'T6')
+      return { code: r.code, t6 }
+    })()
+    const sansCascade = jouer('2-champ-sans-cascade', refVerte)
+    const champVide = jouer('3-champ-vide', (() => { const r = copie(refVerte); r.exigences[0].tactique = ' '; return r })(), casVerte)
+    const inconnue = jouer('4-tactique-inconnue', (() => { const r = copie(refVerte); r.exigences[0].tactique = 'TAC-9'; return r })(), casVerte)
+    const deuxTactiques = jouer('5-deux-tactiques', refVerte, avec(c => tac(c, 'TAC-3').exigences.push('E-007')))
+    const strategieRetiree = jouer('6-strategie-retiree', refVerte, avec(c => {
+      Object.assign(c.strategies.find(s => s.id === 'STR-3'), { statut: 'retiree', motif_retrait: 'fixture' })
+    }))
+    const sansFormat = jouer('7-format-absent', refVerte, avec(c => { delete c.format }))
+    const sansIntention = jouer('8-intention-absente', refVerte, avec(c => { c.intention = {} }))
+    const citeRetiree = jouer('9-cite-une-retiree', refVerte, avec(c => tac(c, 'TAC-2').exigences.push('E-003')))
+    const remede = jouer('10-remede', (() => {
+      const r = copie(refVerte); r.exigences.find(e => e.id === 'E-002').tactique = 'TAC-2'; return r
+    })(), (() => { const c = copie(casRouge); tac(c, 'TAC-3').exigences.push('E-006'); return c })())
+    const illisible = jouer('11-cascade-illisible', refVerte, '{ pas du json')
+
+    const cas = [
+      ['1. referentiel anterieur (fixture verte), sans --cascade -> exit 0, un T6 SANS_OBJET « aucune migration »',
+        anterieur.code === 0 && anterieur.t6.length === 1 && anterieur.t6[0].statut === 'SANS_OBJET' &&
+        anterieur.t6[0].message.includes('aucune migration')],
+      ['2. champ `tactique` porte, sans --cascade -> exit 0, SANS_OBJET qui compte les 3 exigences',
+        sansCascade.code === 0 && sansCascade.fails.length === 0 &&
+        sansCascade.t6.some(c => c.statut === 'SANS_OBJET' && c.message.startsWith('3 exigence(s)'))],
+      ['3. champ `tactique` vide -> FAIL sur cette exigence',
+        champVide.code === 1 && champVide.fails.length === 1 && champVide.fails[0].ou.includes('E-001')],
+      ['4. tactique inconnue de la cascade -> FAIL qui la nomme',
+        inconnue.code === 1 && inconnue.fails.length === 1 && inconnue.fails[0].message.includes('TAC-9')],
+      ['5. exigence citee par deux tactiques -> FAIL « une seule »',
+        deuxTactiques.code === 1 && deuxTactiques.fails.length === 1 &&
+        deuxTactiques.fails[0].message.includes('TAC-2, TAC-3')],
+      ['6. strategie retiree sous une tactique active -> FAIL rupture',
+        strategieRetiree.code === 1 && strategieRetiree.fails.length === 1 &&
+        strategieRetiree.fails[0].message.includes('STR-3 retirée')],
+      ['7. cascade hors format pilot/cascade-isto@1 -> FAIL format',
+        sansFormat.code === 1 && sansFormat.fails.length === 1 && sansFormat.fails[0].message.includes('format')],
+      ['8. cascade sans intention citee -> FAIL intention',
+        sansIntention.code === 1 && sansIntention.fails.some(c => c.message.includes('intention'))],
+      ['9. la cascade cite un identifiant retire -> FAIL qui le dit',
+        citeRetiree.code === 1 && citeRetiree.fails.length === 1 && citeRetiree.fails[0].message.includes('RETIRÉ')],
+      ['10. remede joue : champ aligne sur la cascade et E-006 rattachee -> T6 PASS, exit 0',
+        remede.code === 0 && remede.fails.length === 0 && remede.t6.length === 7],
+      ['11. cascade illisible -> exit 2 (non juge), jamais FAIL',
+        illisible.code === 2]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-tracabilite.mjs (branche TF-1680, T6 remontee ISTO, fixtures ephemeres, etats + remede)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }

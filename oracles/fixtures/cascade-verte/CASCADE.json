@@ -1,0 +1,108 @@
+{
+  "format": "pilot/cascade-isto@1",
+  "projet": "Suivi des demandes d'absence (fixture TF-1680)",
+  "version": "1.0.0",
+  "date": "2026-10-14",
+  "statut": "ratifiée le 2026-10-14 (fixture de recette)",
+  "regle": "references/INTENTION.md 2.0.0",
+  "intention": {
+    "citations": [
+      {
+        "texte": "Je veux que mes salariés déclarent leurs absences sans passer par moi, et savoir qui est absent un jour donné.",
+        "source": "Cahier des charges client, section 1 « Contexte »"
+      }
+    ],
+    "reformulation": "Le responsable veut cesser d'être l'intermédiaire des déclarations d'absence tout en gardant la vue sur la présence de son équipe.",
+    "validation": {
+      "date": "2026-10-14",
+      "par": "le commanditaire du produit",
+      "trace": "fixture de recette : validation simulée, aucune entrée de ledger réelle"
+    }
+  },
+  "parties_prenantes": [
+    { "id": "PP-1", "role": "responsable d'équipe", "intention": "ne plus relayer les déclarations" }
+  ],
+  "arbitrage": "",
+  "contraintes": [
+    { "id": "C-1", "enonce": "Conservation des données d'absence pendant 60 mois.", "source": "Politique de conservation, version en vigueur" }
+  ],
+  "non_objectifs": [
+    { "id": "N-1", "enonce": "Calculer la paie.", "motif": "relève de l'outil de paie existant" }
+  ],
+  "strategies": [
+    {
+      "id": "STR-1",
+      "effet": "Le salarié déclare seul son absence.",
+      "manque": "Chaque déclaration passe aujourd'hui par un courriel au responsable.",
+      "indicateur": {
+        "formule": "déclarations sans intervention du responsable ÷ déclarations",
+        "numerateur": "déclarations enregistrées par le salarié lui-même",
+        "denominateur": "déclarations du mois",
+        "source": "journal des demandes"
+      },
+      "valeur_actuelle": { "non_mesuree": "produit pas encore en service" },
+      "cible": "100 % des déclarations au premier mois de service"
+    },
+    {
+      "id": "STR-2",
+      "effet": "Le responsable sait qui est absent à une date donnée.",
+      "manque": "La présence se reconstitue à la main depuis les courriels.",
+      "indicateur": {
+        "formule": "dates consultées avec réponse ÷ dates consultées",
+        "numerateur": "consultations rendant la liste des absents",
+        "denominateur": "consultations de la liste",
+        "source": "journal de l'écran des absents"
+      },
+      "valeur_actuelle": { "non_mesuree": "produit pas encore en service" },
+      "cible": "100 % des consultations"
+    },
+    {
+      "id": "STR-3",
+      "effet": "L'entreprise tient ses obligations de conservation.",
+      "manque": "Aucune règle de conservation n'est appliquée aux courriels d'absence.",
+      "indicateur": {
+        "formule": "données conservées dans la durée légale ÷ données d'absence",
+        "numerateur": "enregistrements dans la durée légale",
+        "denominateur": "enregistrements d'absence",
+        "source": "requête de contrôle de rétention"
+      },
+      "valeur_actuelle": { "non_mesuree": "produit pas encore en service" },
+      "cible": "100 % des enregistrements"
+    }
+  ],
+  "tactiques": [
+    {
+      "id": "TAC-1",
+      "strategie": "STR-1",
+      "moyen": "Saisie en libre-service avec décompte automatique du solde.",
+      "alternative_ecartee": "Formulaire transmis au responsable pour saisie.",
+      "justification": "Le responsable ne veut plus être l'intermédiaire.",
+      "source": "Cahier des charges client, section 1",
+      "statut_justification": "sourcée",
+      "exigences": ["E-001", "E-002"]
+    },
+    {
+      "id": "TAC-2",
+      "strategie": "STR-2",
+      "moyen": "Liste des absents par date, notifications et récapitulatif mensuel.",
+      "alternative_ecartee": "Calendrier partagé tenu à la main.",
+      "justification": "Un calendrier tenu à la main reproduit le relais que l'intention supprime.",
+      "source": "Cahier des charges client, section 2",
+      "statut_justification": "sourcée",
+      "exigences": ["E-004", "E-005", "E-007", "E-008"]
+    },
+    {
+      "id": "TAC-3",
+      "strategie": "STR-3",
+      "moyen": "Conservation bornée à la durée légale.",
+      "alternative_ecartee": "Conservation illimitée.",
+      "justification": "La politique de conservation l'impose.",
+      "source": "Politique de conservation, version en vigueur",
+      "statut_justification": "sourcée",
+      "exigences": ["E-006"]
+    }
+  ],
+  "historique": [
+    { "version": "1.0.0", "date": "2026-10-14", "niveau": "I", "resume": "cascade initiale de la fixture", "decision": "fixture de recette TF-1680" }
+  ]
+}

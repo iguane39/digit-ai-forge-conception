@@ -43,6 +43,34 @@ lien de surface **et** sans raison est un trou silencieux : S3 la refuse.
 l'intention de l'auteur au patron **calculé** par `oracle-ears` (règle EA3, TF-0101). Absent :
 `oracle-ears` calcule seul, rien à confronter — pas un défaut.
 
+`tactique` — chaîne, sur une exigence (TF-1680). L'identifiant de la tactique de la **cascade
+ISTO** du produit que l'exigence réalise (`TAC-1`, `TAC-2`…). La cascade est l'artefact
+compagnon défini par le pilot (`references/INTENTION.md` 2.0.0, format `pilot/cascade-isto@1`,
+gabarit `gabarits/CASCADE-ISTO.json`), rangé sous `forge/etapes/conception/cascade/CASCADE.json`.
+Elle porte ce que le référentiel n'a pas : l'intention citée et validée, les stratégies (effet,
+manque, indicateur, cible) et les tactiques (moyen, alternative écartée, justification, source).
+Le référentiel ne les recopie pas : deux copies divergeraient à la première révision.
+
+C'est la cascade qui cite les exigences (`tactiques[].exigences`) ; le champ `tactique` en est
+le pointeur inverse, lisible depuis l'exigence. `oracle-tracabilite` **T6** les confronte quand
+on lui donne la cascade (`--cascade <CASCADE.json>`). Chaque exigence doit remonter à une seule
+tactique active, à une stratégie active, puis à une intention citée et reformulée. Un champ qui
+dit une autre tactique que la cascade est un FAIL qui nomme les deux.
+
+| Situation | Verdict de T6 |
+|---|---|
+| Aucun champ `tactique`, aucune `--cascade` | SANS_OBJET motivé : référentiel antérieur, aucune migration due |
+| Champ porté, aucune `--cascade` | SANS_OBJET : la remontée n'est pas vérifiée, et le verdict le dit |
+| Champ vide ou non chaîne | FAIL sur l'exigence |
+| `--cascade` : exigence citée par une tactique active, champ absent ou conforme | PASS, la chaîne imprimée (`E-001 → TAC-1 → STR-1 → intention`) |
+| `--cascade` : champ et cascade divergent, tactique inconnue ou retirée, aucune ou plusieurs tactiques, stratégie inconnue ou retirée | FAIL sur l'exigence |
+| `--cascade` : la cascade cite une exigence absente ou retirée du référentiel | FAIL sur la cascade |
+
+Le champ est **facultatif** : un référentiel écrit avant TF-1680 reste valide, et un produit
+peut tenir sa cascade sans jamais écrire le champ. T6 ne juge de la cascade que ce dont la
+remontée dépend. Le reste (validation tracée de l'intention, indicateurs, alternatives,
+historique) se juge par `oracles/oracle-cascade-isto.mjs` du pilot.
+
 `ecarts_surface_implicite` — tableau, à la racine du référentiel (TF-0811). Une entrée par
 candidat de la surface implicite **écarté** : `{ element, motif, decide_par, date }`.
 

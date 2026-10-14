@@ -1,7 +1,7 @@
 ---
 name: redige-les-exigences
 description: Rédige le référentiel d'exigences d'un produit — chaque exigence atomique, identifiée de façon stable, assortie d'un critère d'acceptation binaire ou chiffré, d'un palier MVP/V1/V2, d'un statut fait constaté ou hypothèse, et d'un lien vers l'élément de surface couvert — puis le fait juger par quatre oracles exécutés. Produit EXIGENCES.md et EXIGENCES.json, la source unique dont toutes les vues aval sont dérivées. Use when / déclencher dès qu'il faut transformer un besoin, un cadrage ou une surface fonctionnelle en spécification opposable, écrire des exigences testables, poser des critères d'acceptation, arbitrer un périmètre MVP, ou produire le PRD d'un produit à construire. Ne pas déclencher pour qualifier l'entrant (→ qualifie-l-entrant), énumérer la surface (→ enumere-la-surface), dériver les vues aval (→ derive-les-vues), ni pour produire epics, stories ou architecture d'implémentation (→ étape C de la SaaS Forge, moteur BMAD).
-version: 1.3.0
+version: 1.4.0
 ---
 
 # Rédige les exigences
@@ -73,6 +73,15 @@ portée par une exigence → PASS, écartée avec un motif d'au moins vingt cara
 → PASS imprimé « [ÉCARTÉ] », ni l'un ni l'autre → **FAIL**, la candidate nommée. Aucune condition
 d'applicabilité n'est inférée : un produit sans donnée de production ou sans élément interactif
 écrit son écart, il ne compte pas sur l'oracle pour le deviner.
+
+**Une exigence remonte jusqu'à l'intention (TF-1680).** Le besoin parent ne dit ni le moyen
+choisi, ni l'alternative écartée, ni l'effet attendu. Quand le produit tient sa cascade ISTO
+(`cascade/CASCADE.json`, format `pilot/cascade-isto@1` du pilot), chaque exigence y est citée
+par une tactique et une seule. Elle peut porter en plus le champ facultatif `tactique`
+(`TAC-1`). `node oracles/oracle-tracabilite.mjs EXIGENCES.json --cascade cascade/CASCADE.json`
+rejoue alors la chaîne exigence → tactique → stratégie → intention (règle **T6**). Sans
+cascade, T6 rend un SANS_OBJET motivé. Détail : `references/schema-referentiel.md`, champ
+`tactique`.
 
 ## Le périmètre est un champ, pas un document
 

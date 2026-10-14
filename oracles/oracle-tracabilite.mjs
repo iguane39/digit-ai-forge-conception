@@ -1,13 +1,13 @@
 // oracle-tracabilite — bijection besoin ↔ exigence ↔ critère, et régénérabilité des vues.
-// Usage : node oracle-tracabilite.mjs <EXIGENCES.json> [--vue <fichier>]...
-// CDC §7.2 — règles T1 à T5.
+// Usage : node oracle-tracabilite.mjs <EXIGENCES.json> [--vue <fichier>]... [--cascade <CASCADE.json>]
+// CDC §7.2 — règles T1 à T5 ; T6 remontée ISTO exigence → tactique → stratégie → intention (TF-1680).
 
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { createHash } from 'node:crypto'
 import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, NATURES } from './_contrat.mjs'
 
-const VERSION = '1.1.0'
+const VERSION = '1.2.0'
 const EN_TETE_SOURCE = /<!--\s*source-sha256:\s*([0-9a-f]{64})\s*-->/i
 
 // TF-0818 : l'empreinte de la SOURCE prouve d'où vient la vue, jamais ce qu'elle contient.
@@ -39,13 +39,28 @@ const SOURCE_DES_SECTIONS = 'skills/derive-les-vues/references/vues.md (section 
 // source-sha256 (voir skills/derive-les-vues).
 const normaliserFinsDeLigne = (texte) => texte.replace(/\r\n/g, '\n')
 
+// TF-1680 : la cascade ISTO du pilot (`references/INTENTION.md` 2.0.0, format
+// `pilot/cascade-isto@1`, gabarit `gabarits/CASCADE-ISTO.json`) range intention, stratégies et
+// tactiques dans un artefact COMPAGNON, `cascade/CASCADE.json`, et c'est la cascade qui cite
+// les exigences (`tactiques[].exigences`). Le référentiel garde sa forme ; une exigence peut
+// porter en plus le champ FACULTATIF `tactique` (identifiant `TAC-n` de la cascade), que T6
+// confronte à la cascade quand `--cascade` la fournit. Sans le champ ni la cascade, T6 rend un
+// SANS_OBJET motivé : aucun référentiel existant n'est accusé, aucune migration n'est due.
+const FORMAT_CASCADE = 'pilot/cascade-isto@1'
+const active = (x) => (x?.statut ?? 'active') !== 'retiree'
+const plein = (v) => typeof v === 'string' && v.trim() !== ''
+
 const cible = process.argv[2]
 const vues = []
+let cheminCascade = null
 for (let i = 3; i < process.argv.length; i++) {
   if (process.argv[i] === '--vue') {
     const v = process.argv[++i]
     if (!v) erreur('--vue attend un chemin de fichier')
     vues.push(v)
+  } else if (process.argv[i] === '--cascade') {
+    cheminCascade = process.argv[++i]
+    if (!cheminCascade) erreur('--cascade attend le chemin de CASCADE.json')
   }
 }
 
@@ -184,6 +199,131 @@ for (const [i, e] of ref.exigences.entries()) {
   }
 }
 
+// --- T6 : chaque exigence remonte à une tactique, une stratégie, l'intention (TF-1680) ---------
+// Retour du 02/10/2026 sur un produit réel : le référentiel ne remontait qu'à des besoins, liste
+// plate sans indicateur ni cible ; en reconstruisant la cascade, 5 tactiques sur 14 n'ont trouvé
+// leur alternative écartée nulle part, et le rattachement a dû vivre hors du référentiel. T1
+// vérifie que le besoin existe ; T6 rejoue la chaîne jusqu'à l'intention, quand on la lui donne.
+
+const ouExigence = (e, i) => (e?.id ? `exigences[${i}] (${e.id})` : `exigences[${i}]`)
+const portent = ref.exigences
+  .map((e, i) => [e, i])
+  .filter(([e]) => e && Object.prototype.hasOwnProperty.call(e, 'tactique'))
+// Le champ, s'il est écrit, est une chaîne non vide — avec ou sans cascade.
+const malFormees = new Set()
+for (const [e, i] of portent) {
+  if (!plein(e.tactique)) {
+    malFormees.add(e)
+    constats.push(constat('T6', FAIL, ouExigence(e, i),
+      'champ `tactique` présent mais vide ou non chaîne — attendu l\'identifiant d\'une tactique ' +
+      'de la cascade (« TAC-1 »), ou le champ retiré'))
+  }
+}
+
+if (cheminCascade === null) {
+  constats.push(constat('T6', SANS_OBJET, 'aucune cascade fournie',
+    portent.length === 0
+      ? 'aucune exigence ne porte de champ `tactique` et aucun argument --cascade : la remontée ' +
+        'ISTO (exigence → tactique → stratégie → intention) n\'est pas jugée, elle n\'est pas ' +
+        'non plus supposée. Référentiel antérieur au champ : aucune migration n\'est due'
+      : `${portent.length} exigence(s) portent un champ \`tactique\`, mais sans --cascade ni ` +
+        'la tactique, ni sa stratégie, ni l\'intention ne sont vérifiées'))
+} else {
+  let cascade
+  try {
+    cascade = JSON.parse(readFileSync(cheminCascade, 'utf8'))
+  } catch (e) {
+    erreur(`cascade illisible ou non parsable : ${cheminCascade} (${e.code ?? e.message})`)
+  }
+  if (cascade?.format !== FORMAT_CASCADE) {
+    constats.push(constat('T6', FAIL, cheminCascade,
+      `format « ${cascade?.format ?? 'absent'} » au lieu de « ${FORMAT_CASCADE} » — gabarit : ` +
+      'gabarits/CASCADE-ISTO.json du pilot'))
+  } else {
+    const tactiques = Array.isArray(cascade.tactiques) ? cascade.tactiques : []
+    const strategies = new Map((Array.isArray(cascade.strategies) ? cascade.strategies : [])
+      .map(s => [s?.id, s]))
+    const parId = new Map(tactiques.map(t => [t?.id, t]))
+    const intention = cascade.intention ?? {}
+    const intentionTient = plein(intention.reformulation) &&
+      (intention.citations ?? []).some(c => plein(c?.texte) && plein(c?.source))
+    if (!intentionTient) {
+      constats.push(constat('T6', FAIL, `${cheminCascade} (intention)`,
+        'la cascade ne porte pas d\'intention citée (texte + source) et reformulée : aucune ' +
+        'exigence ne peut y remonter'))
+    }
+
+    // Les exigences que la cascade cite, par tactique ACTIVE : c'est la cascade qui est la source.
+    const citeesPar = new Map()
+    for (const t of tactiques.filter(active)) {
+      for (const id of Array.isArray(t?.exigences) ? t.exigences : []) {
+        citeesPar.set(id, [...(citeesPar.get(id) ?? []), t.id])
+      }
+    }
+
+    for (const [i, e] of ref.exigences.entries()) {
+      if (malFormees.has(e)) continue
+      const ou = ouExigence(e, i)
+      const citantes = citeesPar.get(e?.id) ?? []
+      let tactique = null
+      if (plein(e?.tactique)) {
+        const t = parId.get(e.tactique.trim())
+        if (!t) {
+          constats.push(constat('T6', FAIL, ou, `tactique ${e.tactique} inconnue de la cascade`))
+          continue
+        }
+        if (!active(t)) {
+          constats.push(constat('T6', FAIL, ou, `tactique ${t.id} retirée de la cascade — rupture ISTO`))
+          continue
+        }
+        if (!citantes.includes(t.id)) {
+          constats.push(constat('T6', FAIL, ou,
+            `le champ \`tactique\` dit ${t.id}, mais la cascade ne cite pas ${e.id} sous ${t.id}` +
+            (citantes.length ? ` (elle la cite sous ${citantes.join(', ')})` : '') +
+            ' — les deux sens divergent ; la cascade est la source (INTENTION.md) : corriger ' +
+            'l\'un ou l\'autre pour qu\'ils disent la même tactique'))
+          continue
+        }
+        tactique = t
+      }
+      if (citantes.length > 1) {
+        constats.push(constat('T6', FAIL, ou,
+          `rattachée à ${citantes.length} tactiques actives (${citantes.join(', ')}) — une seule`))
+        continue
+      }
+      if (!tactique) {
+        if (citantes.length === 0) {
+          constats.push(constat('T6', FAIL, ou,
+            'aucune tactique active de la cascade ne cite cette exigence — opération orpheline'))
+          continue
+        }
+        tactique = parId.get(citantes[0])
+      }
+      const s = strategies.get(tactique.strategie)
+      if (!s) {
+        constats.push(constat('T6', FAIL, ou,
+          `${tactique.id} cite une stratégie inconnue (${tactique.strategie ?? 'aucune'}) — rupture ISTO`))
+      } else if (!active(s)) {
+        constats.push(constat('T6', FAIL, ou, `${tactique.id} sous ${s.id} retirée — rupture ISTO`))
+      } else if (intentionTient) {
+        constats.push(constat('T6', PASS, ou,
+          `${e.id} → ${tactique.id} → ${s.id} → intention` +
+          (plein(e?.tactique) ? ' (champ `tactique` conforme à la cascade)' : '')))
+      }
+    }
+
+    // L'autre sens : la cascade ne cite aucune exigence absente du référentiel.
+    const connues = new Set(ref.exigences.map(e => e?.id))
+    const retirees = new Set(Array.isArray(ref.identifiants_retires) ? ref.identifiants_retires : [])
+    for (const [id, ts] of citeesPar) {
+      if (!connues.has(id)) {
+        constats.push(constat('T6', FAIL, `${cheminCascade} (${ts.join(', ')})`,
+          `la cascade cite ${id}, ${retirees.has(id) ? 'identifiant RETIRÉ du référentiel' : 'absente du référentiel'}`))
+      }
+    }
+  }
+}
+
 emettre({
   oracle: 'oracle-tracabilite',
   version: VERSION,
@@ -197,6 +337,13 @@ emettre({
       'jamais quelle section manque : la liste des sections attendues est CITÉE dans le ' +
       'message, jamais vérifiée dans la vue.',
     'Le contenu d\'une vue sans en-tête `corps-sha256` (T5 SANS_OBJET). Aucune vue scellée ' +
-      'avant TF-0818 n\'a été migrée : sa provenance seule est jugée, et le verdict le dit.'
+      'avant TF-0818 n\'a été migrée : sa provenance seule est jugée, et le verdict le dit.',
+    'La PERTINENCE d\'un rattachement ISTO (T6) : qu\'une exigence serve réellement sa tactique, ' +
+      'une tactique sa stratégie. T6 voit la chaîne d\'identifiants, pas le sens — et ne juge de ' +
+      'la cascade que ce dont la remontée dépend (format, intention citée, tactique et stratégie ' +
+      'actives) ; le reste (validation tracée de l\'intention, indicateurs, alternatives écartées, ' +
+      'historique) relève de `oracle-cascade-isto.mjs` du pilot.',
+    'Que l\'intention de la cascade soit celle d\'`ENTRANT.md` : T6 exige une intention citée ' +
+      'et reformulée, jamais qu\'elle reprenne la section de l\'entrant.'
   ]
 })
