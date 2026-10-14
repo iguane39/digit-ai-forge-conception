@@ -7,7 +7,7 @@
 // n'ont pas pu juger (exit 2 : mauvais type de référentiel, argument manquant) — jamais
 // PASS par défaut, jamais de silence (modèle : run-oracles-design.mjs de forge-design).
 //
-// Contrat : JSON sur stdout — { runner, cible, verdict, oracles: [{oracle, verdict,
+// Contrat : JSON sur stdout — { runner, cible, cascade, verdict, oracles: [{oracle, verdict,
 // exit, resume}], non_juge } ; exit 0 = tous PASS, 1 = au moins un FAIL,
 // 2 = aucun oracle n'a pu juger.
 // Usage :
@@ -16,6 +16,7 @@
 // Le manifeste des verbes (skills → oracles) : oracles\manifeste.json.
 
 import { dirname, join, basename } from "node:path";
+import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 // TF-1319 (23/09/2026) : la règle de découverte vit dans `decouvrir-oracles.mjs`, que le juge
@@ -76,11 +77,22 @@ const VOISIN_PAR_ORACLE = {
 const cibleDe = (oracle) =>
   VOISIN_PAR_ORACLE[oracle] ? join(dirname(cible), VOISIN_PAR_ORACLE[oracle]) : cible;
 
+// TF-1686 : la règle T6 d'oracle-tracabilite (TF-1680) ne se joue que si l'oracle reçoit
+// `--cascade`, et ce lanceur ne le passait jamais : la remontée exigence → tactique → stratégie
+// → intention existait, hors du chemin par défaut. La cascade ISTO vit à un emplacement fixé par
+// le pilot, `cascade/CASCADE.json` à côté du référentiel (forge/etapes/conception/) : présente,
+// elle est passée d'office ; absente, rien ne change et T6 rend son SANS_OBJET motivé.
+const CASCADE_VOISINE = join("cascade", "CASCADE.json");
+const cascade = existsSync(join(dirname(cible), CASCADE_VOISINE))
+  ? join(dirname(cible), CASCADE_VOISINE) : null;
+const argumentsDe = (oracle) => [cibleDe(oracle),
+  ...(oracle === "oracle-tracabilite.mjs" && cascade ? ["--cascade", cascade] : [])];
+
 const resultats = [];
 let unFail = false;
 let unPass = false;
 for (const oracle of oracles) {
-  const r = spawnSync(process.execPath, [join(ICI, oracle), cibleDe(oracle)], { encoding: "utf8" });
+  const r = spawnSync(process.execPath, [join(ICI, oracle), ...argumentsDe(oracle)], { encoding: "utf8" });
   let corps = null;
   try { corps = JSON.parse(r.stdout); } catch { /* sortie non-JSON : déclarée telle quelle */ }
   const verdict = r.status === 0 ? "PASS" : r.status === 1 ? "FAIL" : "NON_JUGE";
@@ -110,8 +122,10 @@ for (const oracle of oracles) {
 const verdict = unFail ? "FAIL" : unPass ? "PASS" : "NON_JUGE";
 const rapport = {
   runner: "run-oracles-conception",
-  version: "1.0.0",
+  version: "1.1.0",
   cible,
+  // TF-1686 : la cascade passée à oracle-tracabilite, ou null — dit si T6 a pu juger la remontée.
+  cascade,
   verdict,
   oracles: resultats,
   non_juge: [

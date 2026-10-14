@@ -1,13 +1,14 @@
 // oracle-tracabilite — bijection besoin ↔ exigence ↔ critère, et régénérabilité des vues.
 // Usage : node oracle-tracabilite.mjs <EXIGENCES.json> [--vue <fichier>]... [--cascade <CASCADE.json>]
 // CDC §7.2 — règles T1 à T5 ; T6 remontée ISTO exigence → tactique → stratégie → intention (TF-1680).
+// T3 juge aussi la vue de la cascade, scellée sur la cascade et sur le référentiel (TF-1686).
 
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { createHash } from 'node:crypto'
 import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, NATURES } from './_contrat.mjs'
 
-const VERSION = '1.2.0'
+const VERSION = '1.3.0'
 const EN_TETE_SOURCE = /<!--\s*source-sha256:\s*([0-9a-f]{64})\s*-->/i
 
 // TF-0818 : l'empreinte de la SOURCE prouve d'où vient la vue, jamais ce qu'elle contient.
@@ -122,6 +123,56 @@ const sha = createHash('sha256')
 const empreinteDuCorps = (corps) => createHash('sha256')
   .update(normaliserFinsDeLigne(corps), 'utf8').digest('hex')
 
+// TF-1686 : la vue de la cascade (`CASCADE.md`, produite par `scripts/vue-cascade.mjs`) n'a pas
+// la même source que les autres vues. Elle se dérive de la cascade ISTO et déclare
+// `<!-- source: cascade/CASCADE.json -->` : son `source-sha256` est l'empreinte de la CASCADE, et
+// une ligne `referentiel-sha256` porte celle du référentiel contre lequel son test rétro (T6) a
+// été joué. Comparer son `source-sha256` à `EXIGENCES.json` la dirait périmée à tort ; ne juger
+// que la cascade laisserait passer un référentiel modifié depuis le verdict qu'elle affiche.
+// T3 juge donc les DEUX provenances ; le corps reste jugé par T5, à l'identique des autres vues.
+const EN_TETE_DECLARATION = /<!--\s*source:\s*(.*?)\s*-->/i
+const EN_TETE_REFERENTIEL = /<!--\s*referentiel-sha256:\s*([0-9a-f]{64})\s*-->/i
+const estVueDeCascade = (contenu) => {
+  const d = contenu.match(EN_TETE_DECLARATION)
+  return Boolean(d) && basename(d[1].replace(/\\/g, '/')) === 'CASCADE.json'
+}
+const shaCascade = (() => {
+  if (!cheminCascade) return null
+  try {
+    return createHash('sha256')
+      .update(normaliserFinsDeLigne(readFileSync(cheminCascade, 'utf8')), 'utf8').digest('hex')
+  } catch { return null }
+})()
+const provenanceDeLaVueDeCascade = (v, contenu, declaree) => {
+  if (!cheminCascade) {
+    return constat('T3', FAIL, v,
+      'vue de la cascade : sa source est la cascade ISTO, et aucun argument --cascade ne la ' +
+      'fournit — sa provenance ne peut pas être jugée. Rejouer avec `--cascade ' +
+      '<cascade/CASCADE.json>` (le lanceur run-oracles-conception le passe d\'office)')
+  }
+  if (shaCascade === null) {
+    return constat('T3', FAIL, v, `vue de la cascade : cascade illisible (${cheminCascade})`)
+  }
+  if (declaree !== shaCascade) {
+    return constat('T3', FAIL, v,
+      `vue de la cascade périmée ou éditée à la main — déclare ${declaree.slice(0, 12)}…, ` +
+      `cascade à ${shaCascade.slice(0, 12)}… ; la régénérer par \`node scripts/vue-cascade.mjs\``)
+  }
+  const r = contenu.match(EN_TETE_REFERENTIEL)
+  if (!r) {
+    return constat('T3', FAIL, v,
+      'vue de la cascade sans en-tête `<!-- referentiel-sha256: ... -->` : son test rétro a été ' +
+      'jugé contre un référentiel qu\'elle ne nomme pas ; la régénérer par `node scripts/vue-cascade.mjs`')
+  }
+  if (r[1].toLowerCase() !== sha) {
+    return constat('T3', FAIL, v,
+      `vue de la cascade jugée contre un autre référentiel — déclare ${r[1].slice(0, 12)}…, ` +
+      `référentiel à ${sha.slice(0, 12)}… : son test rétro ne dit plus ce que tient le référentiel ; ` +
+      'la régénérer par `node scripts/vue-cascade.mjs`')
+  }
+  return constat('T3', PASS, v, 'vue de la cascade alignée sur sa cascade et sur le référentiel')
+}
+
 if (vues.length === 0) {
   constats.push(constat('T3', SANS_OBJET, 'aucune vue fournie',
     'aucun argument --vue : la régénérabilité n\'est pas jugée, elle n\'est pas non plus supposée'))
@@ -141,6 +192,8 @@ if (vues.length === 0) {
     if (!m) {
       constats.push(constat('T3', FAIL, v,
         'en-tête `<!-- source-sha256: ... -->` absent : la vue ne déclare pas sa source'))
+    } else if (estVueDeCascade(contenu)) {
+      constats.push(provenanceDeLaVueDeCascade(v, contenu, m[1].toLowerCase()))
     } else if (m[1].toLowerCase() !== sha) {
       constats.push(constat('T3', FAIL, v,
         `vue périmée ou éditée à la main — déclare ${m[1].slice(0, 12)}…, source à ${sha.slice(0, 12)}…`))
@@ -344,6 +397,9 @@ emettre({
       'actives) ; le reste (validation tracée de l\'intention, indicateurs, alternatives écartées, ' +
       'historique) relève de `oracle-cascade-isto.mjs` du pilot.',
     'Que l\'intention de la cascade soit celle d\'`ENTRANT.md` : T6 exige une intention citée ' +
-      'et reformulée, jamais qu\'elle reprenne la section de l\'entrant.'
+      'et reformulée, jamais qu\'elle reprenne la section de l\'entrant.',
+    'Que la vue de la cascade rende fidèlement sa source (TF-1686) : T3 juge ses deux provenances ' +
+      '(cascade et référentiel), T5 l\'intégrité de son corps ; la fidélité du rendu est prouvée ' +
+      'par la recette du générateur, `scripts/vue-cascade.self-test.mjs`, pas ici.'
   ]
 })

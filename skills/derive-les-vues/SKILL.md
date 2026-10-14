@@ -1,7 +1,7 @@
 ---
 name: derive-les-vues
-description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par DEUX empreintes, celle de sa source (vue périmée détectée) et celle de son propre corps (vue amputée détectée). Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, régénérer des vues après modification du référentiel, ou décliner un rétro-modèle en documentations par audience (vues par profil PO / CSM / utilisateur, scellées elles aussi par le double sceau). Ne pas déclencher pour rédiger ou modifier les exigences elles-mêmes (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
-version: 1.6.1
+description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par DEUX empreintes, sa source (vue périmée détectée) et son corps (vue amputée détectée). Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, régénérer des vues après modification du référentiel, dériver la vue de la cascade ISTO, ou décliner un rétro-modèle en documentations par audience (vues par profil PO / CSM / utilisateur, scellées elles aussi par le double sceau). Ne pas déclencher pour rédiger ou modifier les exigences (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
+version: 1.7.0
 ---
 
 # Dérive les vues
@@ -40,7 +40,8 @@ permet aux trois forges aval de continuer à fonctionner si la Conception dispar
 3. Empreintes    → source-sha256 (la source) + corps-sha256 (le corps), normalisées LF
 4. Artefacts     → CADRAGE-DESIGN.md · MISSION.md · EXIGENCES.json exposé
 5. Contrôle      → node oracles/oracle-tracabilite.mjs EXIGENCES.json --vue CADRAGE-DESIGN.md
-6. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs
+6. Cascade       → si cascade/CASCADE.json existe : node scripts/vue-cascade.mjs EXIGENCES.json → CASCADE.md
+7. État          → ETAT.json (statut produit|bloque_question) → node oracles/oracle-etat.mjs
 ```
 
 ## Les trois vues
@@ -53,6 +54,22 @@ permet aux trois forges aval de continuer à fonctionner si la Conception dispar
 
 Aucune des trois forges n'a été modifiée pour recevoir ces vues. C'est le test de
 non-couplage : la Conception s'aligne sur des contrats existants, elle n'en impose aucun.
+
+## La vue de la cascade (TF-1686)
+
+Quand le produit tient sa cascade ISTO (`cascade/CASCADE.json` à côté du référentiel, format
+`pilot/cascade-isto@1`), ce verbe en dérive aussi `CASCADE.md`, la vue que le demandeur lit pour
+ratifier l'intention, les effets et les moyens. Elle ne se rédige pas : `node scripts/vue-cascade.mjs
+EXIGENCES.json` l'écrit dans la forme en six parties de la famille `gd-cascade-produit` du pilot
+(Intention, Stratégie, Tactique, Opérationnel, Test rétro, Tenir la cascade à jour). Son test
+rétro est le verdict de T6 rejoué à la génération ; une rupture s'y affiche, elle ne bloque pas
+l'écriture. Sans cascade, rien n'est écrit (exit 2) : la vue n'est pas due.
+
+Elle porte le même double sceau que les autres vues, avec une ligne de plus parce qu'elle a deux
+sources : `source-sha256` est l'empreinte de la **cascade**, `referentiel-sha256` celle du
+référentiel contre lequel T6 a été joué, `corps-sha256` celle du corps. Contrôle :
+`node oracles/oracle-tracabilite.mjs EXIGENCES.json --cascade cascade/CASCADE.json --vue CASCADE.md`
+(T3 juge les deux provenances, T5 le corps). Contrat : `references/vues.md`, section 4.
 
 ## Vues par profil (GO du 19/08, étude 20260819b du pilot)
 

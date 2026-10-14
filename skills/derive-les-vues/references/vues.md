@@ -1,4 +1,4 @@
-# Contrats des trois vues
+# Contrats des vues (les trois vues aval, et la vue de la cascade)
 
 Chaque contrat est **constaté** dans le dépôt du consommateur, jamais supposé. Les chemins
 cités sont ceux vérifiés le 04/08/2026.
@@ -39,6 +39,8 @@ node -e "const{createHash}=require('crypto');const fs=require('fs');\
 process.stdout.write(createHash('sha256').update(fs.readFileSync('corps.md','utf8')\
 .replace(/\r\n/g,'\n'),'utf8').digest('hex'))"
 ```
+
+La vue de la cascade a deux sources et porte donc **quatre** lignes d'en-tête : voir section 4.
 
 **Aucune vue déjà scellée n'a été migrée.** Une vue qui ne porte pas `corps-sha256` se juge
 comme avant — provenance seule — et T5 le **dit** en `SANS_OBJET` plutôt que de laisser croire
@@ -165,6 +167,48 @@ reste manuel jusqu'à ce que la forge tourne.
 
 ---
 
+## 4. `CASCADE.md` → le demandeur (TF-1686)
+
+**Contrat source** : la famille `gd-cascade-produit` du pilot
+(`gabarits/documents/cascade-produit/GABARIT.md`, version 1.0.0 du gabarit) et son générateur
+`generateur/generer-vue-cascade.mjs`, dont la forme est reprise partie pour partie. La vue vit
+chez le produit sous `forge/etapes/conception/CASCADE.md`, à côté de sa source
+`forge/etapes/conception/cascade/CASCADE.json` (format `pilot/cascade-isto@1`). Due seulement
+quand la cascade existe.
+
+Elle ne se rédige pas, elle se génère : `node scripts/vue-cascade.mjs <EXIGENCES.json>
+[--cascade <CASCADE.json>] [--sortie <CASCADE.md>]`. La forge n'importe rien du pilot à
+l'exécution ; la seule partie dont le contenu diffère du générateur du pilot est le **test
+rétro** :
+
+| Partie | Dérivation |
+|---|---|
+| Intention | `intention` (citations, reformulation, validation), `parties_prenantes`, `arbitrage`, `contraintes`, `non_objectifs` |
+| Stratégie | `strategies[]` : effet, manque, indicateur, valeur actuelle, cible ; une stratégie retirée porte son motif |
+| Tactique | `tactiques[]` : moyen, alternative écartée et justification, source, statut de la justification |
+| Opérationnel | `tactiques[].exigences` et `autres_elements` ; sans la colonne des tests, que la forge ne lit pas |
+| Test rétro | le verdict de **T6** d'`oracle-tracabilite`, rejoué à la génération contre le référentiel ; les mesures M1 à M4 sont déclarées non rejouées, elles relèvent d'`oracle-cascade-isto` du pilot |
+| Tenir la cascade à jour | la procédure, les commandes de la forge et du pilot, `historique[]` |
+
+**En-tête** — quatre lignes, `corps-sha256` en dernier :
+
+> `<!-- source: cascade/CASCADE.json -->`
+> `<!-- source-sha256: <empreinte de la cascade> -->`
+> `<!-- referentiel-sha256: <empreinte d'EXIGENCES.json> -->`
+> `<!-- corps-sha256: <empreinte du corps> -->`
+
+La ligne `source:` désigne la cascade : c'est elle qui dit à T3 de comparer `source-sha256` à la
+cascade passée par `--cascade`, et non à `EXIGENCES.json`. `referentiel-sha256` existe parce que
+le test rétro dépend aussi du référentiel : une exigence ajoutée ou retirée après la génération
+rend faux le verdict affiché, et T3 le voit. Fins de ligne normalisées LF, comme partout.
+Aucune date de génération dans la vue : deux générations d'une même source rendent le même octet.
+
+Exemple travaillé : [oracles/fixtures/vue-cascade-verte](../../../oracles/fixtures/vue-cascade-verte)
+— la vue générée depuis sa cascade et son référentiel ; sa jumelle `vue-cascade-rouge` ne porte
+que la cascade modifiée après le scellement, et T3 seule la refuse.
+
+---
+
 ## Régénération
 
 À chaque modification de `EXIGENCES.json` : **les trois vues sont refaites**, les **deux**
@@ -174,6 +218,8 @@ empreintes recalculées — celle de la source ET celle du corps, dans cet ordre
 le contrôle du contenu n'aurait alors pas eu lieu. Un écart de surface
 implicite ajouté ou retiré est une modification du référentiel comme une autre : la fiche de
 cadrage est régénérée, faute de quoi elle affirme un périmètre que la source ne dit plus.
+`CASCADE.md` se régénère à chaque modification de la cascade **ou** du référentiel, par
+`scripts/vue-cascade.mjs`, puis se juge avec `--cascade` en plus de `--vue`.
 
 Exemple travaillé, source et vue scellée ensemble :
 [oracles/fixtures/surface-implicite-verte](../../../oracles/fixtures/surface-implicite-verte)

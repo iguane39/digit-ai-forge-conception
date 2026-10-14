@@ -60,7 +60,7 @@ Ce qui vient après lui explique pourquoi aucun ordre ne leur est imposé.
 | [qualifie-l-entrant](skills/qualifie-l-entrant/) | idée, CDC, produit à reprendre, à faire évoluer, produit tiers, dossier d'appel d'offres | `ENTRANT.md`, ou des questions et un arrêt |
 | [enumere-la-surface](skills/enumere-la-surface/) | `ENTRANT.md` | `SURFACE.md` : objets, rôles, parcours, points d'entrée, règles |
 | [redige-les-exigences](skills/redige-les-exigences/) | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
-| [derive-les-vues](skills/derive-les-vues/) | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
+| [derive-les-vues](skills/derive-les-vues/) | `EXIGENCES.json` (+ `cascade/CASCADE.json` s'il existe) | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests, et `CASCADE.md`, la vue scellée de la cascade ISTO |
 
 Ils sont **indépendants**. On peut énumérer une surface sans avoir qualifié d'entrant, dériver
 une vue depuis un référentiel écrit à la main. Aucune séquence n'est imposée : c'est ce qui
@@ -69,13 +69,13 @@ distingue une forge d'un pipeline.
 ## Les oracles
 
 ```bash
-node oracles/self-test.mjs        # 18 entrées d'oracle, 59 règles, fixtures verte et rouge
+node oracles/self-test.mjs        # 19 entrées d'oracle, 60 règles, fixtures verte et rouge
 ```
 
 | Oracle | Règles | Domaine |
 |---|---|---|
 | `oracle-exigences` | E1–E11 | testabilité de l'énoncé : critère chiffré ou binaire, liste noire, atomicité, forme EARS (E7), absolus/pronoms (E8), caractéristiques d'ensemble (E9). Gardes lexicales à frontières de mot **Unicode** depuis TF-0799 : `\b` est ASCII, et un accent y valait frontière — « elle » se lisait dans « réelle ». **E10** : chacune des **trois exigences socle candidates** (données de démonstration invisibles en production, données volatiles éditables/datées/sourcées, effet observable de tout élément interactif) est **portée** par une exigence ou **écartée** dans `ecarts_exigences_socle`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, la candidate nommée (TF-0814) |
-| `oracle-tracabilite` | T1–T6 | orphelins des deux côtés, statut épistémique, vues régénérables. **T5** : la vue porte l'empreinte SHA-256 de **son propre corps** en plus de celle de sa source, et T5 la recalcule — T3 prouvait d'où vient la vue, jamais ce qu'elle contient, et une vue amputée d'un tiers gardait un en-tête valide (TF-0818). Une vue scellée avant ce contrôle n'est pas migrée : T5 y rend `SANS_OBJET` et le dit. **T6** (`--cascade <CASCADE.json>`) : chaque exigence remonte à une seule tactique active de la cascade ISTO du pilot (format `pilot/cascade-isto@1`), à une stratégie active, à une intention citée ; le champ facultatif `tactique` d'une exigence doit dire la même tactique que la cascade. Sans cascade ni champ : `SANS_OBJET`, aucune migration (TF-1680) |
+| `oracle-tracabilite` | T1–T6 | orphelins des deux côtés, statut épistémique, vues régénérables. **T5** : la vue porte l'empreinte SHA-256 de **son propre corps** en plus de celle de sa source, et T5 la recalcule — T3 prouvait d'où vient la vue, jamais ce qu'elle contient, et une vue amputée d'un tiers gardait un en-tête valide (TF-0818). Une vue scellée avant ce contrôle n'est pas migrée : T5 y rend `SANS_OBJET` et le dit. **T6** (`--cascade <CASCADE.json>`) : chaque exigence remonte à une seule tactique active de la cascade ISTO du pilot (format `pilot/cascade-isto@1`), à une stratégie active, à une intention citée ; le champ facultatif `tactique` d'une exigence doit dire la même tactique que la cascade. Sans cascade ni champ : `SANS_OBJET`, aucune migration (TF-1680). Le lanceur `run-oracles-conception` passe `--cascade` de lui-même quand `cascade/CASCADE.json` est à côté du référentiel, et le dit dans son champ `cascade` ; sans fichier, rien ne change. **T3** juge aussi la vue de la cascade (`CASCADE.md`, `<!-- source: cascade/CASCADE.json -->`) : son `source-sha256` contre la cascade, son `referentiel-sha256` contre le référentiel (TF-1686) |
 | `oracle-surface` | S1–S5 | chaque élément non couvert est **nommé**, jamais fondu dans un ratio ; **S4** : dès que le produit a une surface web, chacun des **treize candidats d'office** de la surface implicite (aide, onboarding, compte, favicon, états vides, erreurs visibles, mentions légales, responsive, accessibilité RGAA et ses livrables, 404 par langue — patron P-2 du pilot, TF-0804 — lien public partageable et comptes d'essai vides, TF-0874) est **retenu** ou **écarté** dans `ecarts_surface_implicite`, motif d'au moins 20 caractères, daté et signé. Ni l'un ni l'autre : FAIL, le candidat nommé (TF-0811). **S5** : dès qu'un `objet` énuméré est un registre, un inventaire ou un catalogue, chacun des trois candidats d'un registre (vue transverse, comparaison d'éléments, inventaire hiérarchique) est retenu ou écarté au même champ ; sinon un avertissement non bloquant le nomme (TF-1655) |
 | `oracle-claims` | A1–A2 | aucune donnée chiffrée non marquée |
 | `oracle-etat` | EM1–EM4 | l'état « bloqué sous le seuil » est mécaniquement distinguable de « produit » (TF-0014, R-C3) ; **EM4** : le nom du fichier dit son verbe, `ETAT.json` (un seul verbe dans le dossier) ou `ETAT-<verbe>.json` (plusieurs), en avertissement non bloquant (TF-1619) |
@@ -207,6 +207,18 @@ recette que des juges purs, sans effet de bord) :
 node scripts/delta.self-test.mjs   # sur des copies en répertoire temporaire, jamais sur les fixtures
 ```
 
+**La vue de la cascade** (TF-1686) se dérive par un second outil, `scripts/vue-cascade.mjs` : il lit
+`cascade/CASCADE.json` et `EXIGENCES.json`, rejoue T6, et écrit `CASCADE.md` à côté du référentiel
+dans la forme en six parties de la famille `gd-cascade-produit` du pilot, scellée comme les autres
+vues (source, référentiel, corps). La forge n'importe rien du pilot : le test rétro de la vue porte
+le verdict de T6, les mesures M1 à M4 restent celles d'`oracle-cascade-isto` du pilot. Exemple
+travaillé : [oracles/fixtures/vue-cascade-verte](oracles/fixtures/vue-cascade-verte).
+
+```bash
+node scripts/vue-cascade.mjs <chemin/EXIGENCES.json>   # écrit CASCADE.md ; exit 2 sans cascade voisine
+node scripts/vue-cascade.self-test.mjs                 # sur des copies en répertoire temporaire
+```
+
 ## Invocation par un orchestrateur
 
 Un orchestrateur (conducteur, script de run, agent pilote) qui invoque cette forge doit
@@ -221,14 +233,15 @@ imposée :
 | `qualifie-l-entrant` | idée, CDC, produit à reprendre, à faire évoluer, produit tiers, dossier d'appel d'offres | `ENTRANT.md`, ou des questions et un arrêt |
 | `enumere-la-surface` | `ENTRANT.md` | `SURFACE.md` |
 | `redige-les-exigences` | `ENTRANT.md` + `SURFACE.md` | `EXIGENCES.json` + `EXIGENCES.md` |
-| `derive-les-vues` | `EXIGENCES.json` | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests |
+| `derive-les-vues` | `EXIGENCES.json` (+ `cascade/CASCADE.json` s'il existe) | `CADRAGE-DESIGN.md`, `MISSION.md`, l'export pour Forge Tests, `CASCADE.md` |
 
 **Rejouer les oracles + le self-test**, depuis la racine du dépôt :
 
 ```bash
-node oracles/self-test.mjs                                   # fixtures verte/rouge, 59 règles
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 60 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
 node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md> [--cascade <chemin/cascade/CASCADE.json>]
+node oracles/run-oracles-conception.mjs <chemin/EXIGENCES.json>   # tous les oracles ; cascade/CASCADE.json voisine passée d'office à T6
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
 node oracles/oracle-claims.mjs      <chemin/EXIGENCES.json>
 node oracles/oracle-etat.mjs        <chemin/ETAT.json>

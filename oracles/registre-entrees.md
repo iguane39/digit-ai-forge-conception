@@ -42,16 +42,16 @@ partagé au contrat commun `oracles/_contrat.mjs`.
 absent rendent un `SANS_OBJET` motivé. Ce qui est refusé, c'est l'entrée de JSON qui n'a pas de
 prose — jamais la prose qui n'a pas encore été écrite.
 
-## `oracle-tracabilite` v1.2.0
+## `oracle-tracabilite` v1.3.0
 
 | | |
 |---|---|
 | **Domaine** | Bijection besoin ↔ exigence ↔ critère, et régénérabilité des vues |
 | **Artefact jugé** | `EXIGENCES.json` + les vues dérivées |
 | **Invocation** | `node oracles/oracle-tracabilite.mjs <EXIGENCES.json> [--vue <fichier>]… [--cascade <CASCADE.json>]` |
-| **Règles** | T1 aucun orphelin des deux côtés · T2 exactement un critère · T3 vue alignée sur l'empreinte de sa **source** · T4 statut épistémique porteur de sa source ou de son mode de validation · T5 corps de la vue conforme à l'empreinte de **son propre corps** (TF-0818) · T6 chaque exigence remonte à une seule tactique active de la cascade ISTO, à une stratégie active et à une intention citée ; le champ facultatif `tactique` dit la même tactique que la cascade — sans cascade ni champ, SANS_OBJET (TF-1680) |
-| **Fixtures** | idem, avec `CADRAGE-DESIGN.md` en vue ; `corps-de-vue-verte` / `corps-de-vue-rouge` pour T5 — même source, même en-tête, la rouge amputée de sa seule section « Exigences socle écartées » ; `cascade-verte` / `cascade-rouge` pour T6 — même référentiel, seule la cascade change |
-| **`non_juge`** | La justesse du rattachement · la véracité de la source citée · CE QUI a changé dans un corps altéré (la liste des sections attendues est citée, jamais vérifiée) · le contenu d'une vue sans `corps-sha256` · la pertinence d'un rattachement ISTO, et le reste de la cascade (jugé par `oracle-cascade-isto` du pilot) |
+| **Règles** | T1 aucun orphelin des deux côtés · T2 exactement un critère · T3 vue alignée sur l'empreinte de sa **source** — pour la vue de la cascade (`CASCADE.md`), la cascade ET le référentiel (TF-1686) · T4 statut épistémique porteur de sa source ou de son mode de validation · T5 corps de la vue conforme à l'empreinte de **son propre corps** (TF-0818) · T6 chaque exigence remonte à une seule tactique active de la cascade ISTO, à une stratégie active et à une intention citée ; le champ facultatif `tactique` dit la même tactique que la cascade — sans cascade ni champ, SANS_OBJET (TF-1680) |
+| **Fixtures** | idem, avec `CADRAGE-DESIGN.md` en vue ; `corps-de-vue-verte` / `corps-de-vue-rouge` pour T5 — même source, même en-tête, la rouge amputée de sa seule section « Exigences socle écartées » ; `cascade-verte` / `cascade-rouge` pour T6 — même référentiel, seule la cascade change ; `vue-cascade-verte` / `vue-cascade-rouge` pour T3 sur la vue de la cascade — même référentiel, même vue, la rouge porte une cascade modifiée après le scellement |
+| **`non_juge`** | La justesse du rattachement · la véracité de la source citée · CE QUI a changé dans un corps altéré (la liste des sections attendues est citée, jamais vérifiée) · le contenu d'une vue sans `corps-sha256` · la fidélité du rendu de la vue de la cascade (prouvée par `scripts/vue-cascade.self-test.mjs`) · la pertinence d'un rattachement ISTO, et le reste de la cascade (jugé par `oracle-cascade-isto` du pilot) |
 
 ## `oracle-surface` v1.4.0
 

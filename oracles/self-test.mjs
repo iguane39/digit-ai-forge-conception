@@ -74,6 +74,13 @@ const CORPS_PROFIL_ROUGE = join(ICI, 'fixtures', 'corps-de-vue-profil-rouge')
 // l'exigence dit TAC-1, et ne cite plus E-006 nulle part. T1 a T4 y restent verts.
 const CASCADE_VERTE = join(ICI, 'fixtures', 'cascade-verte')
 const CASCADE_ROUGE = join(ICI, 'fixtures', 'cascade-rouge')
+// TF-1686 : fixtures DEDIEES de la vue de la cascade, rangees comme chez un produit
+// (EXIGENCES.json, cascade/CASCADE.json, CASCADE.md cote a cote). La verte est la sortie de
+// `scripts/vue-cascade.mjs` ; la rouge ne porte que sa cascade, modifiee APRES le scellement
+// (le moyen de TAC-1 change) : meme referentiel, meme vue, la remontee T6 reste verte, T5 aussi --
+// le seul FAIL possible est celui d'une vue en retard sur sa cascade.
+const VUE_CASCADE_VERTE = join(ICI, 'fixtures', 'vue-cascade-verte')
+const VUE_CASCADE_ROUGE = join(ICI, 'fixtures', 'vue-cascade-rouge')
 
 const ORACLES = [
   {
@@ -117,6 +124,17 @@ const ORACLES = [
     regles: ['T6'],
     args: (dossier) => [join(CASCADE_VERTE, 'EXIGENCES.json'), '--cascade',
       join(dossier === VERTE ? CASCADE_VERTE : CASCADE_ROUGE, 'CASCADE.json')]
+  },
+  {
+    // TF-1686 : T3 sur la vue de la cascade, dont la source est la cascade et non le referentiel.
+    // Meme referentiel, meme vue des deux cotes ; seule la cascade differe -- la rouge a change
+    // apres le scellement. Les autres etats (sans --cascade, referentiel modifie, corps retouche)
+    // sont joues dans la branche TF-1686.
+    fichier: 'oracle-tracabilite.mjs',
+    regles: ['T3'],
+    args: (dossier) => [join(VUE_CASCADE_VERTE, 'EXIGENCES.json'), '--cascade',
+      join(dossier === VERTE ? VUE_CASCADE_VERTE : VUE_CASCADE_ROUGE, 'cascade', 'CASCADE.json'),
+      '--vue', join(VUE_CASCADE_VERTE, 'CASCADE.md')]
   },
   {
     // TF-0070 : la verte passe au seuil PAR DEFAUT (S-06 couvert par E-008, palier V2) —
@@ -1056,6 +1074,99 @@ for (const o of ORACLES) {
     for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
     console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
     if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-1686 : T6 sur le chemin par defaut, et la vue de la cascade sous double sceau ---
+// Reste de TF-1680 : T6 ne se jouait que si oracle-tracabilite recevait --cascade, que le lanceur
+// ne passait jamais ; et la vue de la cascade n'avait pas de sceau que T3 sache lire. Ici :
+//   A. le lanceur, sur trois dossiers ephemeres ranges comme chez un produit -- cascade saine
+//      (T6 juge, PASS), cascade en rupture (T6 juge, FAIL), pas de cascade (rien ne change) ;
+//   B. la vue de la cascade, etats que la paire verte/rouge de la boucle ne porte pas, remede joue.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf1686-'))
+  try {
+    const RUNNER = join(ICI, 'run-oracles-conception.mjs')
+    const exigencesVerte = readFileSync(join(VUE_CASCADE_VERTE, 'EXIGENCES.json'), 'utf8')
+    const produit = (nom, cascade) => {
+      const d = join(tmp, nom)
+      mkdirSync(join(d, 'cascade'), { recursive: true })
+      writeFileSync(join(d, 'EXIGENCES.json'), exigencesVerte)
+      if (cascade !== null) writeFileSync(join(d, 'cascade', 'CASCADE.json'), cascade)
+      return join(d, 'EXIGENCES.json')
+    }
+    const lancerRunner = (exigences) => {
+      const r = spawnSync(process.execPath, [RUNNER, exigences, '--seulement=tracabilite', '--json-only'],
+        { encoding: 'utf8', windowsHide: true })
+      let rapport = null
+      try { rapport = JSON.parse(r.stdout) } catch { /* laisse a null */ }
+      const tra = rapport?.oracles?.find(o => o.oracle === 'oracle-tracabilite')
+      return { code: r.status, rapport, tra, brut: r.stdout + r.stderr }
+    }
+    const saine = lancerRunner(produit('A1-saine', readFileSync(join(VUE_CASCADE_VERTE, 'cascade', 'CASCADE.json'), 'utf8')))
+    const rompue = lancerRunner(produit('A2-rompue', readFileSync(join(CASCADE_ROUGE, 'CASCADE.json'), 'utf8')))
+    const absente = lancerRunner(produit('A3-absente', null))
+
+    // B. La vue : copies ephemeres de la fixture verte, une alteration par cas.
+    const vueVerte = readFileSync(join(VUE_CASCADE_VERTE, 'CASCADE.md'), 'utf8')
+    const cascadeVerte = join(VUE_CASCADE_VERTE, 'cascade', 'CASCADE.json')
+    const jugerVue = (nom, { vue = vueVerte, exigences = join(VUE_CASCADE_VERTE, 'EXIGENCES.json'), cascade = cascadeVerte } = {}) => {
+      const chemin = join(tmp, `${nom}-CASCADE.md`)
+      writeFileSync(chemin, vue)
+      const r = lancer('oracle-tracabilite.mjs', [exigences, ...(cascade ? ['--cascade', cascade] : []), '--vue', chemin])
+      const de = (regle) => (r.rapport?.constats ?? []).filter(c => c.regle === regle)
+      return { code: r.code, t3: de('T3'), t5: de('T5') }
+    }
+    const seul = (constats, statut) => constats.length === 1 && constats[0].statut === statut
+    const sansCascade = jugerVue('B1-sans-cascade', { cascade: null })
+    const remede = jugerVue('B2-remede')
+    const refModifie = (() => {
+      const chemin = join(tmp, 'B3-EXIGENCES.json')
+      const ref = JSON.parse(exigencesVerte)
+      ref.exigences[0].critere = ref.exigences[0].critere + ' '
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      return jugerVue('B3-referentiel-modifie', { exigences: chemin })
+    })()
+    const sansRef = jugerVue('B4-sans-referentiel-sha', { vue: vueVerte.replace(/<!-- referentiel-sha256: [0-9a-f]{64} -->\r?\n/, '') })
+    const retouchee = jugerVue('B5-corps-retouche', { vue: vueVerte.replace('## Tactique', '## Tactique\n\nAjout ecrit a la main.') })
+    const vueOrdinaire = lancer('oracle-tracabilite.mjs', [join(CORPS_VERTE, 'EXIGENCES.json'), '--vue',
+      join(CORPS_VERTE, 'CADRAGE-DESIGN.md'), '--cascade', cascadeVerte])
+
+    const cas = [
+      ['A1. lanceur, cascade/CASCADE.json a cote du referentiel -> passee d\'office (champ `cascade`), tracabilite PASS',
+        saine.code === 0 && String(saine.rapport?.cascade ?? '').endsWith('CASCADE.json') && saine.tra?.verdict === 'PASS'],
+      ['A2. lanceur, cascade en rupture -> T6 juge par defaut, tracabilite FAIL qui nomme la tactique',
+        rompue.code === 1 && rompue.tra?.verdict === 'FAIL' && String(rompue.tra?.resume).includes('TAC-')],
+      ['A3. lanceur, aucune cascade -> `cascade` null, tracabilite PASS : rien ne change',
+        absente.code === 0 && absente.rapport?.cascade === null && absente.tra?.verdict === 'PASS'],
+      ['B1. vue de la cascade sans --cascade -> T3 FAIL qui donne le remede (--cascade)',
+        sansCascade.code === 1 && seul(sansCascade.t3, 'FAIL') && sansCascade.t3[0].message.includes('--cascade')],
+      ['B2. remede joue : meme vue, --cascade fourni -> T3 PASS, T5 PASS, exit 0',
+        remede.code === 0 && seul(remede.t3, 'PASS') && seul(remede.t5, 'PASS')],
+      ['B3. referentiel modifie apres scellement -> T3 FAIL « autre referentiel », T5 reste PASS',
+        refModifie.code === 1 && seul(refModifie.t3, 'FAIL') && refModifie.t3[0].message.includes('autre référentiel') &&
+        seul(refModifie.t5, 'PASS')],
+      ['B4. ligne referentiel-sha256 retiree -> T3 FAIL, T5 reste PASS (la ligne est hors du corps)',
+        sansRef.code === 1 && seul(sansRef.t3, 'FAIL') && sansRef.t3[0].message.includes('referentiel-sha256') &&
+        seul(sansRef.t5, 'PASS')],
+      ['B5. corps retouche a la main -> T5 FAIL, T3 reste PASS',
+        retouchee.code === 1 && seul(retouchee.t5, 'FAIL') && seul(retouchee.t3, 'PASS')],
+      // T6 y echoue (cette cascade ne cite pas ce referentiel) : seul T3 est regarde ici.
+      ['B6. temoin : une vue ordinaire (CADRAGE-DESIGN.md) jugee avec --cascade reste jugee sur le referentiel',
+        seul((vueOrdinaire.rapport?.constats ?? []).filter(c => c.regle === 'T3'), 'PASS') &&
+        (vueOrdinaire.rapport?.constats ?? []).find(c => c.regle === 'T3').message === 'vue alignée sur la source']
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('run-oracles-conception.mjs + oracle-tracabilite.mjs (branche TF-1686, cascade par defaut et vue scellee, fixtures ephemeres)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         lanceur : saine=${saine.code} rompue=${rompue.code} absente=${absente.code} | ` +
+        `vue : B1=${sansCascade.code} B2=${remede.code} B3=${refModifie.code} B4=${sansRef.code} B5=${retouchee.code} B6=${vueOrdinaire.code}`)
+    }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }
