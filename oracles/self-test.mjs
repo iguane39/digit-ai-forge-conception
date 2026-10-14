@@ -2245,6 +2245,35 @@ ${processus}
   }
 }
 
+// --- branche TF-1689 : les comptes que le README ecrit suivent la recette qui les mesure ----
+// Mesure du 14/10/2026 : le README annoncait « 55 regles » sur une ligne et « 59 » sur une
+// autre, pour une recette qui en comptait 59. Un compte ecrit a la main ne suit pas sa source.
+// Toute ligne du README qui cite `oracles/self-test.mjs` avec un compte de regles ou d'entrees
+// d'oracle est donc confrontee au compte calcule ici ; le cas rouge rejoue le texte d'avant.
+{
+  const totalRegles = ORACLES.reduce((n, o) => n + o.regles.length, 0)
+  const comptesEcarts = (texte) => texte.split(/\r?\n/)
+    .filter(l => l.includes('oracles/self-test.mjs'))
+    .flatMap(l => [
+      ...[...l.matchAll(/(\d+)\s+règles/g)].map(m => ({ l, dit: Number(m[1]), vaut: totalRegles, quoi: 'regles' })),
+      ...[...l.matchAll(/(\d+)\s+entrées d'oracle/g)].map(m => ({ l, dit: Number(m[1]), vaut: ORACLES.length, quoi: 'entrees' }))
+    ])
+  const relus = comptesEcarts(readFileSync(join(ICI, '..', 'README.md'), 'utf8'))
+  const ecarts = relus.filter(c => c.dit !== c.vaut)
+  const rouge = comptesEcarts('node oracles/self-test.mjs   # fixtures verte/rouge, 55 règles')
+    .filter(c => c.dit !== c.vaut)
+  const cas = [
+    [`1. README : ${relus.length} compte(s) cite(s) avec la recette, tous egaux au calcul (${ORACLES.length} entrees, ${totalRegles} regles)`,
+      relus.length >= 2 && ecarts.length === 0],
+    ['2. cas rouge : la ligne d\'avant (« 55 regles ») est refusee', rouge.length === 1]
+  ]
+  const ko = cas.filter(([, ok]) => !ok)
+  console.log('README.md (branche TF-1689, comptes cites confrontes au calcul)')
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  for (const e of ecarts) console.log(`         le README dit ${e.dit} ${e.quoi}, la recette en compte ${e.vaut} : ${e.l.trim().slice(0, 120)}`)
+  if (ko.length > 0) echecs++
+}
+
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)

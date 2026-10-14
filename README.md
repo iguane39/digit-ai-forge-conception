@@ -226,7 +226,7 @@ imposée :
 **Rejouer les oracles + le self-test**, depuis la racine du dépôt :
 
 ```bash
-node oracles/self-test.mjs                                   # fixtures verte/rouge, 55 règles
+node oracles/self-test.mjs                                   # fixtures verte/rouge, 59 règles
 node oracles/oracle-exigences.mjs   <chemin/EXIGENCES.json>
 node oracles/oracle-tracabilite.mjs <chemin/EXIGENCES.json> --vue <chemin/CADRAGE-DESIGN.md> [--cascade <chemin/cascade/CASCADE.json>]
 node oracles/oracle-surface.mjs     <chemin/EXIGENCES.json>
