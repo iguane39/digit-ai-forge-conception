@@ -53,16 +53,16 @@ prose — jamais la prose qui n'a pas encore été écrite.
 | **Fixtures** | idem, avec `CADRAGE-DESIGN.md` en vue ; `corps-de-vue-verte` / `corps-de-vue-rouge` pour T5 — même source, même en-tête, la rouge amputée de sa seule section « Exigences socle écartées » |
 | **`non_juge`** | La justesse du rattachement · la véracité de la source citée · CE QUI a changé dans un corps altéré (la liste des sections attendues est citée, jamais vérifiée) · le contenu d'une vue sans `corps-sha256` |
 
-## `oracle-surface` v1.2.0
+## `oracle-surface` v1.4.0
 
 | | |
 |---|---|
 | **Domaine** | Couverture de la surface fonctionnelle énumérée, et surface implicite retenue ou écartée |
 | **Artefact jugé** | `EXIGENCES.json` |
 | **Invocation** | `node oracles/oracle-surface.mjs <EXIGENCES.json> [--seuil 95]` |
-| **Règles** | S1 chaque élément non couvert est **nommé** · S2 ratio publié avec sa liste · S3 lien de surface valide ou raison `hors_surface` · S4 chacun des **treize candidats d'office** de la surface implicite est retenu, ou écarté dans `ecarts_surface_implicite` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, le candidat nommé (P-2 et TF-0804 pour la 404, TF-0811 pour le champ et le jugement, TF-0874 pour le lien public partageable et les comptes d'essai) |
-| **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` pour S1-S3 · `oracles/fixtures/surface-implicite-verte` (avec sa vue `CADRAGE-DESIGN.md` scellée) · `oracles/fixtures/surface-implicite-rouge` pour S4 |
-| **`non_juge`** | La complétude de l'inventaire de surface lui-même · le caractère web du produit et la présence d'un candidat, inférés d'un lexique fermé · la pertinence du motif d'un écart · les conditions d'applicabilité hors surface web (« site public français ») · le contenu de la 404 servie (MEP M-9, forge-tests) |
+| **Règles** | S1 chaque élément non couvert est **nommé** · S2 ratio publié avec sa liste · S3 lien de surface valide ou raison `hors_surface` · S4 chacun des **treize candidats d'office** de la surface implicite est retenu, ou écarté dans `ecarts_surface_implicite` avec un motif d'au moins 20 caractères, daté et signé — sinon FAIL, le candidat nommé (P-2 et TF-0804 pour la 404, TF-0811 pour le champ et le jugement, TF-0874 pour le lien public partageable et les comptes d'essai) · S5 dès qu'un `objet` est un registre, chacun des **trois candidats d'un registre** (vue transverse, comparaison, inventaire hiérarchique) est retenu ou écarté au même champ — sinon avertissement non bloquant qui le nomme (TF-1655) |
+| **Fixtures** | `oracles/fixtures/verte` · `oracles/fixtures/rouge` pour S1-S3 · `oracles/fixtures/surface-implicite-verte` (avec sa vue `CADRAGE-DESIGN.md` scellée) · `oracles/fixtures/surface-implicite-rouge` pour S4 · S5 prouvée par la branche TF-1655 du self-test (fixtures éphémères) |
+| **`non_juge`** | La complétude de l'inventaire de surface lui-même · le caractère web du produit et la présence d'un candidat, inférés d'un lexique fermé · la pertinence du motif d'un écart · les conditions d'applicabilité hors surface web (« site public français ») · la nature de registre du produit, inférée d'un lexique fermé (S5) · le contenu de la 404 servie (MEP M-9, forge-tests) |
 
 **Le champ `ecarts_surface_implicite` est facultatif à la lecture** : absent, il vaut « aucun
 écart déclaré ». Un référentiel scellé avant TF-0811 n'est donc jamais accusé d'un défaut de

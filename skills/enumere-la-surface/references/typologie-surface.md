@@ -183,6 +183,46 @@ clé **et** le motif doivent y figurer. Une entrée du JSON absente de la prose 
 nomme. `SURFACE.md` absent rend un `SANS_OBJET` motivé : ce qui est refusé, c'est l'écart écrit
 dans le JSON sans avoir été décidé, jamais la prose qui n'a pas encore été écrite.
 
+## Surface implicite d'un registre — candidats proposés d'office (TF-1655)
+
+Retour du 12/10/2026 sur un produit réel : un hub tenant le registre des projets d'une
+organisation comptait 219 exigences, et aucune ne couvrait trois usages que le commanditaire
+a demandés ensuite. Il voulait lire une même information pour tous les projets, comparer des
+projets, et parcourir l'inventaire hiérarchique des ressources d'un projet avec leur
+architecture. Un run de version a dû ajouter 13 exigences (DELTA-0002). L'entrant décrivait le
+registre fiche par fiche ; les usages qui traversent les fiches n'étaient écrits par personne.
+
+Dès que la surface énumère un **objet qui est un registre** (registre, inventaire, catalogue,
+portefeuille, répertoire, annuaire, cartographie, parc), cette seconde liste close est proposée
+d'office en fin d'énumération, avec la même règle que la surface implicite SaaS. Chaque
+candidat est **retenu** (un élément de surface, puis une exigence qui le couvre) ou **écarté
+explicitement** en section 3 de `SURFACE.md`. L'écart est transcrit dans le même champ
+`ecarts_surface_implicite`, avec l'une des trois clés ci-dessous.
+
+| Candidat | Type suggéré | Ce que l'utilisateur fait |
+|---|---|---|
+| Vue transverse | `point-entree` (un écran qui liste tous les éléments) | lire une même information pour tous les éléments du registre, filtrée et triée |
+| Comparaison d'éléments | `parcours` (sélectionner puis comparer) | mettre deux éléments ou plus côte à côte, attribut par attribut |
+| Inventaire hiérarchique | `point-entree` (une arborescence par élément) | parcourir les ressources d'un élément, du niveau le plus haut au plus fin, avec leur architecture |
+
+### Les clés de la liste close d'un registre
+
+`oracle-surface` **S5** juge ces trois candidats comme S4 juge les treize autres. Deux
+différences sont assumées. La nature de registre est **inférée** d'un lexique fermé sur les
+libellés de type `objet`. La règle est neuve et opposable à des référentiels déjà scellés :
+un candidat ni retenu ni écarté produit un **avertissement non bloquant** qui le nomme
+(SANS_OBJET), jamais un FAIL.
+
+| Clé | Candidat |
+|---|---|
+| `vue-transverse` | Vue transverse |
+| `comparaison` | Comparaison d'éléments |
+| `inventaire-hierarchique` | Inventaire hiérarchique |
+
+Un objet qui emploie l'un de ces mots sans être un registre (« ligne d'issue du registre » d'un
+journal interne, par exemple) réveille le bloc pour rien. Ce cas se solde par trois écarts
+écrits, en une raison chacun, comme un produit mono-tenant écarte le lien public partageable.
+
 ## Identifiants
 
 `S-01`, `S-02`… Numérotation continue, jamais réaffectée.

@@ -1,6 +1,7 @@
 // oracle-surface — couverture de la surface énumérée.
 // Usage : node oracle-surface.mjs <EXIGENCES.json> [--seuil 95]
-// CDC §7.3 — règles S1 à S3. Écho amont du défaut fondateur de Forge Tests :
+// CDC §7.3 — règles S1 à S3 ; S4 surface implicite SaaS (TF-0811) ; S5 surface implicite d'un
+// registre, en avertissement (TF-1655). Écho amont du défaut fondateur de Forge Tests :
 // tout élément inventorié et non couvert est NOMMÉ, jamais fondu dans un pourcentage.
 //
 // RC-1 (retour premier produit réel) : sous le seuil, un élément non couvert reste bloquant
@@ -13,7 +14,7 @@ import {
   charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart
 } from './_contrat.mjs'
 
-const VERSION = '1.3.0'
+const VERSION = '1.4.0'
 const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 
 // S4 — la surface implicite : chaque candidat d'office est RETENU ou ÉCARTÉ explicitement.
@@ -139,6 +140,51 @@ for (const c of SURFACE_IMPLICITE) c.re = lexique(c.motifs)
 const CLES_IMPLICITES = SURFACE_IMPLICITE.map(c => c.cle)
 const EST_CLE = new Set(CLES_IMPLICITES)
 
+// S5 — TF-1655 : la surface implicite d'un REGISTRE.
+//
+// Mesure du 12/10/2026 sur un produit réel : sur 219 exigences d'un hub qui tient le registre
+// des projets d'une organisation, AUCUNE ne couvrait la lecture d'une même information pour tous
+// les projets, la comparaison de projets, ni l'inventaire hiérarchique des ressources d'un projet
+// avec leur architecture. Le commanditaire les a demandés après coup, et un run de version a dû
+// ajouter 13 exigences (DELTA-0002). Profil identique à celui de la surface implicite SaaS : un
+// registre se CONSULTE élément par élément dans l'entrant, et les usages qui traversent les
+// éléments ne sont écrits par personne — l'oubli reste indiscernable de la décision.
+//
+// Même mécanique que S4 — chaque candidat est RETENU (présent à la surface) ou ÉCARTÉ dans
+// `ecarts_surface_implicite`, avec ses propres clés —, deux différences assumées :
+//   — la condition d'applicabilité est INFÉRÉE d'un lexique fermé sur les libellés des éléments
+//     de type `objet` (un objet qui EST un registre, un inventaire, un catalogue…) ;
+//   — la règle est NEUVE et opposable à tous les produits déjà cadrés : elle AVERTIT (SANS_OBJET,
+//     exit inchangé), elle ne bloque pas — même idiome que C5 (TF-1564) et E11 (TF-1625).
+// Ordre et libellés repris à l'identique de `enumere-la-surface/references/typologie-surface.md`,
+// section « Les clés de la liste close d'un registre » ; la recette (branche TF-0854) confronte
+// les deux tables dans les deux sens.
+const MARQUEURS_REGISTRE = ['registre', 'inventaire', 'catalogue', 'portefeuille', 'répertoire',
+  'annuaire', 'cartographie', 'parc']
+const RE_REGISTRE = lexique(MARQUEURS_REGISTRE)
+const SURFACE_REGISTRE = [
+  {
+    cle: 'vue-transverse',
+    libelle: 'Vue transverse',
+    motifs: ['vue transverse', 'inventaire transverse', 'lecture transverse', 'vue consolidée',
+      "vue d'ensemble", 'tous les projets', 'tous les éléments', 'multi-projets']
+  },
+  {
+    cle: 'comparaison',
+    libelle: "Comparaison d'éléments",
+    motifs: ['comparaison', 'comparer', 'compare', 'comparatif', 'côte à côte']
+  },
+  {
+    cle: 'inventaire-hierarchique',
+    libelle: 'Inventaire hiérarchique',
+    motifs: ['inventaire hiérarchique', 'hiérarchie', 'hiérarchique', 'arborescence',
+      'architecture']
+  }
+]
+for (const c of SURFACE_REGISTRE) c.re = lexique(c.motifs)
+const CLES_REGISTRE = SURFACE_REGISTRE.map(c => c.cle)
+const EST_CLE_REGISTRE = new Set(CLES_REGISTRE)
+
 /** Ce qui manque à un écart pour tenir. Chaîne vide = l'écart tient — contrat commun. */
 const defautDeLEcart = (e) => defautDEcart(e, CLES_IMPLICITES)
 
@@ -236,6 +282,8 @@ for (const [i, e] of ref.exigences.entries()) {
   } else {
     for (const [i, e] of (brut ?? []).entries()) {
       const cle = typeof e?.element === 'string' ? e.element.trim() : ''
+      // TF-1655 : un écart d'un candidat de registre est jugé par S5, jamais accusé ici.
+      if (EST_CLE_REGISTRE.has(cle)) continue
       const defaut = defautDeLEcart(e)
       if (!EST_CLE.has(cle)) {
         constats.push(constat('S4', FAIL, `ecarts_surface_implicite[${i}]`,
@@ -287,6 +335,54 @@ for (const [i, e] of ref.exigences.entries()) {
   }
 }
 
+// S5 — la surface implicite d'un registre, candidat par candidat (TF-1655). Avertissement :
+// un candidat ni retenu ni écarté est NOMMÉ en SANS_OBJET, l'exit ne change pas.
+{
+  const tous = surface ?? []
+  const brut = Array.isArray(ref.ecarts_surface_implicite) ? ref.ecarts_surface_implicite : []
+  const ecarts = new Map()
+  for (const [i, e] of brut.entries()) {
+    const cle = typeof e?.element === 'string' ? e.element.trim() : ''
+    if (!EST_CLE_REGISTRE.has(cle)) continue
+    const defaut = defautDEcart(e, CLES_REGISTRE)
+    if (ecarts.get(cle)?.defaut !== '') ecarts.set(cle, { indice: i, ecart: e, defaut })
+  }
+
+  const registres = tous.filter(s => s?.type === 'objet' && RE_REGISTRE.test(`${s?.libelle ?? ''}`))
+  if (registres.length === 0) {
+    constats.push(constat('S5', PASS, 'surface[]',
+      'aucun objet énuméré n\'est un registre, un inventaire ou un catalogue : la surface ' +
+      'implicite d\'un registre (vue transverse, comparaison, inventaire hiérarchique) n\'est ' +
+      'pas due — typologie-surface.md, « Surface implicite d\'un registre »'))
+  } else {
+    const contexte = `${registres.length} objet(s) registre (${registres.map(s => s.id).join(', ')})`
+    for (const c of SURFACE_REGISTRE) {
+      const presents = tous.filter(s => c.re.test(`${s?.libelle ?? ''}`))
+      const ecart = ecarts.get(c.cle)
+      if (presents.length > 0) {
+        constats.push(constat('S5', PASS, `surface[] (${presents.map(s => s.id).join(', ')})`,
+          `« ${c.libelle} » figure à la surface énumérée — ${contexte}`))
+      } else if (ecart && ecart.defaut === '') {
+        constats.push(constat('S5', PASS, `ecarts_surface_implicite[${ecart.indice}] (${c.cle})`,
+          `[ÉCARTÉ] « ${c.libelle} » — ${String(ecart.ecart.motif).trim()} ` +
+          `(décidé par ${String(ecart.ecart.decide_par).trim()}, ` +
+          `le ${String(ecart.ecart.date).trim()})`))
+      } else if (ecart) {
+        constats.push(constat('S5', SANS_OBJET, `ecarts_surface_implicite[${ecart.indice}] (${c.cle})`,
+          `avertissement non bloquant — « ${c.libelle} » absent de la surface, et son écart ne ` +
+          `tient pas : ${ecart.defaut}`))
+      } else {
+        constats.push(constat('S5', SANS_OBJET, `surface[] (${c.cle})`,
+          `avertissement non bloquant — « ${c.libelle} » : candidat d'office de la surface ` +
+          `implicite d'un registre, absent de la surface énumérée et sans écart déclaré — ` +
+          `${contexte}. À retenir (un élément de surface, puis une exigence qui le couvre), ou ` +
+          'à écarter EXPLICITEMENT en section 3 de `SURFACE.md`, transcrite dans ' +
+          '`ecarts_surface_implicite` { element, motif, decide_par, date }'))
+      }
+    }
+  }
+}
+
 emettre({
   oracle: 'oracle-surface',
   version: VERSION,
@@ -315,6 +411,12 @@ emettre({
       'moins cher que de rendre l\'omission indiscernable de la décision.',
     'Le contenu de la 404 elle-même — gabarit, statut HTTP conservé, `noindex`, préfixe de ' +
       'langue : les cinq critères de P-2 se vérifient sur la page servie (MEP, contrôle M-9 ; ' +
-      'contrôle exécutable chez forge-tests), jamais sur un référentiel d\'exigences.'
+      'contrôle exécutable chez forge-tests), jamais sur un référentiel d\'exigences.',
+    'La nature de REGISTRE du produit (S5, TF-1655), inférée d\'un lexique fermé sur les ' +
+      'libellés de type `objet` (registre, inventaire, catalogue, portefeuille, répertoire, ' +
+      'annuaire, cartographie, parc) : un registre nommé autrement reste invisible pour S5, et ' +
+      'un objet qui emploie ces mots sans être un registre réveille le bloc pour rien — ce ' +
+      'second cas se solde par trois écarts déclarés. S5 avertit sans bloquer : règle neuve, ' +
+      'opposable à des référentiels déjà scellés.'
   ]
 })

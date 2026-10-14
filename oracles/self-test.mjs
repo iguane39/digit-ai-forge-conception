@@ -859,6 +859,108 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-1655 : S5, la surface implicite d'un REGISTRE -----------------------------
+// Mesure du 12/10/2026 sur un produit reel : un hub tenant le registre des projets, 219
+// exigences, aucune pour la vue transverse, la comparaison ni l'inventaire hierarchique. Le
+// commanditaire les a demandees apres coup : 13 exigences en run de version. S5 propose ces trois
+// candidats d'office des qu'un `objet` est un registre. Regle NEUVE opposable a des referentiels
+// deja scelles : elle AVERTIT (SANS_OBJET, exit inchange), meme idiome que C5 et E11. Aucune
+// surface web dans la base, pour que S4 rende son seul PASS motive et ne brouille rien :
+//   1. registre + les trois candidats presents          -> 3 PASS, exit 0
+//   2. registre + aucun candidat (la mesure du 12/10)   -> 3 avertissements NOMMES, exit 0
+//   3. registre + trois ecarts valides                  -> 3 PASS « [ECARTE] », S4 n'accuse rien
+//   4. ecart au motif trop court                        -> avertissement nommant `motif`
+//   5. aucun objet registre (« catalogue » en parcours) -> 1 PASS motive, le bloc n'est pas du
+//   6. temoin d'isolation : un seul absent              -> 1 avertissement, ce candidat-la
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf1655-'))
+  try {
+    const REGISTRE = { id: 'S-01', type: 'objet', libelle: 'Registre des projets' }
+    const FICHE = { id: 'S-02', type: 'point-entree', libelle: "Fiche d'un projet" }
+    const TRANSVERSE = { id: 'S-03', type: 'point-entree', libelle: 'Vue transverse : un attribut pour tous les projets' }
+    const COMPARER = { id: 'S-04', type: 'parcours', libelle: 'Comparer deux projets ou plus' }
+    const ARBRE = { id: 'S-05', type: 'point-entree', libelle: "Arborescence des ressources d'un projet et leur architecture" }
+    const ECART = (element, motif) => ({ element, motif, decide_par: 'le commanditaire du produit', date: '2026-10-14' })
+    const ECARTS = [
+      ECART('vue-transverse', 'le registre ne porte que dix projets, tous lus depuis leur fiche'),
+      ECART('comparaison', 'les projets ne partagent aucun attribut comparable entre eux'),
+      ECART('inventaire-hierarchique', 'un projet ne porte aucune ressource : le registre est plat')
+    ]
+    const referentiel = (surface, ecarts) => {
+      const ref = {
+        projet: 'Fixture TF-1655 (surface implicite d\'un registre)',
+        besoins: [{ id: 'B-01', enonce: 'Retrouver un projet du registre.' }],
+        surface,
+        exigences: surface.map((s, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: `Le produit sert ${s.libelle}.`,
+          critere: 'La ressource est affichee.',
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-1655' },
+          surface: [s.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_surface_implicite = ecarts
+      return ref
+    }
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-surface.mjs', [chemin])
+      const c = r.rapport?.constats ?? []
+      const s5 = c.filter(x => x.regle === 'S5')
+      return {
+        code: r.code,
+        s5,
+        avert: s5.filter(x => x.statut === 'SANS_OBJET'),
+        fails: c.filter(x => x.statut === 'FAIL'),
+        sur: (fragment) => s5.find(x => `${x.ou} ${x.message}`.includes(fragment))
+      }
+    }
+
+    const presents = jouer('1-trois-presents', referentiel([REGISTRE, FICHE, TRANSVERSE, COMPARER, ARBRE]))
+    const oubli = jouer('2-la-mesure-du-12-10', referentiel([REGISTRE, FICHE]))
+    const ecartes = jouer('3-trois-ecarts', referentiel([REGISTRE, FICHE], ECARTS))
+    const motifCourt = jouer('4-motif-court', referentiel([REGISTRE, FICHE, TRANSVERSE, COMPARER],
+      [ECART('inventaire-hierarchique', 'registre plat')]))
+    const sansRegistre = jouer('5-sans-registre', referentiel([
+      { id: 'S-01', type: 'parcours', libelle: 'Gestion du catalogue' }, FICHE]))
+    const unSeul = jouer('6-temoin-isolation', referentiel([REGISTRE, FICHE, TRANSVERSE, ARBRE]))
+
+    const cas = [
+      ['1. registre + trois candidats presents -> 3 PASS, exit 0',
+        presents.code === 0 && presents.s5.length === 3 && presents.s5.every(x => x.statut === 'PASS')],
+      ['2. la mesure du 12/10 : registre sans aucun candidat -> 3 avertissements NOMMES, exit 0 (non bloquant)',
+        oubli.code === 0 && oubli.avert.length === 3 &&
+        ['Vue transverse', 'Comparaison', 'Inventaire hi'].every(n => oubli.avert.some(x => x.message.includes(n)))],
+      ['3. trois ecarts valides -> 3 PASS « [ECARTE] », et S4 n\'accuse aucun de ces ecarts',
+        ecartes.code === 0 && ecartes.fails.length === 0 &&
+        ecartes.s5.every(x => x.statut === 'PASS' && x.message.includes('[ÉCARTÉ]'))],
+      ['4. ecart au motif trop court -> avertissement nommant `motif`, exit 0',
+        motifCourt.code === 0 && motifCourt.avert.length === 1 &&
+        motifCourt.avert[0].message.includes('motif')],
+      ['5. aucun objet registre (« catalogue » en parcours) -> 1 PASS motive',
+        sansRegistre.code === 0 && sansRegistre.s5.length === 1 && sansRegistre.s5[0].statut === 'PASS' &&
+        sansRegistre.s5[0].message.includes('n\'est pas due')],
+      ['6. temoin d\'isolation : un seul absent -> 1 avertissement, CE candidat',
+        unSeul.code === 0 && unSeul.avert.length === 1 && unSeul.avert[0].message.includes('Comparaison')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-surface.mjs (branche TF-1655, S5 registre, fixtures ephemeres, 2 sens + temoins)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${presents.code} 2=${oubli.code} 3=${ecartes.code} ` +
+        `4=${motifCourt.code} 5=${sansRegistre.code} 6=${unSeul.code}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 // --- branche TF-0814 : E10 juge, et l'ecart d'une exigence socle a un lieu ou s'ecrire -----
 // Le schema du referentiel propose d'office TROIS exigences socle candidates -- donnees de
 // demonstration invisibles en production, donnees volatiles editables/datees/sourcees, effet
@@ -1532,6 +1634,13 @@ for (const o of ORACLES) {
         'Les cles de la liste close']
     },
     {
+      // TF-1655 : la seconde liste close de la meme section de methode, celle d'un registre.
+      nom: 'SURFACE_REGISTRE',
+      code: ['oracle-surface.mjs', 'SURFACE_REGISTRE', 'cle'],
+      prose: ['skills/enumere-la-surface/references/typologie-surface.md',
+        "Les cles de la liste close d'un registre"]
+    },
+    {
       nom: 'EXIGENCES_SOCLE',
       code: ['oracle-exigences.mjs', 'EXIGENCES_SOCLE', 'cle'],
       prose: ['skills/redige-les-exigences/references/schema-referentiel.md',
@@ -1570,7 +1679,7 @@ for (const o of ORACLES) {
     m.ecart.absentesDeLaProse.length === 0 && m.ecart.absentesDuCode.length === 0)
 
   const cas = [
-    ['1. les trois tables closes sont LUES, dans le code comme dans la prose declaree',
+    [`1. les ${TABLES.length} tables closes sont LUES, dans le code comme dans la prose declaree`,
       lues.length === TABLES.length && lues.every(m => m.code.length > 0 && m.prose.length > 0)],
     ['2. chaque entree du CODE figure dans la table en prose dont elle est transcrite',
       lues.every(m => m.ecart.absentesDeLaProse.length === 0)],
@@ -1590,7 +1699,7 @@ for (const o of ORACLES) {
       lues.every(m => m.code.map(NORMALISER).join('|') === m.prose.map(NORMALISER).join('|'))]
   ]
   const ko = cas.filter(([, ok]) => !ok)
-  console.log('tables closes vs prose (branche TF-0854, 3 tables, 2 sens + 2 temoins)')
+  console.log(`tables closes vs prose (branche TF-0854, ${TABLES.length} tables, 2 sens + 2 temoins)`)
   for (const m of mesures) {
     const nb = (v, quoi) => v === null ? `${quoi} INTROUVABLE` : `${v.length} entree(s)`
     console.log(`  ${m.nom} : ${nb(m.code, 'TABLE')} dans ${m.ouCode}, ` +

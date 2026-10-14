@@ -1,7 +1,7 @@
 ---
 name: enumere-la-surface
 description: Énumère mécaniquement la surface fonctionnelle d'un produit à concevoir — objets métier, rôles, parcours, points d'entrée, règles de gestion — depuis l'entrant qualifié, et produit un SURFACE.md où chaque élément porte un identifiant stable. Inverse le sens de la génération : on énumère d'abord ce qui existe, on rédige ensuite, pour que tout élément non couvert par une exigence soit un manque nommé et non une absence silencieuse. Use when / déclencher dès qu'il faut inventorier ce qu'un produit doit couvrir avant d'écrire des exigences, lister les objets métier, rôles ou parcours d'un CDC ou d'un dépôt existant, ou vérifier qu'une spécification n'oublie pas une partie du périmètre. Ne pas déclencher pour qualifier l'entrant lui-même (→ qualifie-l-entrant), pour rédiger les exigences (→ redige-les-exigences), ni pour énumérer la surface d'un produit déjà construit à des fins de test (→ Forge Tests, qui l'énumère depuis le code exécutable).
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Énumère la surface
@@ -36,7 +36,9 @@ d'identifiants stables qui survivront jusqu'au champ `risque` de Forge Tests.
 2. Typologie     → references/typologie-surface.md, 5 types
 3. Implicite     → references/typologie-surface.md, « Surface implicite SaaS » : chaque
                    candidat retenu ou écarté explicitement (SURFACE.md section 3, puis
-                   `ecarts_surface_implicite` du référentiel — oracle-surface S4 le juge)
+                   `ecarts_surface_implicite` du référentiel — oracle-surface S4 le juge) ;
+                   si un objet est un registre, inventaire ou catalogue : « Surface implicite
+                   d'un registre », trois candidats de plus (S5, avertissement)
 4. Identifiants  → S-01, S-02… stables, jamais réaffectés
 5. Artefact      → SURFACE.md + le tableau `surface[]` du référentiel
 6. Contrôle      → node oracles/oracle-surface.mjs EXIGENCES.json
@@ -85,6 +87,18 @@ par candidat écarté, `element` pris dans les treize clés de la liste close. `
 motif d'au moins vingt caractères → PASS imprimé « [ÉCARTÉ] », ni l'un ni l'autre → **FAIL**.
 Sans point d'entrée web énuméré, le bloc n'est pas dû et S4 rend un PASS motivé. C'est le seul
 endroit de la forge où l'oubli et la décision cessent de se ressembler.
+
+**Un registre a sa propre surface implicite (TF-1655).** Un produit qui tient un registre se
+décrit fiche par fiche, et les usages qui traversent les fiches ne sont écrits par personne. Le
+12/10/2026, un hub de 219 exigences n'en avait aucune pour lire une même information sur tous
+les projets, comparer des projets ou parcourir l'inventaire hiérarchique des ressources d'un
+projet ; 13 exigences sont entrées en run de version. Dès qu'un `objet` énuméré est un registre
+(registre, inventaire, catalogue, portefeuille, répertoire, annuaire, cartographie, parc), trois
+candidats sont proposés d'office : **vue transverse**, **comparaison d'éléments**, **inventaire
+hiérarchique**. Chacun est retenu ou écarté comme les treize autres, dans le même champ, avec
+ses clés `vue-transverse`, `comparaison`, `inventaire-hierarchique`. `oracle-surface` **S5** le
+juge en avertissement non bloquant : elle nomme le candidat manquant, l'exit ne change pas.
+Liste et critères : `references/typologie-surface.md`, « Surface implicite d'un registre ».
 
 **Deux natures d'élément rendent huit exigences DUES — dès l'énumération (TF-0376).** Un
 `point-entree` ou un `parcours` dont l'entrant dit qu'il est **asynchrone** (conversion, import,
