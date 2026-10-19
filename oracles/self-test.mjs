@@ -680,9 +680,13 @@ for (const o of ORACLES) {
       // BASE, et non en jeu, pour la meme raison que les neuf autres -- la mesure de CETTE
       // branche porte sur la 404 SEULE, et un candidat absent de la base la brouillerait.
       { id: 'S-12', type: 'point-entree', libelle: 'Lien public partageable du compte client' },
-      { id: 'S-13', type: 'objet', libelle: "Compte d'essai vide" }
+      { id: 'S-13', type: 'objet', libelle: "Compte d'essai vide" },
+      // TF-1908 : les trois candidats conditionnels, dans la BASE pour la meme raison.
+      { id: 'S-14', type: 'regle', libelle: 'Consentement aux traceurs' },
+      { id: 'S-15', type: 'point-entree', libelle: 'Politique de confidentialité' },
+      { id: 'S-16', type: 'objet', libelle: 'Aperçu de partage des pages publiques' }
     ]
-    const PAGE_404 = { id: 'S-14', type: 'point-entree', libelle: 'Page 404 par langue' }
+    const PAGE_404 = { id: 'S-17', type: 'point-entree', libelle: 'Page 404 par langue' }
     const LOT_NUIT = { id: 'S-01', type: 'point-entree', libelle: 'Import de nuit du fichier fournisseur' }
     const ECART_VALIDE = {
       element: 'page-404',
@@ -743,7 +747,7 @@ for (const o of ORACLES) {
 
     const cas = [
       ['1. candidat present, aucun champ d\'ecart -> PASS (referentiel anterieur au champ)',
-        complet.code === 0 && complet.fails.length === 0 && complet.s4.length === 13],
+        complet.code === 0 && complet.fails.length === 0 && complet.s4.length === 16],
       ['2. candidat absent + ecart valide -> PASS imprime « [ECARTE] »',
         ecarte.code === 0 && ecarte.fails.length === 0 &&
         (ecarte.sur('page-404')?.message ?? '').includes('[ÉCARTÉ]')],
@@ -786,7 +790,7 @@ for (const o of ORACLES) {
 // profil est celui de la 404 (TF-0804) : l'oubli reste indiscernable de la decision tant que la
 // liste close ne porte pas le candidat. Quatre etats, la 404 et les neuf autres candidats
 // restant PRESENTS dans la base pour que la mesure porte sur ces deux-la SEULS :
-//   1. les deux candidats presents                    -> PASS, 13 constats S4
+//   1. les deux candidats presents                    -> PASS, 16 constats S4 (13 avant TF-1908)
 //   2. les deux absents, aucun ecart                  -> FAIL, les DEUX candidats NOMMES
 //                                                        (la mesure du 06/09, cette fois jugee)
 //   3. les deux absents + ecarts mono-tenant valides  -> PASS, deux messages « [ECARTE] »
@@ -807,7 +811,12 @@ for (const o of ORACLES) {
       { id: 'S-09', type: 'regle', libelle: 'Responsive mobile' },
       { id: 'S-10', type: 'regle', libelle: 'Accessibilité RGAA' },
       { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" },
-      { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' }
+      { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' },
+      // TF-1908 : les trois candidats conditionnels, dans la BASE pour que la mesure de cette
+      // branche porte sur le lien public partageable et les comptes d'essai SEULS.
+      { id: 'S-15', type: 'regle', libelle: 'Consentement aux traceurs' },
+      { id: 'S-16', type: 'point-entree', libelle: 'Politique de confidentialité' },
+      { id: 'S-17', type: 'objet', libelle: 'Aperçu de partage des pages publiques' }
     ]
     const LIEN = { id: 'S-13', type: 'point-entree', libelle: "Lien public partageable de l'espace client" }
     const ESSAI = { id: 'S-14', type: 'objet', libelle: "Compte d'essai vide du commanditaire" }
@@ -863,8 +872,8 @@ for (const o of ORACLES) {
     const unSeul = jouer('4-temoin-isolation', referentiel([...BASE, LIEN]))
 
     const cas = [
-      ['1. les deux candidats presents -> PASS, 13 constats S4 (la liste close en compte 13)',
-        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 13],
+      ['1. les deux candidats presents -> PASS, 16 constats S4 (la liste close en compte 16)',
+        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 16],
       ['2. la mesure du 06/09 : les deux absents, aucun ecart -> FAIL, les DEUX candidats NOMMES',
         oubli.code === 1 && oubli.fails.length === 2 &&
         oubli.fails.some(c => c.message.includes('Lien public partageable')) &&
@@ -885,6 +894,133 @@ for (const o of ORACLES) {
       echecs++
       console.log(`         exits obtenus : 1=${presents.code} 2=${oubli.code} ` +
         `3=${ecartes.code} 4=${unSeul.code} ; fails : 2=${oubli.fails.length} 4=${unSeul.fails.length}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-1908 : les trois candidats CONDITIONNELS de la liste close ----------------
+// Mesure du 19/10/2026 (etude d'opportunite 20261019j, check-list avant mise en ligne) : sur 24
+// elements d'un site pret a lancer compares a l'existant, 5 n'etaient couverts par rien, dont le
+// consentement aux traceurs, la politique de confidentialite et l'apercu de partage. Aucune des
+// treize cles de S4 ne les portait : l'oubli etait indiscernable de la decision. Profil de la 404
+// (TF-0804) et du lien public partageable (TF-0874). Les treize autres candidats restent PRESENTS
+// dans la base pour que la mesure porte sur ces trois-la SEULS :
+//   1. les trois candidats presents                    -> PASS, 16 constats S4
+//   2. les trois absents, aucun ecart                  -> FAIL, les TROIS candidats NOMMES
+//   3. les trois absents + ecarts d'un produit interne -> PASS, trois « [ECARTE] » -- c'est le
+//                                                         REMEDE que le message du FAIL propose
+//                                                         (TF-1013), joue et tenu
+//   4. UN SEUL absent (temoin d'isolation)             -> FAIL nommant le seul absent, pas les autres
+//   5. ecart d'une cle neuve au motif trop court       -> FAIL nommant `motif` (temoin : la cle
+//                                                         neuve est lue par le contrat commun)
+// Fixtures ephemeres, comme les branches TF-0811 et TF-0874 dont celle-ci reprend l'idiome.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf1908-'))
+  try {
+    const BASE = [
+      { id: 'S-01', type: 'point-entree', libelle: "Page d'accueil du site" },
+      { id: 'S-02', type: 'point-entree', libelle: 'Aide utilisateur' },
+      { id: 'S-03', type: 'parcours', libelle: 'Onboarding de première connexion' },
+      { id: 'S-04', type: 'objet', libelle: 'Compte utilisateur' },
+      { id: 'S-05', type: 'objet', libelle: 'Favicon' },
+      { id: 'S-06', type: 'parcours', libelle: 'États vides guidés' },
+      { id: 'S-07', type: 'regle', libelle: 'Gestion des erreurs visible' },
+      { id: 'S-08', type: 'point-entree', libelle: 'Mentions légales' },
+      { id: 'S-09', type: 'regle', libelle: 'Responsive mobile' },
+      { id: 'S-10', type: 'regle', libelle: 'Accessibilité RGAA' },
+      { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" },
+      { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' },
+      { id: 'S-13', type: 'point-entree', libelle: "Lien public partageable de l'espace client" },
+      { id: 'S-14', type: 'objet', libelle: "Compte d'essai vide du commanditaire" }
+    ]
+    const TRACEURS = { id: 'S-15', type: 'regle', libelle: "Consentement aux traceurs et mesure d'audience" }
+    const CONFIDENTIALITE = { id: 'S-16', type: 'point-entree', libelle: 'Politique de confidentialité' }
+    const APERCU = { id: 'S-17', type: 'objet', libelle: 'Aperçu de partage : titre, description et image' }
+    const ECART = (element, motif) => ({
+      element,
+      motif,
+      decide_par: 'le commanditaire du produit',
+      date: '2026-10-19'
+    })
+    const ECARTS_PRODUIT_INTERNE = [
+      ECART('traceurs-consentement',
+        'produit interne sans mesure d\'audience ni traceur tiers : seuls des temoins de session necessaires'),
+      ECART('politique-confidentialite',
+        'produit interne : l\'information des collaborateurs releve de la notice de l\'entreprise'),
+      ECART('apercu-partage',
+        'produit interne derriere authentification : aucune page publique, donc aucun apercu a produire')
+    ]
+
+    const referentiel = (surface, ecarts) => {
+      const ref = {
+        projet: 'Fixture TF-1908 (traceurs et consentement, confidentialite, apercu de partage)',
+        besoins: [{ id: 'B-01', enonce: 'Un visiteur doit atteindre le produit depuis le web.' }],
+        surface,
+        exigences: surface.map((s, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: `Le produit sert ${s.libelle}.`,
+          critere: 'La ressource est affichee.',
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-1908' },
+          surface: [s.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_surface_implicite = ecarts
+      return ref
+    }
+
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-surface.mjs', [chemin])
+      const s4 = (r.rapport?.constats ?? []).filter(c => c.regle === 'S4')
+      return {
+        code: r.code,
+        s4,
+        fails: s4.filter(c => c.statut === 'FAIL'),
+        sur: (fragment) => s4.find(c => `${c.ou} ${c.message}`.includes(fragment))
+      }
+    }
+
+    const presents = jouer('1-trois-presents', referentiel([...BASE, TRACEURS, CONFIDENTIALITE, APERCU]))
+    const oubli = jouer('2-la-mesure-du-19-10', referentiel(BASE))
+    const ecartes = jouer('3-ecarts-produit-interne', referentiel(BASE, ECARTS_PRODUIT_INTERNE))
+    const unSeul = jouer('4-temoin-isolation', referentiel([...BASE, TRACEURS, CONFIDENTIALITE]))
+    const motifCourt = jouer('5-motif-court', referentiel([...BASE, TRACEURS, CONFIDENTIALITE],
+      [ECART('apercu-partage', 'pas de page')]))
+
+    const cas = [
+      ['1. les trois candidats presents -> PASS, 16 constats S4 (la liste close en compte 16)',
+        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 16],
+      ['2. la mesure du 19/10 : les trois absents, aucun ecart -> FAIL, les TROIS candidats NOMMES',
+        oubli.code === 1 && oubli.fails.length === 3 &&
+        oubli.fails.some(c => c.message.includes('Traceurs et consentement')) &&
+        oubli.fails.some(c => c.message.includes('Politique de confidentialité')) &&
+        oubli.fails.some(c => c.message.includes('Aperçu de partage'))],
+      ['3. remede du FAIL joue : trois ecarts d\'un produit interne -> PASS, trois « [ECARTE] »',
+        ecartes.code === 0 && ecartes.fails.length === 0 &&
+        ['traceurs-consentement', 'politique-confidentialite', 'apercu-partage']
+          .every(cle => (ecartes.sur(cle)?.message ?? '').includes('[ÉCARTÉ]'))],
+      ['4. temoin d\'isolation : un seul absent -> FAIL nommant CE candidat, pas les deux autres',
+        unSeul.code === 1 && unSeul.fails.length === 1 &&
+        unSeul.fails[0].message.includes('Aperçu de partage')],
+      ['5. ecart d\'une cle neuve au motif trop court -> FAIL nommant `motif`',
+        motifCourt.code === 1 && motifCourt.fails.length === 1 &&
+        motifCourt.fails[0].message.includes('motif')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-surface.mjs (branche TF-1908, trois candidats conditionnels, fixtures ephemeres, 3 etats + 2 temoins)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${presents.code} 2=${oubli.code} 3=${ecartes.code} ` +
+        `4=${unSeul.code} 5=${motifCourt.code} ; fails : 2=${oubli.fails.length} ` +
+        `4=${unSeul.fails.length} 5=${motifCourt.fails.length}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })

@@ -78,11 +78,16 @@ simple type suggéré : la **page 404 par langue** (P-2 — patron éprouvé du 
 n'est proposée que si le produit a une surface web, avec ses cinq critères d'acceptation ; le
 **lien public partageable (copie, QR)** et les **comptes d'essai vides** (TF-0874) visent les
 produits **multi-tenant** — un produit mono-tenant les écarte tous les deux, avec sa raison.
+Trois autres (TF-1908) sont conditionnels de la même façon : **traceurs et consentement**
+(le produit pose un traceur non exempté de consentement), **politique de confidentialité** (il
+collecte une donnée personnelle) et **aperçu de partage** (il a une page publique). Le
+**favicon** d'un document autoportant n'a pas la forme de celui d'un site ; la distinction est
+dans les critères d'acceptation de la typologie.
 
 **L'écart s'écrit dans le référentiel, pas seulement en prose (TF-0811).** La section 3 de
 `SURFACE.md` reste le lieu où l'écart se rédige ; elle est transcrite, sans reformulation, dans
 le champ racine `ecarts_surface_implicite` — `{ element, motif, decide_par, date }`, une entrée
-par candidat écarté, `element` pris dans les treize clés de la liste close. `oracle-surface`
+par candidat écarté, `element` pris dans les seize clés de la liste close. `oracle-surface`
 (règle **S4**) juge alors chaque candidat individuellement : présent → PASS, écarté avec un
 motif d'au moins vingt caractères → PASS imprimé « [ÉCARTÉ] », ni l'un ni l'autre → **FAIL**.
 Sans point d'entrée web énuméré, le bloc n'est pas dû et S4 rend un PASS motivé. C'est le seul
@@ -95,7 +100,7 @@ les projets, comparer des projets ou parcourir l'inventaire hiérarchique des re
 projet ; 13 exigences sont entrées en run de version. Dès qu'un `objet` énuméré est un registre
 (registre, inventaire, catalogue, portefeuille, répertoire, annuaire, cartographie, parc), trois
 candidats sont proposés d'office : **vue transverse**, **comparaison d'éléments**, **inventaire
-hiérarchique**. Chacun est retenu ou écarté comme les treize autres, dans le même champ, avec
+hiérarchique**. Chacun est retenu ou écarté comme les seize autres, dans le même champ, avec
 ses clés `vue-transverse`, `comparaison`, `inventaire-hierarchique`. `oracle-surface` **S5** le
 juge en avertissement non bloquant : elle nomme le candidat manquant, l'exit ne change pas.
 Liste et critères : `references/typologie-surface.md`, « Surface implicite d'un registre ».

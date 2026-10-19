@@ -31,6 +31,24 @@
       "motif": "portail interne ouvert aux seuls collaborateurs authentifiés par l'annuaire : un compte d'essai vide n'y est ni créable ni utile au commanditaire",
       "decide_par": "le commanditaire du produit",
       "date": "2026-09-08"
+    },
+    {
+      "element": "traceurs-consentement",
+      "motif": "portail interne sans mesure d'audience ni traceur tiers : seuls des témoins de session strictement nécessaires sont posés, exemptés de consentement",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-10-19"
+    },
+    {
+      "element": "politique-confidentialite",
+      "motif": "portail interne : l'information des collaborateurs sur leurs données relève de la notice de l'entreprise, pas d'une page publiée par le produit",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-10-19"
+    },
+    {
+      "element": "apercu-partage",
+      "motif": "portail interne derrière authentification : aucune page publique n'existe, donc aucun aperçu de partage n'est à produire",
+      "decide_par": "le commanditaire du produit",
+      "date": "2026-10-19"
     }
   ],
   "ecarts_exigences_socle": [

@@ -14,7 +14,7 @@ import {
   charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart
 } from './_contrat.mjs'
 
-const VERSION = '1.4.0'
+const VERSION = '1.5.0'
 const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 
 // S4 — la surface implicite : chaque candidat d'office est RETENU ou ÉCARTÉ explicitement.
@@ -26,7 +26,8 @@ const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 // implicite (`enumere-la-surface/references/typologie-surface.md`) : aide, onboarding, compte,
 // favicon, états vides, erreurs visibles, mentions légales, responsive, accessibilité, ses
 // livrables légaux, la 404 — et depuis TF-0874 le lien public partageable et les comptes
-// d'essai. La règle ne juge pas la page servie — cela relève de la MEP
+// d'essai, depuis TF-1908 les traceurs et le consentement, la politique de confidentialité et
+// l'aperçu de partage. La règle ne juge pas la page servie — cela relève de la MEP
 // (contrôle M-9) et de forge-tests — mais l'ÉNUMÉRATION : le candidat est-il entré dans la
 // surface, là où l'oubli est encore réparable ?
 //
@@ -134,6 +135,30 @@ const SURFACE_IMPLICITE = [
     libelle: "Comptes d'essai vides",
     motifs: ["compte d'essai", "comptes d'essai", 'compte de test', 'comptes de test',
       "compte d'évaluation", "comptes d'évaluation", 'bac à sable']
+  },
+  // TF-1908 — les trois candidats CONDITIONNELS que la liste close n'avait pas. L'étude
+  // d'opportunité 20261019j (check-list avant mise en ligne) a comparé 24 éléments d'un site prêt
+  // à lancer à l'existant de la Factory : 5 n'étaient couverts par rien, dont trois que le droit
+  // ou le partage rendent dus et qu'aucun CDC ne cite. Profil de la 404 (TF-0804) : personne ne
+  // les conçoit, aucune revue ne les voit. Chacun porte une condition d'applicabilité que S4
+  // n'infère PAS (déclarée en `non_juge`) : un traceur non exempté de consentement, une donnée
+  // personnelle collectée, une page publique. Un produit qui ne la remplit pas l'écarte en une
+  // ligne, avec sa raison ; il ne l'oublie pas.
+  {
+    cle: 'traceurs-consentement',
+    libelle: "Traceurs et consentement (mesure d'audience comprise)",
+    motifs: ['traceur', 'consentement', 'cookie', "mesure d'audience", "analyse d'audience"]
+  },
+  {
+    cle: 'politique-confidentialite',
+    libelle: 'Politique de confidentialité',
+    motifs: ['politique de confidentialité', 'confidentialité', 'vie privée', 'rgpd']
+  },
+  {
+    cle: 'apercu-partage',
+    libelle: 'Aperçu de partage',
+    motifs: ['aperçu de partage', 'aperçu de lien', 'aperçu social', 'open graph',
+      'carte de partage', 'image de partage']
   }
 ]
 for (const c of SURFACE_IMPLICITE) c.re = lexique(c.motifs)
@@ -408,7 +433,13 @@ emettre({
       '« produit multi-tenant » pour le lien public partageable et les comptes d\'essai ' +
       '(TF-0874). S4 ne les infère pas : le candidat est retenu ou écarté avec son motif, ' +
       'comme les autres — un produit mono-tenant écarte les deux en deux lignes, et c\'est ' +
-      'moins cher que de rendre l\'omission indiscernable de la décision.',
+      'moins cher que de rendre l\'omission indiscernable de la décision. De même (TF-1908) ' +
+      'pour « le produit pose un traceur non exempté de consentement » (traceurs et ' +
+      'consentement), « le produit collecte une donnée personnelle » (politique de ' +
+      'confidentialité) et « le produit a une page publique » (aperçu de partage) : un produit ' +
+      'qui ne remplit pas la condition écarte le candidat en une ligne avec sa raison. La base ' +
+      'légale de la politique de confidentialité n\'a pas été relue à Légifrance par l\'étude ' +
+      'qui fonde ces candidats ; seul le consentement est sourcé (CNIL, 12/12/2024).',
     'Le contenu de la 404 elle-même — gabarit, statut HTTP conservé, `noindex`, préfixe de ' +
       'langue : les cinq critères de P-2 se vérifient sur la page servie (MEP, contrôle M-9 ; ' +
       'contrôle exécutable chez forge-tests), jamais sur un référentiel d\'exigences.',

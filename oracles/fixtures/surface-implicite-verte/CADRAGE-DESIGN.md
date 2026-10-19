@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: 3386404a62db0c0867342b79bac477da911b014bbfcfe1f8e013ba5e074a2ad8 -->
+<!-- source-sha256: f0ce6d63cd2e7386bac53ca8fc26d5bb929c42c2f2f5a8a7d2ba9e9c9e39b03d -->
 
 # Fiche de cadrage design — Portail de réservation de salles
 
@@ -43,6 +43,9 @@ transcrit de la section 3 « Écartés » de `SURFACE.md`. Un candidat d'office 
 | `livrables-accessibilite` | corollaire de l'écart précédent : sans obligation RGAA, ni schéma pluriannuel ni déclaration d'accessibilité ne sont dus, et aucun n'est produit pour la forme | le commanditaire du produit | 2026-09-05 |
 | `lien-public-partageable` | portail mono-tenant, servi sur une adresse unique pour l'entreprise : aucun espace client n'existe, donc aucun lien public par client n'a de sens | le commanditaire du produit | 2026-09-08 |
 | `comptes-essai` | portail interne ouvert aux seuls collaborateurs authentifiés par l'annuaire : un compte d'essai vide n'y est ni créable ni utile au commanditaire | le commanditaire du produit | 2026-09-08 |
+| `traceurs-consentement` | portail interne sans mesure d'audience ni traceur tiers : seuls des témoins de session strictement nécessaires sont posés, exemptés de consentement | le commanditaire du produit | 2026-10-19 |
+| `politique-confidentialite` | portail interne : l'information des collaborateurs sur leurs données relève de la notice de l'entreprise, pas d'une page publiée par le produit | le commanditaire du produit | 2026-10-19 |
+| `apercu-partage` | portail interne derrière authentification : aucune page publique n'existe, donc aucun aperçu de partage n'est à produire | le commanditaire du produit | 2026-10-19 |
 
 Les neuf autres candidats de la liste close sont **retenus** : ils figurent au tableau
 ci-dessus, chacun porteur d'au moins une exigence.

@@ -1,6 +1,6 @@
 # Surface fonctionnelle — Portail de réservation de salles
 
-> Fixture TF-0822, **sens vert** : la section 3 porte les quatre entrées d'
+> Fixture TF-0822, **sens vert** : la section 3 porte les sept entrées d'
 > `ecarts_surface_implicite` du référentiel voisin, clé et motif. `oracle-exigences-md` P4 y
 > rend PASS.
 
@@ -27,8 +27,8 @@ rédaction d'exigence, pour que ce qui n'est pas couvert soit un manque nommé.
 
 ## 3. Écartés
 
-Quatre candidats d'office de la **surface implicite** ont été vus et volontairement exclus. Ces
-quatre lignes sont transcrites telles quelles dans le champ `ecarts_surface_implicite` du
+Sept candidats d'office de la **surface implicite** ont été vus et volontairement exclus. Ces
+sept lignes sont transcrites telles quelles dans le champ `ecarts_surface_implicite` du
 référentiel — la prose est ici la source, le champ en est la copie.
 
 | clé | motif | décidé par | date |
@@ -37,6 +37,9 @@ référentiel — la prose est ici la source, le champ en est la copie.
 | `livrables-accessibilite` | corollaire de l'écart précédent : sans obligation RGAA, ni schéma pluriannuel ni déclaration d'accessibilité ne sont dus, et aucun n'est produit pour la forme | le commanditaire du produit | 2026-09-05 |
 | `lien-public-partageable` | portail mono-tenant, servi sur une adresse unique pour l'entreprise : aucun espace client n'existe, donc aucun lien public par client n'a de sens | le commanditaire du produit | 2026-09-08 |
 | `comptes-essai` | portail interne ouvert aux seuls collaborateurs authentifiés par l'annuaire : un compte d'essai vide n'y est ni créable ni utile au commanditaire | le commanditaire du produit | 2026-09-08 |
+| `traceurs-consentement` | portail interne sans mesure d'audience ni traceur tiers : seuls des témoins de session strictement nécessaires sont posés, exemptés de consentement | le commanditaire du produit | 2026-10-19 |
+| `politique-confidentialite` | portail interne : l'information des collaborateurs sur leurs données relève de la notice de l'entreprise, pas d'une page publiée par le produit | le commanditaire du produit | 2026-10-19 |
+| `apercu-partage` | portail interne derrière authentification : aucune page publique n'existe, donc aucun aperçu de partage n'est à produire | le commanditaire du produit | 2026-10-19 |
 
 ## 4. Non énumérable
 
