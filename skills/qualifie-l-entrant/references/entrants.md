@@ -162,6 +162,30 @@ Règle dure, non négociable.
 il ne valide pas. Aucun oracle ne rendra ce verdict — c'est un arbitrage humain, et le cas
 échéant un avis de conseil.
 
+### Artefact compilé ou empaqueté, sans source (mode rétro-modèle, TF-1906)
+
+**Refus par défaut.** Un binaire, un APK, un assemblage .NET ou un bundle JavaScript minifié ne
+s'analyse pas pour en reprendre la fonction. Le texte applicable est l'article L122-6-1 du Code
+de la propriété intellectuelle (CPI, version en vigueur depuis le 26/11/2021, lue sur Légifrance
+le 19/10/2026), qui transpose la directive 2009/24/CE (articles 5 et 6, lus en copie anglaise
+faute du texte français). Trois cas sont admis : un titulaire de licence qui mandate la Factory
+par écrit, l'acte étant alors fait pour son compte ; l'interopérabilité d'un logiciel créé de
+façon indépendante, limitée aux parties nécessaires et à des informations pas déjà aisément
+accessibles (L122-6-1, IV ; directive, article 6) ; la correction d'erreurs qui affectent le
+fonctionnement (L122-6-1, I). Trois usages sont interdits dans tous les cas : copier le code ou
+les actifs, construire un logiciel d'expression substantiellement similaire à partir de ce que
+l'analyse montre (L122-6-1, IV ; directive, article 6, paragraphe 2), contourner une protection
+technique, infraction distincte que cette règle n'instruit pas.
+
+Outil connu, non adopté : REA (`morluto/rea`, licence MIT, relevé le 19/10/2026) donne ces
+capacités à un agent, mais il installe un serveur MCP et un skill tiers (règle R-33 ter du
+pilot). Son essai exige deux conditions réunies : une mission avec un logiciel sans source et
+mandat écrit du titulaire, et un premier run réel du mode rétro-modèle ; revue prévue le
+19/11/2026 (étude `20261019-etude-opportunite-retro-ingenierie-par-agents.md` du pilot).
+
+**`non_juge`** : la conformité juridique de la décompilation, comme celle de la reprise. Un avis
+de conseil précède toute mission réelle.
+
 ## Format des questions sous le seuil
 
 Une par ligne, indicée `a/b/c`, chacune avec option recommandée et défaut appliqué :
