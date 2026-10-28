@@ -2521,6 +2521,113 @@ ${processus}
   if (ko.length > 0) echecs++
 }
 
+// --- branche TF-2010 : le patron de plateformes cite ses sources, ne porte aucune valeur, et un run le lit ----
+// Le patron « front sur Workers static assets, donnees et auth sur Supabase, deploiement par GitHub Actions »
+// (skills/redige-les-exigences/references/) est une reference datee : chaque fait y renvoie a une page de
+// documentation lue a une date, aucun secret ni adresse de projet n'y entre, et rien ne le rend orphelin.
+// Six regles sur le document : PP1 sources datees du frontmatter, PP2 chaque ligne de tableau cite une
+// source [Sn], PP3 chaque [Sn] est definie et chaque source est citee, PP4 aucune valeur (affectation,
+// cle, adresse de projet, mot de passe dans une URL), PP5 les cinq sections attendues, PP6 le patron est
+// appele par SKILL.md de redige-les-exigences et par le README (loi 1 : un fichier que rien n'appelle n'existe pas).
+// Preuve : le patron reel passe ; la fixture verte passe ; la fixture rouge declenche PP1 a PP5 ; cinq mutations
+// du patron reel declenchent chacune UNE seule regle ; un SKILL.md qui ne cite pas le patron declenche PP6.
+{
+  const PATRON_NOM = 'patron-plateformes-workers-supabase-actions.md'
+  const PATRON_FICHIER = join(ICI, '..', 'skills', 'redige-les-exigences', 'references', PATRON_NOM)
+  const SKILL_FICHIER = join(ICI, '..', 'skills', 'redige-les-exigences', 'SKILL.md')
+  const README_FICHIER = join(ICI, '..', 'README.md')
+  const SECTIONS_PATRON = ['Responsabilités', "Variables d'environnement", 'Prévisualisations',
+    'Questions de conception', 'Hypothèses non résolues']
+  const lignesDe = (t) => t.split(/\r?\n/)
+  const DATE_ISO = /^\d{4}-\d{2}-\d{2}$/
+  const aujourdhui = new Date().toISOString().slice(0, 10)
+  const dateValide = (s) => DATE_ISO.test(s || '') && !Number.isNaN(Date.parse(s)) &&
+    new Date(Date.parse(s)).toISOString().slice(0, 10) === s && s <= aujourdhui
+  const SEPARATEUR = /^\s*\|[\s:|-]+\|\s*$/
+
+  // Rend la liste des regles violees (chaque element : { regle, msg }).
+  function jugerPatron (texte, { skill, readme } = {}) {
+    const ko = []
+    const m = texte.replace(/^﻿/, '').match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/)
+    const fm = m ? m[1] : ''
+    const corps = m ? m[2] : texte
+    // PP1
+    const sources = []
+    let cur = null
+    for (const l of lignesDe(fm)) {
+      let r
+      if ((r = l.match(/^\s*-\s+id:\s*(\S+)\s*$/))) { cur = { id: r[1] }; sources.push(cur) }
+      else if (cur && (r = l.match(/^\s+url:\s*(\S+)\s*$/))) cur.url = r[1]
+      else if (cur && (r = l.match(/^\s+lu_le:\s*(\S+)\s*$/))) cur.lu_le = r[1]
+    }
+    if (!/^sources:\s*$/m.test(fm) || sources.length === 0) ko.push({ regle: 'PP1', msg: 'frontmatter sans liste `sources`' })
+    for (const s of sources) {
+      if (!/^S\d+$/.test(s.id)) ko.push({ regle: 'PP1', msg: `identifiant de source invalide : ${s.id}` })
+      if (!/^https:\/\/\S+$/.test(s.url || '')) ko.push({ regle: 'PP1', msg: `${s.id} : url absente ou non https` })
+      if (!dateValide(s.lu_le)) ko.push({ regle: 'PP1', msg: `${s.id} : lu_le absent ou invalide (${s.lu_le || 'vide'})` })
+    }
+    // PP2
+    const L = lignesDe(corps)
+    L.forEach((l, i) => {
+      if (!/^\s*\|/.test(l) || SEPARATEUR.test(l)) return
+      if (i + 1 < L.length && SEPARATEUR.test(L[i + 1])) return // ligne d'en-tete
+      if (!/\[S\d+\]/.test(l)) ko.push({ regle: 'PP2', msg: `ligne de tableau sans source : ${l.trim().slice(0, 60)}` })
+    })
+    // PP3
+    const citees = new Set([...corps.matchAll(/\[(S\d+)\]/g)].map(r => r[1]))
+    const definies = new Set(sources.map(s => s.id))
+    for (const c of citees) if (!definies.has(c)) ko.push({ regle: 'PP3', msg: `${c} citee mais non definie` })
+    for (const d of definies) if (!citees.has(d)) ko.push({ regle: 'PP3', msg: `${d} definie mais jamais citee` })
+    // PP4
+    const fuites = [
+      [/^\s*[A-Z][A-Z0-9_]{3,}\s*=\s*\S/m, 'affectation NOM=valeur'],
+      [/sb_(publishable|secret)_[A-Za-z0-9_-]{8,}/, 'cle Supabase'],
+      [/eyJ[A-Za-z0-9_-]{10,}/, 'jeton JWT'],
+      [/\b[a-z0-9]{20}\.supabase\.co\b/, 'adresse de projet Supabase'],
+      [/:\/\/[^/\s]*:[^/\s]*@/, 'mot de passe dans une URL']
+    ]
+    for (const [re, nom] of fuites) if (re.test(corps)) ko.push({ regle: 'PP4', msg: `valeur presente : ${nom}` })
+    // PP5
+    const titres = L.filter(l => /^#{2,3}\s/.test(l))
+    for (const s of SECTIONS_PATRON) {
+      if (!titres.some(t => t.includes(s))) ko.push({ regle: 'PP5', msg: `section absente : ${s}` })
+    }
+    // PP6 (seulement si on fournit les textes appelants)
+    if (skill !== undefined && !skill.includes(PATRON_NOM)) ko.push({ regle: 'PP6', msg: 'SKILL.md de redige-les-exigences ne cite pas le patron' })
+    if (readme !== undefined && !readme.includes(PATRON_NOM.replace(/\.md$/, ''))) ko.push({ regle: 'PP6', msg: 'le README ne cite pas le patron' })
+    return ko
+  }
+  const regles = (ko) => [...new Set(ko.map(k => k.regle))].sort().join(',')
+
+  const lire = (f) => (existsSync(f) ? readFileSync(f, 'utf8') : null)
+  const reel = lire(PATRON_FICHIER)
+  const skillTexte = lire(SKILL_FICHIER) ?? ''
+  const readmeTexte = lire(README_FICHIER) ?? ''
+  const verte = lire(join(ICI, 'fixtures', 'patron-plateformes-verte', 'PATRON.md')) ?? ''
+  const rouge = lire(join(ICI, 'fixtures', 'patron-plateformes-rouge', 'PATRON.md')) ?? ''
+
+  const koReel = reel === null ? [{ regle: 'PP0', msg: `patron absent : ${PATRON_NOM}` }] : jugerPatron(reel, { skill: skillTexte, readme: readmeTexte })
+  const base = reel ?? ''
+  const mutation = (f) => regles(jugerPatron(f(base), { skill: skillTexte, readme: readmeTexte }))
+  const retireLuLe = (t) => { let fait = false; return t.split(/\r?\n/).filter(l => (!fait && /^\s+lu_le:/.test(l)) ? !(fait = true) : true).join('\n') }
+  const cas = [
+    [`1. le patron reel passe PP1 a PP6 (${koReel.length} violation(s))`, reel !== null && koReel.length === 0],
+    ['2. fixture verte : aucune violation PP1 a PP5', regles(jugerPatron(verte)) === ''],
+    [`3. fixture rouge : PP1,PP2,PP3,PP4,PP5 declenchees (${regles(jugerPatron(rouge))})`, regles(jugerPatron(rouge)) === 'PP1,PP2,PP3,PP4,PP5'],
+    ['4. mutation : une source sans lu_le declenche PP1 seule', reel !== null && mutation(retireLuLe) === 'PP1'],
+    ['5. mutation : un tableau ajoute sans source declenche PP2 seule', reel !== null && mutation(t => t + '\n\n| Ajout | Sans source |\n|---|---|\n| x | y |\n') === 'PP2'],
+    ['6. mutation : une source citee mais non definie declenche PP3 seule', reel !== null && mutation(t => t + '\n\nVoir [S99].\n') === 'PP3'],
+    ['7. mutation : une affectation NOM=valeur declenche PP4 seule', reel !== null && mutation(t => t + '\n\nSUPABASE_SECRET_KEY=valeur\n') === 'PP4'],
+    ['8. mutation : la section des hypotheses renommee declenche PP5 seule', reel !== null && mutation(t => t.replace(/Hypothèses non résolues/g, 'Autres points')) === 'PP5'],
+    ['9. un SKILL.md qui ne cite pas le patron declenche PP6', regles(jugerPatron(base, { skill: skillTexte.split(PATRON_NOM).join('autre.md'), readme: readmeTexte })) === 'PP6']
+  ]
+  const ko = cas.filter(([, ok]) => !ok)
+  console.log(`${PATRON_NOM} (branche TF-2010, patron de plateformes : sources, absence de valeur, appel)`)
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  for (const k of koReel.slice(0, 12)) console.log(`         ${k.regle} : ${k.msg}`)
+  if (ko.length > 0) echecs++
+}
+
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)

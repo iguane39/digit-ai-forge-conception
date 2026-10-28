@@ -1,7 +1,7 @@
 ---
 name: redige-les-exigences
 description: Rédige le référentiel d'exigences d'un produit — chaque exigence atomique, identifiée de façon stable, assortie d'un critère d'acceptation binaire ou chiffré, d'un palier MVP/V1/V2, d'un statut fait constaté ou hypothèse, et d'un lien vers l'élément de surface couvert — puis le fait juger par quatre oracles exécutés. Produit EXIGENCES.md et EXIGENCES.json, la source unique dont toutes les vues aval sont dérivées. Use when / déclencher dès qu'il faut transformer un besoin, un cadrage ou une surface fonctionnelle en spécification opposable, écrire des exigences testables, poser des critères d'acceptation, arbitrer un périmètre MVP, ou produire le PRD d'un produit à construire. Ne pas déclencher pour qualifier l'entrant (→ qualifie-l-entrant), énumérer la surface (→ enumere-la-surface), dériver les vues aval (→ derive-les-vues), ni pour produire epics, stories ou architecture d'implémentation (→ étape C de la SaaS Forge, moteur BMAD).
-version: 1.4.0
+version: 1.5.0
 ---
 
 # Rédige les exigences
@@ -36,6 +36,9 @@ d'identifiant jamais réaffecté.
 1. Entrées       → ENTRANT.md + SURFACE.md
 2. Schéma        → references/schema-referentiel.md
 3. Grammaire     → references/formulation.md
+   Plateformes   → references/patron-plateformes-workers-supabase-actions.md (si l'entrant
+                   nomme Workers ou Pages, Supabase et GitHub Actions : 17 questions à trancher,
+                   chacune avec son fait daté et sa source)
 4. Artefacts     → EXIGENCES.json (source) + EXIGENCES.md (lecture humaine)
 5. Contrôle      → node oracles/oracle-exigences.mjs EXIGENCES.json
                    node oracles/oracle-tracabilite.mjs EXIGENCES.json

@@ -1,7 +1,7 @@
 {
   "manifeste": "forge-conception",
-  "version": "1.0.0",
-  "date": "2026-08-14",
+  "version": "1.1.0",
+  "date": "2026-10-28",
   "description": "Méthode des 4 verbes : chaque verbe est un skill, chaque livrable est jugé par oracles (D-C1 du contrat pilot, soldée).",
   "point_entree_oracles": "node oracles/run-oracles-conception.mjs <EXIGENCES.json> [--json-only]",
   "verbes": [

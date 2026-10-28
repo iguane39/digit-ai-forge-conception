@@ -364,6 +364,19 @@ recommandée et défaut appliqué — et tout défaut appliqué est marqué comm
 **Un critère rouge n'est jamais requalifié** pour obtenir un vert. Boucle bornée à 3 passes,
 puis livraison avec les écarts résiduels nommés.
 
+## Le patron de plateformes (TF-2010)
+
+Un produit qui combine Cloudflare Workers (ou Pages), Supabase et GitHub Actions pose des questions
+qu'aucune plateforme ne tranche seule : où vit chaque variable, quelle URL de prévisualisation l'auth
+doit autoriser, Hyperdrive ou client Supabase, qui déploie le code et qui déploie le schéma.
+[Le patron](skills/redige-les-exigences/references/patron-plateformes-workers-supabase-actions.md)
+les range en 17 questions à trancher, chacune avec son défaut, le lieu du référentiel où sa réponse
+se range, et le fait qui l'impose. Chaque fait renvoie à une page de documentation lue le 28/10/2026,
+avec son adresse et sa date. `redige-les-exigences` l'appelle quand l'entrant nomme deux de ces
+plateformes ; la branche TF-2010 de la recette refuse un patron dont une ligne n'a pas de source,
+dont une source n'est pas datée, qui porte une valeur (clé, affectation, adresse de projet), ou que
+ni `SKILL.md` ni ce README n'appellent. Le déploiement lui-même relève de forge-ops.
+
 ## Ce que la forge ne fait pas
 
 - Pas de PRD d'implémentation, d'epics, de stories, d'architecture — c'est l'étape C de la
