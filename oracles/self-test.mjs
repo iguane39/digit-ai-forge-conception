@@ -2628,6 +2628,31 @@ ${processus}
   if (ko.length > 0) echecs++
 }
 
+// --- branche TF-2019 : chaque quick start nomme le dossier de ses livrables ---
+// Le 28/10/2026, un produit a ecrit son ENTRANT.md et son EXIGENCES.json sous forge/conception :
+// les skills disaient « ENTRANT.md en depot » sans nommer de dossier, et `mobiliser.mjs --verifier`
+// du pilot n'accepte que forge/etapes/conception/EXIGENCES.json (references/CARTE-FORGES.json).
+// Livrable juge MANQUE, deplace, renvois reecrits (retour RC-1). Prouve dans les deux sens :
+//   1. les quatre quick start nomment forge/etapes/conception/
+//   2. temoin rouge : la ligne retiree d'un skill -> l'ecart NOMME le skill
+{
+  const SKILLS = ['qualifie-l-entrant', 'enumere-la-surface', 'redige-les-exigences', 'derive-les-vues']
+  const DOSSIER = 'forge/etapes/conception/'
+  const quickStart = (texte) => (texte.split(/^## Quick start\s*$/m)[1] ?? '').split(/^## /m)[0]
+  const juger = (textes) => SKILLS.filter(s => !quickStart(textes[s] ?? '').includes(DOSSIER))
+  const textes = Object.fromEntries(SKILLS.map(s => [s, readFileSync(join(ICI, '..', 'skills', s, 'SKILL.md'), 'utf8')]))
+  const reel = juger(textes)
+  const ampute = { ...textes, 'redige-les-exigences': textes['redige-les-exigences'].split(DOSSIER).join('forge/conception/') }
+  const temoin = juger(ampute)
+  const cas = [
+    [`1. les ${SKILLS.length} quick start nomment ${DOSSIER} (absents : ${reel.join(', ') || 'aucun'})`, reel.length === 0],
+    ['2. temoin rouge : le dossier retire de redige-les-exigences -> ecart nomme', temoin.length === 1 && temoin[0] === 'redige-les-exigences']
+  ]
+  console.log('quick start des skills (branche TF-2019, dossier des livrables nomme)')
+  for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+  if (cas.some(([, ok]) => !ok)) echecs++
+}
+
 console.log('')
 console.log(`${ORACLES.length} oracles, ${ORACLES.reduce((n, o) => n + o.regles.length, 0)} regles.`)
 console.log(echecs === 0 ? 'SELF-TEST VERT' : `SELF-TEST ROUGE -- ${echecs} anomalie(s)`)

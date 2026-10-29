@@ -1,7 +1,7 @@
 ---
 name: derive-les-vues
 description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par DEUX empreintes, sa source (vue périmée détectée) et son corps (vue amputée détectée). Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, régénérer des vues après modification du référentiel, dériver la vue de la cascade ISTO, ou décliner un rétro-modèle en documentations par audience (vues par profil PO / CSM / utilisateur, scellées elles aussi par le double sceau). Ne pas déclencher pour rédiger ou modifier les exigences (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
-version: 1.7.0
+version: 1.7.1
 ---
 
 # Dérive les vues
@@ -35,6 +35,8 @@ permet aux trois forges aval de continuer à fonctionner si la Conception dispar
 ## Quick start
 
 ```
+0. Dossier       → forge/etapes/conception/ chez le produit : tous les artefacts ci-dessous
+                   y vivent (mobiliser.mjs --verifier du pilot n'accepte que ce chemin)
 1. Entrée        → EXIGENCES.json
 2. Contrats      → references/vues.md
 3. Empreintes    → source-sha256 (la source) + corps-sha256 (le corps), normalisées LF

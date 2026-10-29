@@ -1,7 +1,7 @@
 ---
 name: qualifie-l-entrant
 description: Qualifie ce qui entre dans une conception produit — idée, cahier des charges, produit à reprendre, produit à faire évoluer, produit tiers à répliquer, dossier d'appel d'offres — en déterminant son type, le protocole d'extraction, ce qui en est extractible ou hors de portée, et si le seuil de suffisance est atteint. Produit un ENTRANT.md, ou rend la main avec des questions indicées sous le seuil. Use when / déclencher dès que l'utilisateur arrive avec une matière produit à transformer en spécification (« voici le CDC », « voici le dossier de consultation », « on repart de ce produit existant », « j'ai une idée d'appli »), demande si sa matière suffit pour lancer une conception, ou demande le rétro-engineering d'un projet (mode rétro-modèle → RETRO-MODELE.md). Ne pas déclencher pour clarifier une idée encore floue et non instrumentée (→ clarifie-une-idee, que ce skill appelle lui-même), pour énumérer la surface fonctionnelle (→ enumere-la-surface), ni pour rédiger des exigences (→ redige-les-exigences).
-version: 1.3.0
+version: 1.3.1
 ---
 
 # Qualifie l'entrant
@@ -24,6 +24,8 @@ garde-fou juridique du cinquième.
 ## Quick start
 
 ```
+0. Dossier       → forge/etapes/conception/ chez le produit : tous les artefacts ci-dessous
+                   y vivent (mobiliser.mjs --verifier du pilot n'accepte que ce chemin)
 1. Type          → references/entrants.md, table des 6 entrants
 2. Protocole     → celui de la ligne retenue, pas un autre
 3. Seuil         → atteint ? sinon questions a/b/c et ARRÊT

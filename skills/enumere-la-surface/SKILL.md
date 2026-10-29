@@ -1,7 +1,7 @@
 ---
 name: enumere-la-surface
 description: Énumère mécaniquement la surface fonctionnelle d'un produit à concevoir — objets métier, rôles, parcours, points d'entrée, règles de gestion — depuis l'entrant qualifié, et produit un SURFACE.md où chaque élément porte un identifiant stable. Inverse le sens de la génération : on énumère d'abord ce qui existe, on rédige ensuite, pour que tout élément non couvert par une exigence soit un manque nommé et non une absence silencieuse. Use when / déclencher dès qu'il faut inventorier ce qu'un produit doit couvrir avant d'écrire des exigences, lister les objets métier, rôles ou parcours d'un CDC ou d'un dépôt existant, ou vérifier qu'une spécification n'oublie pas une partie du périmètre. Ne pas déclencher pour qualifier l'entrant lui-même (→ qualifie-l-entrant), pour rédiger les exigences (→ redige-les-exigences), ni pour énumérer la surface d'un produit déjà construit à des fins de test (→ Forge Tests, qui l'énumère depuis le code exécutable).
-version: 1.5.0
+version: 1.5.1
 ---
 
 # Énumère la surface
@@ -32,6 +32,8 @@ d'identifiants stables qui survivront jusqu'au champ `risque` de Forge Tests.
 ## Quick start
 
 ```
+0. Dossier       → forge/etapes/conception/ chez le produit : tous les artefacts ci-dessous
+                   y vivent (mobiliser.mjs --verifier du pilot n'accepte que ce chemin)
 1. Entrée        → ENTRANT.md, section 3 (extractible obtenu)
 2. Typologie     → references/typologie-surface.md, 5 types
 3. Implicite     → references/typologie-surface.md, « Surface implicite SaaS » : chaque
