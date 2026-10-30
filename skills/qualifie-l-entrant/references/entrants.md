@@ -37,7 +37,12 @@ note `absente`, et c'est elle qui fera déclarer l'entrant dégradé.
 
 **2. Conversion en texte.** L'outil du pas 3 ne lit que `.md` et `.txt`. Un PDF ou un DOCX se
 convertit avant, et la conversion se déclare en section 2 d'`ENTRANT.md` : outil, date, pages
-illisibles.
+illisibles. Pour un PDF, appeler `lire-pdf.py`, script du skill `digit-ai-pdf` de forge-agents :
+`python lire-pdf.py <piece.pdf> --out <piece.md> --images <dossier>`. Il choisit la couche de texte
+ou l'OCR page par page, et son bilan rend ces trois informations. Exit 1 veut dire qu'une page reste
+illisible : son image est dans `<dossier>`, la session la lit, et la page se déclare. Un montant,
+une date ou un seuil lu par OCR se relit sur l'image, `--images-ocr` la dépose : sur le banc de ce
+skill, l'OCR perd de 10 à 55 % des nombres d'un scan.
 
 **3. Construction du référentiel — appelée, jamais réimplémentée.**
 `node construire-referentiel-ao.mjs <rc.md> [<cctp.md> …] --out <referentiel.md>`, script du
