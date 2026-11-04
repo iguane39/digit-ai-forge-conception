@@ -11,10 +11,10 @@
 // de l'élément.
 
 import {
-  charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart
+  charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart, AVANT, APRES
 } from './_contrat.mjs'
 
-const VERSION = '1.5.0'
+const VERSION = '1.6.0'
 const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 
 // S4 — la surface implicite : chaque candidat d'office est RETENU ou ÉCARTÉ explicitement.
@@ -27,7 +27,8 @@ const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 // favicon, états vides, erreurs visibles, mentions légales, responsive, accessibilité, ses
 // livrables légaux, la 404 — et depuis TF-0874 le lien public partageable et les comptes
 // d'essai, depuis TF-1908 les traceurs et le consentement, la politique de confidentialité et
-// l'aperçu de partage. La règle ne juge pas la page servie — cela relève de la MEP
+// l'aperçu de partage, depuis TF-2120 l'aide contextuelle de champ, le filtre et tri des listes et
+// la garde de saisie. La règle ne juge pas la page servie — cela relève de la MEP
 // (contrôle M-9) et de forge-tests — mais l'ÉNUMÉRATION : le candidat est-il entré dans la
 // surface, là où l'oubli est encore réparable ?
 //
@@ -63,7 +64,16 @@ const SURFACE_IMPLICITE = [
   {
     cle: 'aide-utilisateur',
     libelle: 'Aide utilisateur',
-    motifs: ['aide', "centre d'aide", 'help']
+    motifs: ['aide', "centre d'aide", 'help'],
+    // TF-2120 : une « aide » réduite aux codes d'erreur ne satisfait plus le candidat. Retour de
+    // Produit-86 (lot du 03/11/2026) : une page d'aide qui ne listait que les codes de refus avait
+    // suffi. Un élément dont le libellé dit « codes d'erreur » sans nommer une autre facette de
+    // l'aide (page, encart, champ, guide, FAQ…) est écarté de la présence ; l'écart reste possible.
+    reduite: lexique(["codes? d['’]erreur", "codes? de refus", "codes? d['’]échec",
+      "codes? d['’]anomalie", "codes? de retour", 'codes? http']),
+    facettes: lexique(['aide de page', 'aide de la page', 'encarts?', 'par champ', 'de champ',
+      'contextuelle', 'guide', 'tutoriel', 'faq', 'prise en main', 'pas à pas', "rôle de l['’]écran",
+      'centre d[\'’]aide'])
   },
   {
     cle: 'onboarding',
@@ -159,6 +169,32 @@ const SURFACE_IMPLICITE = [
     libelle: 'Aperçu de partage',
     motifs: ['aperçu de partage', 'aperçu de lien', 'aperçu social', 'open graph',
       'carte de partage', 'image de partage']
+  },
+  // TF-2120 — les trois candidats que la liste close n'avait pas, constatés sur Produit-86 (lot
+  // du 03/11/2026) : une page d'aide réduite aux codes de refus avait satisfait le candidat
+  // « aide », et le produit n'offrait ni aide au niveau du champ, ni filtre et tri sur ses
+  // listes, ni garde de saisie. Profil de la 404 (TF-0804) : personne ne les conçoit. Chacun porte
+  // une condition d'applicabilité que S4 n'infère PAS (déclarée en `non_juge`) : un champ de
+  // saisie non trivial, une liste de 8 éléments ou plus (le seuil de L4, `check_html.py` du skill
+  // `digit-ai-page-html` de forge-agents : « filtre, tri et recherche obligatoires dès 8
+  // lignes »), un formulaire de saisie. Un produit qui ne la remplit pas l'écarte en une ligne.
+  {
+    cle: 'aide-champ',
+    libelle: 'Aide contextuelle de champ',
+    motifs: ['aide de champ', 'aide contextuelle', 'aide par champ', 'aide à la saisie',
+      'aide au champ', 'exemple de saisie', 'infobulle de champ', 'texte d[\'’]aide']
+  },
+  {
+    cle: 'filtre-tri-listes',
+    libelle: 'Filtre et tri des listes',
+    motifs: ['filtre', 'filtrer', 'filtrage', 'tri', 'trier', 'tri des listes']
+  },
+  {
+    cle: 'garde-saisie',
+    libelle: 'Garde de saisie',
+    motifs: ['garde de saisie', 'garde-saisie', 'validation de saisie', 'validation des saisies',
+      'validation avant envoi', 'validation de formulaire', 'validation des champs',
+      'contrôle de saisie', 'contrôle des saisies']
   }
 ]
 for (const c of SURFACE_IMPLICITE) c.re = lexique(c.motifs)
@@ -210,8 +246,52 @@ for (const c of SURFACE_REGISTRE) c.re = lexique(c.motifs)
 const CLES_REGISTRE = SURFACE_REGISTRE.map(c => c.cle)
 const EST_CLE_REGISTRE = new Set(CLES_REGISTRE)
 
-/** Ce qui manque à un écart pour tenir. Chaîne vide = l'écart tient — contrat commun. */
-const defautDeLEcart = (e) => defautDEcart(e, CLES_IMPLICITES)
+// TF-2119 — QUI décide d'un écart de surface implicite. Fait (lot de Produit-86 du 03/11/2026) :
+// l'onboarding a été écarté avec `decide_par` « la session de build », S4 a rendu PASS, et le
+// porteur juge cet écart contraire à la loi n° 3 : la surface implicite s'écarte explicitement,
+// par DÉCISION HUMAINE. Le contrat commun (`defautDEcart`) exige un `decide_par` non vide, rien de
+// plus : « la session de build » le remplit. Deux conditions s'ajoutent ici, propres à la
+// surface (le contrat commun reste inchangé pour `ecarts_exigences_socle`, E10) :
+//   1. `decide_par` ne désigne ni une session, ni un agent, ni un build, ni une IA, un script, un
+//      pipeline… (lexique fermé) ;
+//   2. `decide_par` porte une décision humaine RÉFÉRENCÉE, sous l'une de ces trois formes :
+//      un identifiant de décision (D-N), une entrée de ledger (« ledger » suivi d'un numéro, ou
+//      « seq N »), une citation humaine DATÉE (texte entre guillemets d'au moins 10 caractères
+//      et une date AAAA-MM-JJ ou JJ/MM/AAAA, dans `decide_par`).
+// La FORME de la référence est jugée, jamais son existence : une référence inventée passe
+// (déclaré en `non_juge`). Un nom d'humain seul (« le commanditaire du produit ») ne suffit plus.
+const RE_DESIGNE_UNE_MACHINE = lexique(['session', 'agent', 'build', 'ia', 'claude', 'assistant',
+  'modèle', 'pipeline', 'script', 'bot', 'orchestrateur', 'automatique', 'automatiquement'])
+const RE_DECISION_ID = new RegExp(`${AVANT}D-\\d+${APRES}`, 'u')
+const RE_LEDGER = new RegExp(`ledger[^\\n]{0,60}?\\d|${AVANT}seq\\.?\\s*[:#]?\\s*\\d+`, 'iu')
+const RE_CITATION = /[«"“][^»"”]{10,}[»"”]/u
+const RE_DATE_CITEE = /\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}/
+
+function defautDuDecideur (decidePar) {
+  const t = typeof decidePar === 'string' ? decidePar.trim() : ''
+  if (t === '') return '' // l'absence est déjà nommée par le contrat commun
+  if (RE_DESIGNE_UNE_MACHINE.test(t)) {
+    return `\`decide_par\` « ${t} » désigne une session, un agent ou un build : un écart de ` +
+      'surface implicite est une décision humaine (loi n° 3, « l\'oubli n\'existe pas »). ' +
+      'Nommer l\'humain qui a décidé, avec sa décision référencée (identifiant D-N, entrée de ' +
+      'ledger, ou citation humaine datée)'
+  }
+  const reference = RE_DECISION_ID.test(t) || RE_LEDGER.test(t) ||
+    (RE_CITATION.test(t) && RE_DATE_CITEE.test(t))
+  if (!reference) {
+    return `\`decide_par\` « ${t} » ne porte aucune décision humaine référencée : ajouter un ` +
+      'identifiant de décision (D-N), une entrée de ledger (« ledger seq N »), ou une citation ' +
+      'humaine datée (« … » et une date AAAA-MM-JJ) — un nom seul n\'atteste pas la décision'
+  }
+  return ''
+}
+
+/**
+ * Ce qui manque à un écart pour tenir. Chaîne vide = l'écart tient — contrat commun, puis les
+ * deux conditions du décideur (TF-2119). `cles` : la liste close visée (S4 ou S5).
+ */
+const defautDeLEcart = (e, cles = CLES_IMPLICITES) =>
+  defautDEcart(e, cles) || defautDuDecideur(e?.decide_par)
 
 const cible = process.argv[2]
 let seuil = SEUIL_DEFAUT
@@ -334,7 +414,12 @@ for (const [i, e] of ref.exigences.entries()) {
   } else {
     const contexte = `${pointsWeb.length} point(s) d'entrée web (${pointsWeb.map(s => s.id).join(', ')})`
     for (const c of SURFACE_IMPLICITE) {
-      const presents = tous.filter(s => c.re.test(`${s?.libelle ?? ''}`))
+      const lus = tous.filter(s => c.re.test(`${s?.libelle ?? ''}`))
+      // TF-2120 : un élément qui ne dit que « codes d'erreur » ne tient pas lieu d'aide.
+      const reduits = c.reduite
+        ? lus.filter(s => c.reduite.test(`${s?.libelle ?? ''}`) && !c.facettes.test(`${s?.libelle ?? ''}`))
+        : []
+      const presents = lus.filter(s => !reduits.includes(s))
       const ecart = ecarts.get(c.cle)
       if (presents.length > 0) {
         constats.push(constat('S4', PASS, `surface[] (${presents.map(s => s.id).join(', ')})`,
@@ -348,12 +433,17 @@ for (const [i, e] of ref.exigences.entries()) {
         constats.push(constat('S4', FAIL, `ecarts_surface_implicite[${ecart.indice}] (${c.cle})`,
           `« ${c.libelle} » absent de la surface, et son écart ne tient pas : ${ecart.defaut}`))
       } else {
+        const reduite = reduits.length > 0
+          ? ` La seule aide énumérée (${reduits.map(s => s.id).join(', ')}) est réduite aux codes ` +
+            "d'erreur : elle ne tient pas lieu d'aide utilisateur (page, encarts, aide par champ)."
+          : ''
         constats.push(constat('S4', FAIL, `surface[] (${c.cle})`,
           `« ${c.libelle} » : candidat d'office de la surface implicite, absent de la surface ` +
-          `énumérée et sans écart déclaré — ${contexte}. À retenir (un élément de surface, ` +
+          `énumérée et sans écart déclaré — ${contexte}.${reduite} À retenir (un élément de surface, ` +
           'puis une exigence qui le couvre), ou à écarter EXPLICITEMENT en section 3 de ' +
           '`SURFACE.md`, transcrite dans `ecarts_surface_implicite` ' +
-          '{ element, motif, decide_par, date }. La loi transverse n° 3 ne connaît pas ' +
+          '{ element, motif, decide_par, date } — decide_par nomme l\'humain ET sa décision ' +
+          'référencée (D-N, entrée de ledger, citation datée). La loi transverse n° 3 ne connaît pas ' +
           'l\'absence par omission.'))
       }
     }
@@ -369,7 +459,7 @@ for (const [i, e] of ref.exigences.entries()) {
   for (const [i, e] of brut.entries()) {
     const cle = typeof e?.element === 'string' ? e.element.trim() : ''
     if (!EST_CLE_REGISTRE.has(cle)) continue
-    const defaut = defautDEcart(e, CLES_REGISTRE)
+    const defaut = defautDeLEcart(e, CLES_REGISTRE)
     if (ecarts.get(cle)?.defaut !== '') ecarts.set(cle, { indice: i, ecart: e, defaut })
   }
 
@@ -428,6 +518,25 @@ emettre({
     'La PERTINENCE du motif d\'un écart. S4 exige qu\'il soit écrit, daté et signé ; il ne juge ' +
       'ni sa véracité ni sa suffisance — un écart est opposable parce qu\'écrit, pas parce ' +
       'que vrai.',
+    'L\'EXISTENCE et l\'AUTHENTICITÉ de la décision humaine qu\'un écart référence (TF-2119). S4 ' +
+      'juge la FORME de `decide_par` : aucune désignation d\'une session, d\'un agent ou d\'un ' +
+      'build (lexique fermé : une machine nommée autrement, un agent déguisé en prénom, passe), ' +
+      'et une référence de forme valide — D-N, « ledger » suivi d\'un numéro, citation entre ' +
+      'guillemets avec une date. Un D-N inventé, une entrée de ledger qui n\'existe pas, une ' +
+      'citation que l\'humain n\'a jamais écrite passent ; seule une relecture contre le ' +
+      'registre des décisions du pilot les attrape. Un écart qui nomme l\'humain ET une machine ' +
+      '(« décidé par le porteur, appliqué par la session ») est refusé : le nom de la machine ' +
+      'sort de `decide_par`.',
+    'La condition d\'applicabilité des trois candidats de TF-2120 : « un champ de saisie non ' +
+      'trivial » (aide contextuelle de champ), « une liste de 8 éléments ou plus » (filtre et ' +
+      'tri des listes — le seuil de L4, `check_html.py` du skill `digit-ai-page-html`), « un ' +
+      'formulaire de saisie » (garde de saisie). S4 ne les infère pas : un produit qui ne la ' +
+      'remplit pas écarte le candidat en une ligne, avec sa raison. Le critère vérifiable de ' +
+      'chacun vit dans l\'exigence qui retient le candidat (`typologie-surface.md`), jamais dans ' +
+      'ce juge. De même, la REDUCTION d\'une aide aux codes d\'erreur est inférée du libellé ' +
+      '(lexique fermé sur « codes d\'erreur », « codes de refus »…, levée par une autre facette ' +
+      'nommée : page, encart, champ, guide, FAQ) : une page d\'aide à l\'intitulé neutre qui ne ' +
+      'contiendrait que ces codes reste invisible.',
     'Les conditions d\'applicabilité qu\'un candidat porte au-delà de la surface web — ' +
       '« site public français » pour l\'accessibilité RGAA et ses livrables légaux, ' +
       '« produit multi-tenant » pour le lien public partageable et les comptes d\'essai ' +

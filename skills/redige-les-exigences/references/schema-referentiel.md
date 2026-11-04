@@ -76,9 +76,9 @@ candidat de la surface implicite **écarté** : `{ element, motif, decide_par, d
 
 | Champ | Contrainte vérifiée par `oracle-surface` S4 |
 |---|---|
-| `element` | l'une des seize clés de la liste close (`enumere-la-surface/references/typologie-surface.md`, « Les clés de la liste close »), ou l'une des trois clés d'un registre (« Les clés de la liste close d'un registre »), jugées par S5 en avertissement (TF-1655) |
+| `element` | l'une des dix-neuf clés de la liste close (`enumere-la-surface/references/typologie-surface.md`, « Les clés de la liste close »), ou l'une des trois clés d'un registre (« Les clés de la liste close d'un registre »), jugées par S5 en avertissement (TF-1655) |
 | `motif` | chaîne d'au moins **20 caractères** — plus court, ce n'est pas une raison, c'est un mot |
-| `decide_par` | chaîne non vide — un écart est décidé par quelqu'un |
+| `decide_par` | chaîne non vide — un écart est décidé par un humain, **avec sa décision référencée** (TF-2119) : un identifiant `D-N`, une entrée de ledger (« ledger seq 412 »), ou une citation humaine datée (texte entre guillemets et date `AAAA-MM-JJ`). Ni une session, ni un agent, ni un build : S4 et S5 refusent |
 | `date` | `AAAA-MM-JJ` |
 
 **Il ne se saisit nulle part ailleurs qu'en transcription de la section 3 « Écartés » de

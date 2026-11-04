@@ -43,6 +43,18 @@ const VUESP_ROUGE = join(ICI, 'fixtures', 'vues-profil-rouge')
 // CONSTIT_SANS_PROMESSE : un seul FAIL possible, celui que la regle doit prouver.
 const SURFIMP_VERTE = join(ICI, 'fixtures', 'surface-implicite-verte')
 const SURFIMP_ROUGE = join(ICI, 'fixtures', 'surface-implicite-rouge')
+// TF-2119 : un ecart de surface implicite porte une decision humaine REFERENCEE (D-N, ledger ou
+// citation datee) -- le nom d'un humain seul ne suffit plus. Les branches ephemeres d'oracle-surface
+// s'ecrivent toutes avec ce decideur ; le cas rouge qui le retire est dans la branche TF-2119.
+const DECIDEUR_REF = 'le commanditaire du produit (décision D-7)'
+// TF-2120 : les trois candidats neufs de la liste close (aide de champ, filtre et tri, garde de
+// saisie). Ils entrent dans la BASE des branches S4 anterieures, pour que chacune continue de
+// mesurer ses candidats SEULS ; la branche TF-2120 les met en jeu.
+const NEUFS_TF2120 = [
+  { id: 'S-91', type: 'regle', libelle: 'Aide contextuelle de champ' },
+  { id: 'S-92', type: 'regle', libelle: 'Filtre et tri des listes' },
+  { id: 'S-93', type: 'regle', libelle: 'Garde de saisie' }
+]
 // TF-0814 : fixtures DEDIEES d'E10. Meme idiome que SURFIMP ci-dessus -- la rouge est le MEME
 // referentiel que la verte, prive de son seul champ d'ecarts : un seul FAIL possible, celui que
 // la regle doit prouver.
@@ -684,14 +696,16 @@ for (const o of ORACLES) {
       // TF-1908 : les trois candidats conditionnels, dans la BASE pour la meme raison.
       { id: 'S-14', type: 'regle', libelle: 'Consentement aux traceurs' },
       { id: 'S-15', type: 'point-entree', libelle: 'Politique de confidentialité' },
-      { id: 'S-16', type: 'objet', libelle: 'Aperçu de partage des pages publiques' }
+      { id: 'S-16', type: 'objet', libelle: 'Aperçu de partage des pages publiques' },
+      // TF-2120 : les trois candidats neufs, dans la BASE pour la meme raison.
+      ...NEUFS_TF2120
     ]
     const PAGE_404 = { id: 'S-17', type: 'point-entree', libelle: 'Page 404 par langue' }
     const LOT_NUIT = { id: 'S-01', type: 'point-entree', libelle: 'Import de nuit du fichier fournisseur' }
     const ECART_VALIDE = {
       element: 'page-404',
       motif: 'le routeur de la plateforme possede deja sa page d\'erreur par langue : c\'est lui qui la sert, pas le produit',
-      decide_par: 'le commanditaire du produit',
+      decide_par: DECIDEUR_REF,
       date: '2026-09-05'
     }
 
@@ -747,7 +761,7 @@ for (const o of ORACLES) {
 
     const cas = [
       ['1. candidat present, aucun champ d\'ecart -> PASS (referentiel anterieur au champ)',
-        complet.code === 0 && complet.fails.length === 0 && complet.s4.length === 16],
+        complet.code === 0 && complet.fails.length === 0 && complet.s4.length === 19],
       ['2. candidat absent + ecart valide -> PASS imprime « [ECARTE] »',
         ecarte.code === 0 && ecarte.fails.length === 0 &&
         (ecarte.sur('page-404')?.message ?? '').includes('[ÉCARTÉ]')],
@@ -790,7 +804,7 @@ for (const o of ORACLES) {
 // profil est celui de la 404 (TF-0804) : l'oubli reste indiscernable de la decision tant que la
 // liste close ne porte pas le candidat. Quatre etats, la 404 et les neuf autres candidats
 // restant PRESENTS dans la base pour que la mesure porte sur ces deux-la SEULS :
-//   1. les deux candidats presents                    -> PASS, 16 constats S4 (13 avant TF-1908)
+//   1. les deux candidats presents                    -> PASS, 19 constats S4 (13 avant TF-1908, 16 avant TF-2120)
 //   2. les deux absents, aucun ecart                  -> FAIL, les DEUX candidats NOMMES
 //                                                        (la mesure du 06/09, cette fois jugee)
 //   3. les deux absents + ecarts mono-tenant valides  -> PASS, deux messages « [ECARTE] »
@@ -816,14 +830,15 @@ for (const o of ORACLES) {
       // branche porte sur le lien public partageable et les comptes d'essai SEULS.
       { id: 'S-15', type: 'regle', libelle: 'Consentement aux traceurs' },
       { id: 'S-16', type: 'point-entree', libelle: 'Politique de confidentialité' },
-      { id: 'S-17', type: 'objet', libelle: 'Aperçu de partage des pages publiques' }
+      { id: 'S-17', type: 'objet', libelle: 'Aperçu de partage des pages publiques' },
+      ...NEUFS_TF2120
     ]
     const LIEN = { id: 'S-13', type: 'point-entree', libelle: "Lien public partageable de l'espace client" }
     const ESSAI = { id: 'S-14', type: 'objet', libelle: "Compte d'essai vide du commanditaire" }
     const ECART = (element, motif) => ({
       element,
       motif,
-      decide_par: 'le commanditaire du produit',
+      decide_par: DECIDEUR_REF,
       date: '2026-09-08'
     })
     const ECARTS_MONO_TENANT = [
@@ -872,8 +887,8 @@ for (const o of ORACLES) {
     const unSeul = jouer('4-temoin-isolation', referentiel([...BASE, LIEN]))
 
     const cas = [
-      ['1. les deux candidats presents -> PASS, 16 constats S4 (la liste close en compte 16)',
-        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 16],
+      ['1. les deux candidats presents -> PASS, 19 constats S4 (la liste close en compte 19)',
+        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 19],
       ['2. la mesure du 06/09 : les deux absents, aucun ecart -> FAIL, les DEUX candidats NOMMES',
         oubli.code === 1 && oubli.fails.length === 2 &&
         oubli.fails.some(c => c.message.includes('Lien public partageable')) &&
@@ -907,7 +922,7 @@ for (const o of ORACLES) {
 // treize cles de S4 ne les portait : l'oubli etait indiscernable de la decision. Profil de la 404
 // (TF-0804) et du lien public partageable (TF-0874). Les treize autres candidats restent PRESENTS
 // dans la base pour que la mesure porte sur ces trois-la SEULS :
-//   1. les trois candidats presents                    -> PASS, 16 constats S4
+//   1. les trois candidats presents                    -> PASS, 19 constats S4
 //   2. les trois absents, aucun ecart                  -> FAIL, les TROIS candidats NOMMES
 //   3. les trois absents + ecarts d'un produit interne -> PASS, trois « [ECARTE] » -- c'est le
 //                                                         REMEDE que le message du FAIL propose
@@ -933,7 +948,8 @@ for (const o of ORACLES) {
       { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" },
       { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' },
       { id: 'S-13', type: 'point-entree', libelle: "Lien public partageable de l'espace client" },
-      { id: 'S-14', type: 'objet', libelle: "Compte d'essai vide du commanditaire" }
+      { id: 'S-14', type: 'objet', libelle: "Compte d'essai vide du commanditaire" },
+      ...NEUFS_TF2120
     ]
     const TRACEURS = { id: 'S-15', type: 'regle', libelle: "Consentement aux traceurs et mesure d'audience" }
     const CONFIDENTIALITE = { id: 'S-16', type: 'point-entree', libelle: 'Politique de confidentialité' }
@@ -941,7 +957,7 @@ for (const o of ORACLES) {
     const ECART = (element, motif) => ({
       element,
       motif,
-      decide_par: 'le commanditaire du produit',
+      decide_par: DECIDEUR_REF,
       date: '2026-10-19'
     })
     const ECARTS_PRODUIT_INTERNE = [
@@ -994,8 +1010,8 @@ for (const o of ORACLES) {
       [ECART('apercu-partage', 'pas de page')]))
 
     const cas = [
-      ['1. les trois candidats presents -> PASS, 16 constats S4 (la liste close en compte 16)',
-        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 16],
+      ['1. les trois candidats presents -> PASS, 19 constats S4 (la liste close en compte 19)',
+        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 19],
       ['2. la mesure du 19/10 : les trois absents, aucun ecart -> FAIL, les TROIS candidats NOMMES',
         oubli.code === 1 && oubli.fails.length === 3 &&
         oubli.fails.some(c => c.message.includes('Traceurs et consentement')) &&
@@ -1048,7 +1064,7 @@ for (const o of ORACLES) {
     const TRANSVERSE = { id: 'S-03', type: 'point-entree', libelle: 'Vue transverse : un attribut pour tous les projets' }
     const COMPARER = { id: 'S-04', type: 'parcours', libelle: 'Comparer deux projets ou plus' }
     const ARBRE = { id: 'S-05', type: 'point-entree', libelle: "Arborescence des ressources d'un projet et leur architecture" }
-    const ECART = (element, motif) => ({ element, motif, decide_par: 'le commanditaire du produit', date: '2026-10-14' })
+    const ECART = (element, motif) => ({ element, motif, decide_par: DECIDEUR_REF, date: '2026-10-14' })
     const ECARTS = [
       ECART('vue-transverse', 'le registre ne porte que dix projets, tous lus depuis leur fiche'),
       ECART('comparaison', 'les projets ne partagent aucun attribut comparable entre eux'),
@@ -1123,6 +1139,302 @@ for (const o of ORACLES) {
       echecs++
       console.log(`         exits obtenus : 1=${presents.code} 2=${oubli.code} 3=${ecartes.code} ` +
         `4=${motifCourt.code} 5=${sansRegistre.code} 6=${unSeul.code}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-2119 : un ecart de surface implicite est une DECISION HUMAINE REFERENCEE -----
+// Fait (lot de Produit-86 du 03/11/2026) : l'onboarding a ete ecarte avec `decide_par` « la
+// session de build », S4 a rendu PASS, et le porteur juge cet ecart contraire a la loi n° 3
+// (« l'oubli n'existe pas » : la surface implicite s'ecarte explicitement, par decision humaine).
+// Le contrat commun n'exigeait qu'un `decide_par` non vide. Deux conditions s'ajoutent a S4 et S5 :
+// aucune designation d'une session, d'un agent ou d'un build ; une decision humaine referencee
+// (identifiant D-N, entree de ledger, ou citation humaine datee). Le candidat mis en jeu est
+// l'onboarding, tous les autres restant PRESENTS dans la base, pour isoler la mesure :
+//   1. le cas reel -- « la session de build »            -> FAIL nommant `decide_par` et la session
+//   2. « un agent de campagne »                          -> FAIL (temoin : toute machine est lue)
+//   3. un humain NOMME sans reference                    -> FAIL « aucune decision humaine referencee »
+//   4. la machine reste nommee a cote de l'humain        -> FAIL (documente : le nom sort de decide_par)
+//   5. citation humaine sans date                        -> FAIL
+//   6. remede joue, forme D-N                            -> PASS « [ECARTE] »
+//   7. remede joue, forme entree de ledger               -> PASS « [ECARTE] »
+//   8. remede joue, forme citation humaine datee         -> PASS « [ECARTE] »
+//   9. S5 (registre) lit la meme condition               -> avertissement nommant la session, exit 0
+//  10. le FAIL d'un candidat sans ecart enonce la condition (le message propose le remede, TF-1013)
+// Fixtures ephemeres, comme les branches TF-0811 et TF-1908 dont celle-ci reprend l'idiome.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2119-'))
+  try {
+    const BASE = [
+      { id: 'S-01', type: 'point-entree', libelle: "Page d'accueil du site" },
+      { id: 'S-02', type: 'point-entree', libelle: 'Aide utilisateur' },
+      { id: 'S-04', type: 'objet', libelle: 'Compte utilisateur' },
+      { id: 'S-05', type: 'objet', libelle: 'Favicon' },
+      { id: 'S-06', type: 'parcours', libelle: 'États vides guidés' },
+      { id: 'S-07', type: 'regle', libelle: 'Gestion des erreurs visible' },
+      { id: 'S-08', type: 'point-entree', libelle: 'Mentions légales' },
+      { id: 'S-09', type: 'regle', libelle: 'Responsive mobile' },
+      { id: 'S-10', type: 'regle', libelle: 'Accessibilité RGAA' },
+      { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" },
+      { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' },
+      { id: 'S-13', type: 'point-entree', libelle: "Lien public partageable de l'espace client" },
+      { id: 'S-14', type: 'objet', libelle: "Compte d'essai vide du commanditaire" },
+      { id: 'S-15', type: 'regle', libelle: "Consentement aux traceurs et mesure d'audience" },
+      { id: 'S-16', type: 'point-entree', libelle: 'Politique de confidentialité' },
+      { id: 'S-17', type: 'objet', libelle: 'Aperçu de partage : titre, description et image' },
+      ...NEUFS_TF2120
+    ]
+    const MOTIF = "outil interne de dix collaborateurs : la premiere connexion se fait avec l'accompagnement du service qui l'a deploye"
+    const ECART = (decidePar) => ({
+      element: 'onboarding', motif: MOTIF, decide_par: decidePar, date: '2026-11-03'
+    })
+    const referentiel = (surface, ecarts) => {
+      const ref = {
+        projet: 'Fixture TF-2119 (decision humaine referencee)',
+        besoins: [{ id: 'B-01', enonce: 'Un visiteur doit atteindre le produit depuis le web.' }],
+        surface,
+        exigences: surface.map((s, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: `Le produit sert ${s.libelle}.`,
+          critere: 'La ressource est affichee.',
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-2119' },
+          surface: [s.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_surface_implicite = ecarts
+      return ref
+    }
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-surface.mjs', [chemin])
+      const c = r.rapport?.constats ?? []
+      const s4 = c.filter(x => x.regle === 'S4')
+      const s5 = c.filter(x => x.regle === 'S5')
+      return {
+        code: r.code,
+        s4,
+        fails: s4.filter(x => x.statut === 'FAIL'),
+        avert5: s5.filter(x => x.statut === 'SANS_OBJET'),
+        sur: (fragment) => s4.find(x => `${x.ou} ${x.message}`.includes(fragment))
+      }
+    }
+
+    const session = jouer('1-session-de-build', referentiel(BASE, [ECART('la session de build')]))
+    const agent = jouer('2-agent', referentiel(BASE, [ECART("un agent de campagne")]))
+    const nomSeul = jouer('3-humain-sans-reference', referentiel(BASE, [ECART('le commanditaire du produit')]))
+    const mixte = jouer('4-humain-et-machine',
+      referentiel(BASE, [ECART('le porteur (décision D-12), appliquée par la session')]))
+    const citationNue = jouer('5-citation-sans-date',
+      referentiel(BASE, [ECART("le porteur : « un outil interne n'a pas besoin d'onboarding »")]))
+    const parId = jouer('6-identifiant', referentiel(BASE, [ECART('le porteur (décision D-12 (a))')]))
+    const parLedger = jouer('7-ledger', referentiel(BASE, [ECART('le porteur, entrée de ledger seq 412')]))
+    const parCitation = jouer('8-citation-datee', referentiel(BASE, [ECART(
+      "le porteur : « un outil interne n'a pas besoin d'onboarding », 2026-11-03")]))
+    const sansEcart = jouer('10-aucun-ecart', referentiel(BASE))
+    const REGISTRE = [
+      { id: 'S-01', type: 'objet', libelle: 'Registre des projets' },
+      { id: 'S-02', type: 'point-entree', libelle: "Fiche d'un projet" }
+    ]
+    const ecartRegistre = jouer('9-registre-session', referentiel(REGISTRE, [{
+      element: 'vue-transverse', motif: 'le registre ne porte que dix projets, tous lus depuis leur fiche',
+      decide_par: 'la session de build', date: '2026-11-03'
+    }]))
+
+    const cas = [
+      ['1. le cas reel -- « la session de build » -> FAIL nommant `decide_par` et la session',
+        session.code === 1 && session.fails.length === 1 &&
+        session.fails[0].message.includes('decide_par') &&
+        session.fails[0].message.includes('désigne une session, un agent ou un build')],
+      ['2. « un agent de campagne » -> FAIL (temoin : toute machine nommee est lue)',
+        agent.code === 1 && agent.fails.length === 1 &&
+        agent.fails[0].message.includes('désigne une session, un agent ou un build')],
+      ['3. un humain nomme sans reference -> FAIL « aucune décision humaine référencée »',
+        nomSeul.code === 1 && nomSeul.fails.length === 1 &&
+        nomSeul.fails[0].message.includes('aucune décision humaine référencée')],
+      ['4. l\'humain ET la machine nommes -> FAIL (le nom de la machine sort de `decide_par`)',
+        mixte.code === 1 && mixte.fails.length === 1 &&
+        mixte.fails[0].message.includes('désigne une session')],
+      ['5. citation humaine sans date -> FAIL « aucune décision humaine référencée »',
+        citationNue.code === 1 && citationNue.fails.length === 1 &&
+        citationNue.fails[0].message.includes('aucune décision humaine référencée')],
+      ['6. remede joue, identifiant de decision D-12 -> PASS « [ECARTE] »',
+        parId.code === 0 && parId.fails.length === 0 &&
+        (parId.sur('onboarding')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['7. remede joue, entree de ledger seq 412 -> PASS « [ECARTE] »',
+        parLedger.code === 0 && parLedger.fails.length === 0 &&
+        (parLedger.sur('onboarding')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['8. remede joue, citation humaine datee -> PASS « [ECARTE] »',
+        parCitation.code === 0 && parCitation.fails.length === 0 &&
+        (parCitation.sur('onboarding')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['9. S5 (registre) lit la meme condition -> avertissement nommant la session, exit 0',
+        ecartRegistre.code === 0 && ecartRegistre.avert5.length >= 1 &&
+        ecartRegistre.avert5.some(x => x.message.includes('désigne une session'))],
+      ['10. le FAIL d\'un candidat sans ecart enonce la condition (decision referencee : D-N, ledger, citation)',
+        sansEcart.code === 1 && sansEcart.fails.length === 1 &&
+        sansEcart.fails[0].message.includes('décision référencée') &&
+        sansEcart.fails[0].message.includes('D-N')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-surface.mjs (branche TF-2119, decision humaine referencee, fixtures ephemeres, 5 rouges + 3 remedes + S5)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${session.code} 2=${agent.code} 3=${nomSeul.code} ` +
+        `4=${mixte.code} 5=${citationNue.code} 6=${parId.code} 7=${parLedger.code} ` +
+        `8=${parCitation.code} 9=${ecartRegistre.code} 10=${sansEcart.code}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-2120 : aide de champ, filtre et tri des listes, garde de saisie ---------------
+// Fait (Produit-86, lot du 03/11/2026) : une page d'aide reduite aux codes de refus a satisfait le
+// candidat « aide » ; le produit n'avait ni aide au niveau du champ, ni filtre et tri sur ses
+// listes, ni garde de saisie. Trois candidats entrent dans la liste close (19 cles), et une aide
+// reduite aux codes d'erreur ne tient plus lieu d'aide. Les seize autres candidats restent
+// PRESENTS dans la base, pour que la mesure porte sur ces trois-la SEULS :
+//   1. les trois candidats presents                    -> PASS, 19 constats S4
+//   2. les trois absents, aucun ecart                  -> FAIL, les TROIS candidats NOMMES
+//   3. les trois absents + trois ecarts references     -> PASS, trois « [ECARTE] » (le remede)
+//   4. UN SEUL absent (temoin d'isolation)             -> FAIL nommant la garde de saisie seule
+//   5. le cas reel : l'aide ne liste que des codes     -> FAIL nommant l'aide reduite aux codes
+//   6. remede : une page d'aide de page a cote         -> PASS
+//   7. libelle mixte (codes ET aide par champ)         -> PASS (la facette leve la reduction)
+//   8. remede : ecart de l'aide, decision referencee   -> PASS « [ECARTE] »
+// Fixtures ephemeres, comme les branches TF-0811 et TF-1908 dont celle-ci reprend l'idiome.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2120-'))
+  try {
+    const BASE = [
+      { id: 'S-01', type: 'point-entree', libelle: "Page d'accueil du site" },
+      { id: 'S-02', type: 'point-entree', libelle: 'Aide utilisateur' },
+      { id: 'S-03', type: 'parcours', libelle: 'Onboarding de première connexion' },
+      { id: 'S-04', type: 'objet', libelle: 'Compte utilisateur' },
+      { id: 'S-05', type: 'objet', libelle: 'Favicon' },
+      { id: 'S-06', type: 'parcours', libelle: 'États vides guidés' },
+      { id: 'S-07', type: 'regle', libelle: 'Gestion des erreurs visible' },
+      { id: 'S-08', type: 'point-entree', libelle: 'Mentions légales' },
+      { id: 'S-09', type: 'regle', libelle: 'Responsive mobile' },
+      { id: 'S-10', type: 'regle', libelle: 'Accessibilité RGAA' },
+      { id: 'S-11', type: 'objet', libelle: "Déclaration d'accessibilité" },
+      { id: 'S-12', type: 'point-entree', libelle: 'Page 404 par langue' },
+      { id: 'S-13', type: 'point-entree', libelle: "Lien public partageable de l'espace client" },
+      { id: 'S-14', type: 'objet', libelle: "Compte d'essai vide du commanditaire" },
+      { id: 'S-15', type: 'regle', libelle: "Consentement aux traceurs et mesure d'audience" },
+      { id: 'S-16', type: 'point-entree', libelle: 'Politique de confidentialité' },
+      { id: 'S-17', type: 'objet', libelle: 'Aperçu de partage : titre, description et image' }
+    ]
+    const SANS_AIDE = BASE.filter(s => s.id !== 'S-02')
+    const AIDE_CHAMP = { id: 'S-91', type: 'regle', libelle: 'Aide contextuelle de champ' }
+    const FILTRE_TRI = { id: 'S-92', type: 'regle', libelle: 'Filtre et tri des listes de huit éléments ou plus' }
+    const GARDE = { id: 'S-93', type: 'regle', libelle: 'Garde de saisie : validation avant envoi' }
+    // Un exemple sous chaque champ satisfait « aide de champ » SANS contenir le mot « aide » :
+    // il ne tient donc pas lieu d'aide utilisateur (isole le cas reel).
+    const EXEMPLE = { id: 'S-91', type: 'regle', libelle: 'Exemple de saisie sous chaque champ' }
+    const ECART = (element, motif) => ({
+      element, motif, decide_par: DECIDEUR_REF, date: '2026-11-04'
+    })
+    const ECARTS_TROIS = [
+      ECART('aide-champ', 'outil de consultation sans champ de saisie libre : aucune valeur attendue ne demande une aide'),
+      ECART('filtre-tri-listes', 'aucune liste du produit ne depasse sept elements : le seuil de huit n\'est jamais atteint'),
+      ECART('garde-saisie', 'aucun champ de saisie libre : chaque valeur se choisit dans une liste fermee')
+    ]
+    const referentiel = (surface, ecarts) => {
+      const ref = {
+        projet: 'Fixture TF-2120 (aide de champ, filtre et tri, garde de saisie)',
+        besoins: [{ id: 'B-01', enonce: 'Un visiteur doit atteindre le produit depuis le web.' }],
+        surface,
+        exigences: surface.map((s, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: `Le produit sert ${s.libelle}.`,
+          critere: 'La ressource est affichee.',
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-2120' },
+          surface: [s.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_surface_implicite = ecarts
+      return ref
+    }
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-surface.mjs', [chemin])
+      const s4 = (r.rapport?.constats ?? []).filter(c => c.regle === 'S4')
+      return {
+        code: r.code,
+        s4,
+        fails: s4.filter(c => c.statut === 'FAIL'),
+        sur: (fragment) => s4.find(c => `${c.ou} ${c.message}`.includes(fragment))
+      }
+    }
+
+    const presents = jouer('1-trois-presents', referentiel([...BASE, AIDE_CHAMP, FILTRE_TRI, GARDE]))
+    const oubli = jouer('2-trois-absents', referentiel(BASE))
+    const ecartes = jouer('3-trois-ecarts', referentiel(BASE, ECARTS_TROIS))
+    const unSeul = jouer('4-temoin-isolation', referentiel([...BASE, AIDE_CHAMP, FILTRE_TRI]))
+    const codesSeuls = jouer('5-aide-reduite-aux-codes', referentiel(
+      [...SANS_AIDE, { id: 'S-02', type: 'point-entree', libelle: "Page d'aide : les codes de refus" },
+        EXEMPLE, FILTRE_TRI, GARDE]))
+    const avecPage = jouer('6-aide-de-page-a-cote', referentiel(
+      [...SANS_AIDE, { id: 'S-02', type: 'point-entree', libelle: "Page d'aide : les codes de refus" },
+        { id: 'S-03b', type: 'point-entree', libelle: "Aide de page : rôle de l'écran et circuit" },
+        EXEMPLE, FILTRE_TRI, GARDE]))
+    const mixte = jouer('7-libelle-mixte', referentiel(
+      [...SANS_AIDE, { id: 'S-02', type: 'point-entree', libelle: "Aide : codes d'erreur et aide par champ" },
+        EXEMPLE, FILTRE_TRI, GARDE]))
+    const ecartAide = jouer('8-ecart-de-l-aide', referentiel(
+      [...SANS_AIDE, { id: 'S-02', type: 'point-entree', libelle: "Page d'aide : les codes de refus" },
+        EXEMPLE, FILTRE_TRI, GARDE],
+      [{ element: 'aide-utilisateur', motif: 'outil interne a usage unique : la notice papier du service tient lieu d\'aide',
+        decide_par: DECIDEUR_REF, date: '2026-11-04' }]))
+
+    const cas = [
+      ['1. les trois candidats presents -> PASS, 19 constats S4 (la liste close en compte 19)',
+        presents.code === 0 && presents.fails.length === 0 && presents.s4.length === 19],
+      ['2. les trois absents, aucun ecart -> FAIL, les TROIS candidats NOMMES',
+        oubli.code === 1 && oubli.fails.length === 3 &&
+        oubli.fails.some(c => c.message.includes('Aide contextuelle de champ')) &&
+        oubli.fails.some(c => c.message.includes('Filtre et tri des listes')) &&
+        oubli.fails.some(c => c.message.includes('Garde de saisie'))],
+      ['3. remede du FAIL joue : trois ecarts references -> PASS, trois « [ECARTE] »',
+        ecartes.code === 0 && ecartes.fails.length === 0 &&
+        ['aide-champ', 'filtre-tri-listes', 'garde-saisie']
+          .every(cle => (ecartes.sur(cle)?.message ?? '').includes('[ÉCARTÉ]'))],
+      ['4. temoin d\'isolation : un seul absent -> FAIL nommant la garde de saisie seule',
+        unSeul.code === 1 && unSeul.fails.length === 1 &&
+        unSeul.fails[0].message.includes('Garde de saisie')],
+      ['5. le cas reel : une aide qui ne liste que des codes de refus -> FAIL nommant l\'aide reduite',
+        codesSeuls.code === 1 && codesSeuls.fails.length === 1 &&
+        codesSeuls.fails[0].message.includes('Aide utilisateur') &&
+        codesSeuls.fails[0].message.includes('réduite aux codes d\'erreur')],
+      ['6. remede : une aide de page a cote de la page des codes -> PASS',
+        avecPage.code === 0 && avecPage.fails.length === 0],
+      ['7. libelle mixte (codes d\'erreur ET aide par champ) -> PASS : la facette leve la reduction',
+        mixte.code === 0 && mixte.fails.length === 0],
+      ['8. remede : l\'aide reduite ecartee par une decision referencee -> PASS « [ECARTE] »',
+        ecartAide.code === 0 && ecartAide.fails.length === 0 &&
+        (ecartAide.sur('aide-utilisateur')?.message ?? '').includes('[ÉCARTÉ]')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-surface.mjs (branche TF-2120, trois candidats neufs et aide reduite, fixtures ephemeres, 8 etats)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${presents.code} 2=${oubli.code} 3=${ecartes.code} ` +
+        `4=${unSeul.code} 5=${codesSeuls.code} 6=${avecPage.code} 7=${mixte.code} 8=${ecartAide.code} ; ` +
+        `fails : 2=${oubli.fails.length} 4=${unSeul.fails.length} 5=${codesSeuls.fails.length}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })

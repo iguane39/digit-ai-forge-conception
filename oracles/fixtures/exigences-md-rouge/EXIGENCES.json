@@ -11,44 +11,62 @@
     {
       "element": "accessibilite-rgaa",
       "motif": "portail interne à l'entreprise, accessible par authentification seule : il n'entre pas dans le champ du site public français où le RGAA 4.1 est une obligation légale",
-      "decide_par": "le commanditaire du produit",
+      "decide_par": "le commanditaire du produit (décision D-1)",
       "date": "2026-09-05"
     },
     {
       "element": "livrables-accessibilite",
       "motif": "corollaire de l'écart précédent : sans obligation RGAA, ni schéma pluriannuel ni déclaration d'accessibilité ne sont dus, et aucun n'est produit pour la forme",
-      "decide_par": "le commanditaire du produit",
+      "decide_par": "le commanditaire du produit (décision D-2)",
       "date": "2026-09-05"
     },
     {
       "element": "lien-public-partageable",
       "motif": "portail mono-tenant, servi sur une adresse unique pour l'entreprise : aucun espace client n'existe, donc aucun lien public par client n'a de sens",
-      "decide_par": "le commanditaire du produit",
+      "decide_par": "le commanditaire du produit (décision D-3)",
       "date": "2026-09-08"
     },
     {
       "element": "comptes-essai",
       "motif": "portail interne ouvert aux seuls collaborateurs authentifiés par l'annuaire : un compte d'essai vide n'y est ni créable ni utile au commanditaire",
-      "decide_par": "le commanditaire du produit",
+      "decide_par": "le commanditaire du produit (décision D-4)",
       "date": "2026-09-08"
     },
     {
       "element": "traceurs-consentement",
       "motif": "portail interne sans mesure d'audience ni traceur tiers : seuls des témoins de session strictement nécessaires sont posés, exemptés de consentement",
-      "decide_par": "le commanditaire du produit",
+      "decide_par": "le commanditaire du produit (décision D-5)",
       "date": "2026-10-19"
     },
     {
       "element": "politique-confidentialite",
       "motif": "portail interne : l'information des collaborateurs sur leurs données relève de la notice de l'entreprise, pas d'une page publiée par le produit",
-      "decide_par": "le commanditaire du produit",
+      "decide_par": "le commanditaire du produit (décision D-6)",
       "date": "2026-10-19"
     },
     {
       "element": "apercu-partage",
       "motif": "portail interne derrière authentification : aucune page publique n'existe, donc aucun aperçu de partage n'est à produire",
-      "decide_par": "le commanditaire du produit",
+      "decide_par": "le commanditaire du produit (décision D-7)",
       "date": "2026-10-19"
+    },
+    {
+      "element": "aide-champ",
+      "motif": "portail de réservation à choix fermés : salle, créneau et durée se choisissent dans des listes et un calendrier, aucun champ de saisie libre ne demande une aide ou un exemple",
+      "decide_par": "le commanditaire du produit (décision D-8)",
+      "date": "2026-11-04"
+    },
+    {
+      "element": "filtre-tri-listes",
+      "motif": "le parc compte moins de huit salles et chaque liste du portail reste sous huit éléments : le seuil du filtre et du tri des listes n'est jamais atteint",
+      "decide_par": "le commanditaire du produit (décision D-9)",
+      "date": "2026-11-04"
+    },
+    {
+      "element": "garde-saisie",
+      "motif": "aucun champ de saisie libre n'existe : chaque valeur est choisie dans une liste fermée ou un calendrier, il n'y a donc rien à valider avant l'envoi",
+      "decide_par": "le commanditaire du produit (décision D-10)",
+      "date": "2026-11-04"
     }
   ],
   "ecarts_exigences_socle": [

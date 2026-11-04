@@ -63,7 +63,7 @@ API interne, produit tiers analysé de l'extérieur) écarte le bloc entier avec
 Côté machine, ce cas se reconnaît le plus souvent tout seul : sans aucun `point-entree` au
 libellé web, `oracle-surface` S4 rend un PASS motivé et ne réclame aucun écart. Si le produit a
 malgré tout une surface que le lexique lit comme web — une API interne exposée par des routes,
-par exemple —, la raison unique se recopie sur chacune des seize clés. Seize lignes est le prix
+par exemple —, la raison unique se recopie sur chacune des dix-neuf clés. Dix-neuf lignes est le prix
 de l'opposabilité : c'est délibérément moins cher que de rendre l'omission indiscernable.
 
 | Candidat | Type suggéré | Origine |
@@ -84,6 +84,9 @@ de l'opposabilité : c'est délibérément moins cher que de rendre l'omission i
 | **Traceurs et consentement (mesure d'audience comprise)** — **si et seulement si** le produit pose un traceur non exempté de consentement | `regle` (aucun traceur non exempté n'est posé avant le choix de l'utilisateur, et refuser est aussi simple qu'accepter) + `point-entree` (le moyen de donner, de refuser et de retirer son consentement) | TF-1908, étude d'opportunité 20261019j du pilot : sur 24 éléments d'une check-list de lancement comparés à l'existant, aucun candidat ni exigence ne le portait |
 | **Politique de confidentialité** — **si et seulement si** le produit collecte une donnée personnelle | `point-entree` (une page publiée, atteignable depuis le produit) | TF-1908, même étude : « conforme au RGPD » est non testable en l'état (`formulation.md`), et aucun candidat ne portait la page |
 | **Aperçu de partage** — **si et seulement si** le produit a une page publique | `objet` (titre, description et image affichés quand l'adresse de la page est partagée ; balises Open Graph) | TF-1908, même étude : la balise est lue par `crawler.py` de forge-seo-geo, jamais exigée ni notée |
+| **Aide contextuelle de champ** — **si et seulement si** le produit a un champ de saisie non trivial | `regle` (un champ dont la valeur attendue ne se déduit pas de son intitulé porte une aide ou un exemple à côté de lui) | TF-2120, Produit-86 (lot du 03/11/2026) : une page d'aide réduite aux codes de refus avait satisfait le candidat « aide » ; le produit n'offrait aucune aide au niveau du champ |
+| **Filtre et tri des listes** — **si et seulement si** le produit affiche une liste de 8 éléments ou plus | `regle` (toute liste de 8 éléments ou plus se filtre et se trie) | TF-2120, même lot : le produit listait sans filtre ni tri ; seuil repris de la règle L4 de `check_html.py` (skill `digit-ai-page-html`, forge-agents) |
+| **Garde de saisie** — **si et seulement si** le produit a un formulaire de saisie | `regle` (une valeur invalide est refusée avant l'envoi, avec un message d'erreur localisé) | TF-2120, même lot : aucune validation avant envoi |
 
 Les lignes « lien public partageable » et « comptes d'essai vides » portent, comme l'accessibilité
 RGAA, une condition d'applicabilité que `oracle-surface` **n'infère pas** : un produit
@@ -92,7 +95,7 @@ RGAA, une condition d'applicabilité que `oracle-surface` **n'infère pas** : un
 distingue l'arbitrage de l'oubli, et c'est précisément l'oubli qui a coûté deux exigences en run
 de version le 06/09/2026.
 
-Les trois dernières lignes du tableau (TF-1908) portent chacune leur condition, que
+Les trois lignes que TF-1908 a posées (traceurs, confidentialité, aperçu de partage) portent chacune leur condition, que
 `oracle-surface` n'infère pas non plus : un produit qui pose seulement des traceurs exemptés de consentement, ou
 qui ne collecte aucune donnée personnelle, ou qui n'a aucune page publique (outil interne, API),
 écarte le candidat concerné en une ligne, avec sa raison. Sources et limites, relevées le
@@ -102,6 +105,13 @@ confidentialité et des mentions légales n'ont pas été relues à Légifrance,
 éléments de la vidéo qui a lancé l'étude reste inconnue, la vidéo n'ayant pas été visionnée. Revue
 prévue le 30/11/2026, ou au premier produit à surface web ouvert avec cette liste si c'est plus
 tôt : si les trois candidats sont tous écartés sur trois produits, ils sortent de la liste.
+
+Les trois dernières lignes du tableau (TF-2120) portent aussi leur condition, que `oracle-surface` n'infère pas :
+un champ de saisie non trivial, une liste de 8 éléments ou plus, un formulaire de saisie. Un outil de consultation
+sans saisie libre, ou dont chaque liste reste sous le seuil, écarte le candidat en une ligne, avec sa raison. Le seuil
+de 8 est celui de la règle L4 de `check_html.py` (skill `digit-ai-page-html` de forge-agents, « filtre, tri et
+recherche obligatoires dès 8 lignes »), lu le 04/11/2026 : la demande de TF-2120 disait « plus de N éléments » sans
+donner N, et L4 s'applique dès 8 lignes inclus. Les trois critères vérifiables sont ci-dessous.
 
 **Critères d'acceptation précisés** (2ᵉ inspection utilisateur du premier produit, lot 03) —
 « exister » ne suffit pas, la perception de l'utilisateur fait foi ; ces critères s'écrivent
@@ -121,7 +131,20 @@ dans l'exigence dès que le candidat est retenu :
   discrète « existe » mais n'est pas perçue comme un onboarding : exigence non tenue.
 - **Aide utilisateur** (RD-7 — 7ᵉ constat de ce retour) : **trois niveaux** — aide de page (rôle de l'écran, circuit,
   pièges), encarts par section non évidente, aide par champ. Une page d'aide unique ne tient
-  pas l'exigence.
+  pas l'exigence. **Une aide réduite aux codes d'erreur (ou de refus) ne tient pas lieu d'aide** (TF-2120) :
+  une page qui ne liste que ces codes avait satisfait le candidat sur Produit-86 ; `oracle-surface` S4 ne la
+  compte plus comme présence, tant qu'un autre élément ne porte pas une facette de l'aide (page, encart, champ).
+- **Aide contextuelle de champ** (TF-2120) : chaque champ de saisie non trivial porte une aide ou un exemple
+  visible à côté de lui. Non trivial : sa valeur attendue ne se déduit pas de son intitulé seul (format imposé,
+  unité, plage, valeur d'une règle métier). Vérifiable : on dénombre, écran par écran, les champs non triviaux et
+  ceux qui n'ont ni aide ni exemple ; le second compte vaut 0.
+- **Filtre et tri des listes** (TF-2120) : toute liste de 8 éléments ou plus offre un filtre et un tri.
+  Vérifiable : sur une liste de 8 éléments, filtrer sur la valeur d'une colonne réduit les lignes affichées et
+  trier sur une colonne les réordonne, les deux gestes observés sur la page rendue.
+- **Garde de saisie** (TF-2120) : une valeur invalide est refusée avant l'envoi, avec un message d'erreur dans la
+  langue de l'interface, affiché à côté du champ, qui nomme le champ et la forme attendue. Vérifiable : pour
+  chaque champ contraint, une valeur invalide n'émet aucune requête et affiche le message ; une valeur valide
+  émet la requête.
 - **Page 404 par langue** (P-2, TF-0804) : **cinq critères**, à recopier dans l'exigence dès
   que le candidat est retenu — (1) une 404 **par langue**, du **même gabarit** que les autres
   pages : menu complet, charte, consentement, liens de secours (accueil, plan du site, contact),
@@ -157,13 +180,13 @@ ailleurs (`redige-les-exigences/references/schema-referentiel.md`) :
   {
     "element": "accessibilite-rgaa",
     "motif": "produit interne à l'entreprise : hors du champ du site public français",
-    "decide_par": "le commanditaire du produit",
+    "decide_par": "le commanditaire du produit (décision D-7)",
     "date": "2026-09-05"
   }
 ]
 ```
 
-`element` prend l'une des seize **clés** de la liste close, dans cet ordre — c'est la même table
+`element` prend l'une des dix-neuf **clés** de la liste close, dans cet ordre — c'est la même table
 que celle ci-dessus, vue par la machine :
 
 | Clé | Candidat |
@@ -184,6 +207,9 @@ que celle ci-dessus, vue par la machine :
 | `traceurs-consentement` | Traceurs et consentement (mesure d'audience comprise) |
 | `politique-confidentialite` | Politique de confidentialité |
 | `apercu-partage` | Aperçu de partage |
+| `aide-champ` | Aide contextuelle de champ |
+| `filtre-tri-listes` | Filtre et tri des listes |
+| `garde-saisie` | Garde de saisie |
 
 Ce que S4 juge alors, candidat par candidat, chacun **nommé** :
 
@@ -195,10 +221,20 @@ Ce que S4 juge alors, candidat par candidat, chacun **nommé** :
 | Aucun point d'entrée web énuméré | PASS motivé — le bloc n'est pas dû |
 
 Un écart **tient** à quatre conditions cumulatives : `element` dans la liste close, `motif` d'au
-moins **20 caractères**, `decide_par` non vide, `date` au format `AAAA-MM-JJ`. Les trois
-dernières ne sont pas de la bureaucratie : un écart est opposable parce qu'il est écrit, daté et
-signé. S4 ne juge en revanche ni la véracité ni la suffisance du motif — c'est une décision
+moins **20 caractères**, `decide_par` non vide **qui nomme un humain et sa décision référencée**,
+`date` au format `AAAA-MM-JJ`. Les trois dernières ne sont pas de la bureaucratie : un écart est
+opposable parce qu'il est écrit, daté et signé. S4 ne juge en revanche ni la véracité ni la suffisance du motif — c'est une décision
 humaine, déclarée en `non_juge`.
+
+**Qui décide (TF-2119).** Fait, lot de Produit-86 du 03/11/2026 : l'onboarding avait été écarté avec
+`decide_par` « la session de build », S4 avait rendu PASS, et le porteur a jugé cet écart contraire à la loi
+n° 3 : la surface implicite s'écarte par une **décision humaine**. `decide_par` ne désigne donc ni une session,
+ni un agent, ni un build, ni une IA, un script ou un pipeline, et il porte **une décision humaine référencée**,
+sous l'une de ces trois formes : un identifiant de décision (`D-7`), une entrée de ledger (« ledger seq 412 »),
+ou une citation humaine datée (un texte entre guillemets et une date `AAAA-MM-JJ`). Un nom d'humain seul ne suffit
+plus. S4 et S5 jugent la **forme** de cette référence, jamais son existence (déclaré en `non_juge`) : relire la
+décision contre le registre des décisions du pilot reste un geste humain. Le même validateur de forme ne juge pas
+`ecarts_exigences_socle` (E10), hors de ce périmètre.
 
 Le champ est **facultatif à la lecture** : absent, il vaut « aucun écart déclaré ». Un
 référentiel écrit avant TF-0811 n'est donc jamais accusé d'un défaut de format — il est jugé sur
@@ -234,7 +270,7 @@ explicitement** en section 3 de `SURFACE.md`. L'écart est transcrit dans le mê
 
 ### Les clés de la liste close d'un registre
 
-`oracle-surface` **S5** juge ces trois candidats comme S4 juge les seize autres. Deux
+`oracle-surface` **S5** juge ces trois candidats comme S4 juge les dix-neuf autres. Deux
 différences sont assumées. La nature de registre est **inférée** d'un lexique fermé sur les
 libellés de type `objet`. La règle est neuve et opposable à des référentiels déjà scellés :
 un candidat ni retenu ni écarté produit un **avertissement non bloquant** qui le nomme

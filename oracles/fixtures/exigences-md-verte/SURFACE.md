@@ -1,6 +1,6 @@
 # Surface fonctionnelle — Portail de réservation de salles
 
-> Fixture TF-0822, **sens vert** : la section 3 porte les sept entrées d'
+> Fixture TF-0822, **sens vert** : la section 3 porte les dix entrées d'
 > `ecarts_surface_implicite` du référentiel voisin, clé et motif. `oracle-exigences-md` P4 y
 > rend PASS.
 
@@ -27,19 +27,22 @@ rédaction d'exigence, pour que ce qui n'est pas couvert soit un manque nommé.
 
 ## 3. Écartés
 
-Sept candidats d'office de la **surface implicite** ont été vus et volontairement exclus. Ces
-sept lignes sont transcrites telles quelles dans le champ `ecarts_surface_implicite` du
+Dix candidats d'office de la **surface implicite** ont été vus et volontairement exclus. Ces
+dix lignes sont transcrites telles quelles dans le champ `ecarts_surface_implicite` du
 référentiel — la prose est ici la source, le champ en est la copie.
 
 | clé | motif | décidé par | date |
 |---|---|---|---|
-| `accessibilite-rgaa` | portail interne à l'entreprise, accessible par authentification seule : il n'entre pas dans le champ du site public français où le RGAA 4.1 est une obligation légale | le commanditaire du produit | 2026-09-05 |
-| `livrables-accessibilite` | corollaire de l'écart précédent : sans obligation RGAA, ni schéma pluriannuel ni déclaration d'accessibilité ne sont dus, et aucun n'est produit pour la forme | le commanditaire du produit | 2026-09-05 |
-| `lien-public-partageable` | portail mono-tenant, servi sur une adresse unique pour l'entreprise : aucun espace client n'existe, donc aucun lien public par client n'a de sens | le commanditaire du produit | 2026-09-08 |
-| `comptes-essai` | portail interne ouvert aux seuls collaborateurs authentifiés par l'annuaire : un compte d'essai vide n'y est ni créable ni utile au commanditaire | le commanditaire du produit | 2026-09-08 |
-| `traceurs-consentement` | portail interne sans mesure d'audience ni traceur tiers : seuls des témoins de session strictement nécessaires sont posés, exemptés de consentement | le commanditaire du produit | 2026-10-19 |
-| `politique-confidentialite` | portail interne : l'information des collaborateurs sur leurs données relève de la notice de l'entreprise, pas d'une page publiée par le produit | le commanditaire du produit | 2026-10-19 |
-| `apercu-partage` | portail interne derrière authentification : aucune page publique n'existe, donc aucun aperçu de partage n'est à produire | le commanditaire du produit | 2026-10-19 |
+| `accessibilite-rgaa` | portail interne à l'entreprise, accessible par authentification seule : il n'entre pas dans le champ du site public français où le RGAA 4.1 est une obligation légale | le commanditaire du produit (décision D-1) | 2026-09-05 |
+| `livrables-accessibilite` | corollaire de l'écart précédent : sans obligation RGAA, ni schéma pluriannuel ni déclaration d'accessibilité ne sont dus, et aucun n'est produit pour la forme | le commanditaire du produit (décision D-2) | 2026-09-05 |
+| `lien-public-partageable` | portail mono-tenant, servi sur une adresse unique pour l'entreprise : aucun espace client n'existe, donc aucun lien public par client n'a de sens | le commanditaire du produit (décision D-3) | 2026-09-08 |
+| `comptes-essai` | portail interne ouvert aux seuls collaborateurs authentifiés par l'annuaire : un compte d'essai vide n'y est ni créable ni utile au commanditaire | le commanditaire du produit (décision D-4) | 2026-09-08 |
+| `traceurs-consentement` | portail interne sans mesure d'audience ni traceur tiers : seuls des témoins de session strictement nécessaires sont posés, exemptés de consentement | le commanditaire du produit (décision D-5) | 2026-10-19 |
+| `politique-confidentialite` | portail interne : l'information des collaborateurs sur leurs données relève de la notice de l'entreprise, pas d'une page publiée par le produit | le commanditaire du produit (décision D-6) | 2026-10-19 |
+| `apercu-partage` | portail interne derrière authentification : aucune page publique n'existe, donc aucun aperçu de partage n'est à produire | le commanditaire du produit (décision D-7) | 2026-10-19 |
+| `aide-champ` | portail de réservation à choix fermés : salle, créneau et durée se choisissent dans des listes et un calendrier, aucun champ de saisie libre ne demande une aide ou un exemple | le commanditaire du produit (décision D-8) | 2026-11-04 |
+| `filtre-tri-listes` | le parc compte moins de huit salles et chaque liste du portail reste sous huit éléments : le seuil du filtre et du tri des listes n'est jamais atteint | le commanditaire du produit (décision D-9) | 2026-11-04 |
+| `garde-saisie` | aucun champ de saisie libre n'existe : chaque valeur est choisie dans une liste fermée ou un calendrier, il n'y a donc rien à valider avant l'envoi | le commanditaire du produit (décision D-10) | 2026-11-04 |
 
 ## 4. Non énumérable
 
