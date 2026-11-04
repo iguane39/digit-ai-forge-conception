@@ -101,7 +101,7 @@ veut dire la même chose des deux côtés, c'est un seul contrôle partagé (`or
 |---|---|
 | `element` | l'une des trois clés de la liste close (« Exigences socle candidates » ci-dessous) |
 | `motif` | chaîne d'au moins **20 caractères** — plus court, ce n'est pas une raison, c'est un mot |
-| `decide_par` | chaîne non vide — un écart est décidé par quelqu'un |
+| `decide_par` | chaîne non vide — un écart est décidé par un humain, **avec sa décision référencée** (TF-2132, la condition de TF-2119 étendue au socle) : un identifiant `D-N`, une entrée de ledger (« ledger seq 412 »), ou une citation humaine datée (texte entre guillemets et date `AAAA-MM-JJ`). Ni une session, ni un agent, ni un build : E10 refuse |
 | `date` | `AAAA-MM-JJ` |
 
 **Il ne se saisit nulle part ailleurs qu'en transcription de la section 7 « Ce que le référentiel
@@ -200,7 +200,7 @@ ailleurs :
   {
     "element": "donnees-demonstration",
     "motif": "le produit n'embarque aucun jeu de démonstration : la recette se fait sur un extrait anonymisé",
-    "decide_par": "le commanditaire du produit",
+    "decide_par": "le commanditaire du produit (décision D-7)",
     "date": "2026-09-05"
   }
 ]

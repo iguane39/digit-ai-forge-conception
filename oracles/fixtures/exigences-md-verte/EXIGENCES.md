@@ -58,9 +58,9 @@ référentiel — la prose est ici la source, le champ en est la copie.
 
 | clé | motif | décidé par | date |
 |---|---|---|---|
-| `donnees-demonstration` | portail réservé aux collaborateurs authentifiés : aucun jeu de démonstration n'est prévu, et aucun environnement de démonstration n'est ouvert | le commanditaire du produit | 2026-09-05 |
-| `donnees-volatiles` | les salles et leurs créneaux sont saisis par les services généraux depuis le produit : aucun catalogue ni tarif figé dans le code n'existe | le commanditaire du produit | 2026-09-05 |
-| `effet-observable` | chaque exigence de ce référentiel porte déjà son critère observable ; aucune règle transverse supplémentaire n'est retenue au palier MVP | le commanditaire du produit | 2026-09-05 |
+| `donnees-demonstration` | portail réservé aux collaborateurs authentifiés : aucun jeu de démonstration n'est prévu, et aucun environnement de démonstration n'est ouvert | le commanditaire du produit (décision D-11) | 2026-09-05 |
+| `donnees-volatiles` | les salles et leurs créneaux sont saisis par les services généraux depuis le produit : aucun catalogue ni tarif figé dans le code n'existe | le commanditaire du produit (décision D-12) | 2026-09-05 |
+| `effet-observable` | chaque exigence de ce référentiel porte déjà son critère observable ; aucune règle transverse supplémentaire n'est retenue au palier MVP | le commanditaire du produit (décision D-13) | 2026-09-05 |
 
 Reste hors du référentiel, et attendu d'une décision : le sort des réservations récurrentes,
 la politique de rétention des créneaux passés, et l'ouverture éventuelle du portail à des

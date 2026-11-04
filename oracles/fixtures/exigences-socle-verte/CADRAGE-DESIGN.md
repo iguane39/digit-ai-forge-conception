@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: 0b4d70263d9d6a06c39ff64e890edbdb16df6cee73472abf0ce24aecae6ea355 -->
+<!-- source-sha256: d9398e33486c4a08045e67950c68b62961ed67af18ee2fc6d1dd4167f2453fdc -->
 
 # Fiche de cadrage design — Catalogue de formations internes
 
@@ -35,7 +35,7 @@ jamais un arbitrage : `oracle-exigences` E10 le refuse.
 
 | Candidate écartée | Motif | Décidé par | Date |
 |---|---|---|---|
-| `donnees-demonstration` | le produit n'embarque aucun jeu de démonstration : la recette se fait sur un extrait anonymisé du catalogue réel, déposé hors du binaire livré | le commanditaire du produit | 2026-09-05 |
+| `donnees-demonstration` | le produit n'embarque aucun jeu de démonstration : la recette se fait sur un extrait anonymisé du catalogue réel, déposé hors du binaire livré | le commanditaire du produit (décision D-1) | 2026-09-05 |
 
 Les deux autres candidates sont **retenues** : la donnée volatile par E-003, qui date et source
 le tarif servi, et l'effet observable par E-004. Le design hérite donc des deux, et n'a aucun

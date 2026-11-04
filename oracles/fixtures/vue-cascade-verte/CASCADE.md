@@ -1,6 +1,6 @@
 <!-- source: cascade/CASCADE.json -->
 <!-- source-sha256: f81d19f9dcbc5606bdea84d50ccacd5b60979453ac60b55d949e41744114aabd -->
-<!-- referentiel-sha256: b8d2536ff3676421cdec530d5bf6107db970c698f2d89d249c392081c7a0fb14 -->
+<!-- referentiel-sha256: 9fa342c9a89e0d37be3a23df7cb9e08c0d44b3878f9a2ccdb6f1fdc78071890e -->
 <!-- corps-sha256: de19c7c04fd1c3f86a9311a77312ca39d06a23bc7f5a86b815bb9ab90f95fe08 -->
 ---
 role: cascade du produit — intention, stratégie, tactique, opérationnel, puis test rétro (references/INTENTION.md du pilot) ; vue dérivée, jamais éditée à la main

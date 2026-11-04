@@ -1663,7 +1663,8 @@ for (const o of ORACLES) {
     const ECART_VALIDE = {
       element: 'donnees-demonstration',
       motif: "le produit n'embarque aucun jeu de demonstration : la recette se fait sur un extrait anonymise depose hors du binaire livre",
-      decide_par: 'le commanditaire du produit',
+      // TF-2132 : la decision humaine est referencee (D-N), comme l'ecart de surface (TF-2119)
+      decide_par: 'le commanditaire du produit (décision D-1)',
       date: '2026-09-05'
     }
 
@@ -1756,6 +1757,142 @@ for (const o of ORACLES) {
       echecs++
       console.log(`         exits obtenus : 1=${completes.code} 2=${ecartee.code} 3=${oubli.code} ` +
         `4=${motifCourt.code} 5=${cleInconnue.code} 6=${dateInvalide.code} 7=${sceau.code}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-2132 : un ecart d'exigence socle (E10) est une DECISION HUMAINE REFERENCEE -----
+// Fait : TF-2119 a pose, pour l'ecart de surface implicite (S4, S5), la condition d'une decision
+// humaine referencee (aucune session, aucun agent, aucun build ; identifiant D-N, entree de
+// ledger ou citation humaine datee). E10 partageait le contrat commun `defautDEcart` mais pas
+// cette condition : un ecart au socle acceptait encore « la session de build » ou un nom seul. La
+// loi n° 3 vaut pour l'exigence socle comme pour la surface. Les deux sens, la candidate des
+// donnees de demonstration etant seule mise en jeu (volatiles et effet restent portees) :
+//   1. « la session de build »                        -> FAIL nommant `decide_par` et la session
+//   2. « un agent de campagne »                       -> FAIL (temoin : toute machine est lue)
+//   3. un humain nomme sans reference                 -> FAIL « aucune decision humaine referencee »
+//   4. l'humain ET la machine                         -> FAIL (documente : le nom sort de decide_par)
+//   5. citation humaine sans date                     -> FAIL
+//   6. remede joue, forme D-N                         -> PASS « [ECARTE] »
+//   7. remede joue, forme entree de ledger            -> PASS « [ECARTE] »
+//   8. remede joue, forme citation humaine datee      -> PASS « [ECARTE] »
+//   9. le FAIL d'une candidate sans ecart enonce la condition (le message propose le remede)
+//  10. le message d'un decideur refuse parle de l'exigence socle, pas de la surface implicite
+// Fixtures ephemeres, comme TF-0814 dont la branche reprend l'idiome.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2132-'))
+  try {
+    const RETENUES = [
+      {
+        surface: { id: 'S-02', type: 'objet', libelle: 'Catalogue des formations' },
+        enonce: 'Le catalogue des formations est édité en base, sans livraison de code.',
+        critere: 'La date de mise à jour et la source de chaque fiche du catalogue sont présentes, chacune non vide.'
+      },
+      {
+        surface: { id: 'S-03', type: 'parcours', libelle: 'Inscription a une session' },
+        enonce: 'Chaque élément interactif du produit produit un effet observable.',
+        critere: "Un message de confirmation est affiché après l'envoi du formulaire d'inscription."
+      }
+    ]
+    const ECART = (decidePar) => ({
+      element: 'donnees-demonstration',
+      motif: "le produit n'embarque aucun jeu de demonstration : la recette se fait sur un extrait anonymise depose hors du binaire livre",
+      decide_par: decidePar,
+      date: '2026-11-04'
+    })
+    const referentiel = (ecarts) => {
+      const ref = {
+        projet: 'Fixture TF-2132 (decision humaine referencee, exigences socle)',
+        besoins: [{ id: 'B-01', enonce: 'Le produit doit tenir les trois lois transverses du socle.' }],
+        surface: RETENUES.map(c => c.surface),
+        exigences: RETENUES.map((c, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: c.enonce,
+          critere: c.critere,
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-2132' },
+          surface: [c.surface.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_exigences_socle = ecarts
+      return ref
+    }
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-exigences.mjs', [chemin])
+      const constats = r.rapport?.constats ?? []
+      const e10 = constats.filter(c => c.regle === 'E10')
+      return {
+        code: r.code,
+        e10,
+        fails: e10.filter(c => c.statut === 'FAIL'),
+        autresFails: constats.filter(c => c.statut === 'FAIL' && c.regle !== 'E10'),
+        sur: (fragment) => e10.find(c => `${c.ou} ${c.message}`.includes(fragment))
+      }
+    }
+
+    const session = jouer('1-session-de-build', referentiel([ECART('la session de build')]))
+    const agent = jouer('2-agent', referentiel([ECART('un agent de campagne')]))
+    const nomSeul = jouer('3-humain-sans-reference', referentiel([ECART('le commanditaire du produit')]))
+    const mixte = jouer('4-humain-et-machine',
+      referentiel([ECART('le porteur (décision D-12), appliquée par la session')]))
+    const citationNue = jouer('5-citation-sans-date',
+      referentiel([ECART("le porteur : « pas de donnees de demonstration dans ce produit »")]))
+    const parId = jouer('6-identifiant', referentiel([ECART('le porteur (décision D-12 (a))')]))
+    const parLedger = jouer('7-ledger', referentiel([ECART('le porteur, entrée de ledger seq 412')]))
+    const parCitation = jouer('8-citation-datee', referentiel([ECART(
+      'le porteur : « pas de donnees de demonstration dans ce produit », 2026-11-04')]))
+    const sansEcart = jouer('9-aucun-ecart', referentiel())
+
+    const cas = [
+      ['1. le cas reel -- « la session de build » -> FAIL nommant `decide_par` et la session',
+        session.code === 1 && session.fails.length === 1 && session.autresFails.length === 0 &&
+        session.fails[0].message.includes('decide_par') &&
+        session.fails[0].message.includes('désigne une session, un agent ou un build')],
+      ['2. « un agent de campagne » -> FAIL (temoin : toute machine nommee est lue)',
+        agent.code === 1 && agent.fails.length === 1 &&
+        agent.fails[0].message.includes('désigne une session, un agent ou un build')],
+      ['3. un humain nomme sans reference -> FAIL « aucune décision humaine référencée »',
+        nomSeul.code === 1 && nomSeul.fails.length === 1 &&
+        nomSeul.fails[0].message.includes('aucune décision humaine référencée')],
+      ['4. l\'humain ET la machine nommes -> FAIL (le nom de la machine sort de `decide_par`)',
+        mixte.code === 1 && mixte.fails.length === 1 &&
+        mixte.fails[0].message.includes('désigne une session')],
+      ['5. citation humaine sans date -> FAIL « aucune décision humaine référencée »',
+        citationNue.code === 1 && citationNue.fails.length === 1 &&
+        citationNue.fails[0].message.includes('aucune décision humaine référencée')],
+      ['6. remede joue, identifiant de decision D-12 -> PASS « [ECARTE] »',
+        parId.code === 0 && parId.fails.length === 0 &&
+        (parId.sur('donnees-demonstration')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['7. remede joue, entree de ledger seq 412 -> PASS « [ECARTE] »',
+        parLedger.code === 0 && parLedger.fails.length === 0 &&
+        (parLedger.sur('donnees-demonstration')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['8. remede joue, citation humaine datee -> PASS « [ECARTE] »',
+        parCitation.code === 0 && parCitation.fails.length === 0 &&
+        (parCitation.sur('donnees-demonstration')?.message ?? '').includes('[ÉCARTÉ]')],
+      ['9. le FAIL d\'une candidate sans ecart enonce la condition (decision referencee : D-N, ledger, citation)',
+        sansEcart.code === 1 && sansEcart.fails.length === 1 &&
+        sansEcart.fails[0].message.includes('décision référencée') &&
+        sansEcart.fails[0].message.includes('D-N')],
+      ['10. le decideur refuse parle de l\'exigence socle, pas de la surface implicite',
+        nomSeul.fails.length === 1 &&
+        nomSeul.fails[0].message.includes('exigence socle') &&
+        !nomSeul.fails[0].message.includes('surface implicite')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences.mjs (branche TF-2132, decision humaine referencee pour E10, fixtures ephemeres, 5 rouges + 3 remedes + 2 messages)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${session.code} 2=${agent.code} 3=${nomSeul.code} ` +
+        `4=${mixte.code} 5=${citationNue.code} 6=${parId.code} 7=${parLedger.code} ` +
+        `8=${parCitation.code} 9=${sansEcart.code}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })

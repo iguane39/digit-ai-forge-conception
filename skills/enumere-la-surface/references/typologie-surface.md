@@ -233,8 +233,8 @@ ni un agent, ni un build, ni une IA, un script ou un pipeline, et il porte **une
 sous l'une de ces trois formes : un identifiant de décision (`D-7`), une entrée de ledger (« ledger seq 412 »),
 ou une citation humaine datée (un texte entre guillemets et une date `AAAA-MM-JJ`). Un nom d'humain seul ne suffit
 plus. S4 et S5 jugent la **forme** de cette référence, jamais son existence (déclaré en `non_juge`) : relire la
-décision contre le registre des décisions du pilot reste un geste humain. Le même validateur de forme ne juge pas
-`ecarts_exigences_socle` (E10), hors de ce périmètre.
+décision contre le registre des décisions du pilot reste un geste humain. Le même validateur de forme juge aussi
+`ecarts_exigences_socle` (E10) depuis TF-2132 : `oracles/_contrat.mjs` le porte une seule fois.
 
 Le champ est **facultatif à la lecture** : absent, il vaut « aucun écart déclaré ». Un
 référentiel écrit avant TF-0811 n'est donc jamais accusé d'un défaut de format — il est jugé sur

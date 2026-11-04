@@ -5,10 +5,10 @@
 
 import {
   charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, PALIERS, NATURES, AVANT, APRES, lexique,
-  defautDEcart
+  defautDEcart, defautDuDecideur
 } from './_contrat.mjs'
 
-const VERSION = '1.3.0'
+const VERSION = '1.4.0'
 
 // --- Checklist versionnée ---------------------------------------------------
 
@@ -383,7 +383,10 @@ if (surfaceRefE9.length === 0) {
   } else {
     for (const [i, e] of (brut ?? []).entries()) {
       const cle = typeof e?.element === 'string' ? e.element.trim() : ''
-      const defaut = defautDEcart(e, CLES_SOCLE)
+      // TF-2132 : le décideur d'un écart au socle est une décision humaine RÉFÉRENCÉE, comme pour
+      // la surface implicite (TF-2119) : le contrat commun seul acceptait « la session de build ».
+      const defaut = defautDEcart(e, CLES_SOCLE) ||
+        defautDuDecideur(e?.decide_par, 'un écart d\'exigence socle')
       if (!CLES_SOCLE.includes(cle)) {
         constats.push(constat('E10', FAIL, `ecarts_exigences_socle[${i}]`,
           `écart rattaché à aucune exigence socle candidate : ${defaut}`))
@@ -417,7 +420,9 @@ if (surfaceRefE9.length === 0) {
         `« ${c.libelle} » : exigence socle candidate, portée par aucune exigence du référentiel ` +
         'et sans écart déclaré. À retenir (une exigence normale, avec son critère et son lien ' +
         'de surface), ou à écarter EXPLICITEMENT en section 7 d\'`EXIGENCES.md`, transcrite ' +
-        'dans `ecarts_exigences_socle` { element, motif, decide_par, date }. La loi transverse ' +
+        'dans `ecarts_exigences_socle` { element, motif, decide_par, date } — `decide_par` nomme ' +
+        'l\'humain ET sa décision référencée (identifiant D-N, entrée de ledger, ou citation ' +
+        'humaine datée), jamais une session, un agent ou un build. La loi transverse ' +
         'n° 3 ne connaît pas l\'absence par omission.'))
     }
   }
@@ -484,6 +489,10 @@ emettre({
     'La PERTINENCE du motif d\'un écart. E10 exige qu\'il soit écrit, daté et signé ; il ne juge ' +
       'ni sa véracité ni sa suffisance — un écart est opposable parce qu\'écrit, pas parce que ' +
       'vrai.',
+    'L\'EXISTENCE et l\'AUTHENTICITÉ de la décision humaine qu\'un écart au socle référence ' +
+      '(TF-2132). E10 juge la FORME de `decide_par` : aucune désignation d\'une session, d\'un ' +
+      'agent ou d\'un build, et une décision référencée (identifiant D-N, entrée de ledger, ' +
+      'citation humaine datée). Une référence de la bonne forme mais inventée passe.',
     'La REFORMULATION qui convient à E11 : il compte les têtes de trois mots répétées, il ne juge ' +
       'ni que le sujet est superflu (une exigence EARS peut légitimement ouvrir par le même sujet) ' +
       'ni que l\'infinitif choisi est le bon. Avertissement, jamais un FAIL.',

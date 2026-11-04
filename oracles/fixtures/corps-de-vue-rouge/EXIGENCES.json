@@ -11,7 +11,7 @@
     {
       "element": "donnees-demonstration",
       "motif": "le produit n'embarque aucun jeu de démonstration : la recette se fait sur un extrait anonymisé du catalogue réel, déposé hors du binaire livré",
-      "decide_par": "le commanditaire du produit",
+      "decide_par": "le commanditaire du produit (décision D-1)",
       "date": "2026-09-05"
     }
   ],

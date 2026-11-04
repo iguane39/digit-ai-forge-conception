@@ -11,7 +11,7 @@
 // de l'élément.
 
 import {
-  charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart, AVANT, APRES
+  charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart, defautDuDecideur
 } from './_contrat.mjs'
 
 const VERSION = '1.6.0'
@@ -246,45 +246,10 @@ for (const c of SURFACE_REGISTRE) c.re = lexique(c.motifs)
 const CLES_REGISTRE = SURFACE_REGISTRE.map(c => c.cle)
 const EST_CLE_REGISTRE = new Set(CLES_REGISTRE)
 
-// TF-2119 — QUI décide d'un écart de surface implicite. Fait (lot de Produit-86 du 03/11/2026) :
-// l'onboarding a été écarté avec `decide_par` « la session de build », S4 a rendu PASS, et le
-// porteur juge cet écart contraire à la loi n° 3 : la surface implicite s'écarte explicitement,
-// par DÉCISION HUMAINE. Le contrat commun (`defautDEcart`) exige un `decide_par` non vide, rien de
-// plus : « la session de build » le remplit. Deux conditions s'ajoutent ici, propres à la
-// surface (le contrat commun reste inchangé pour `ecarts_exigences_socle`, E10) :
-//   1. `decide_par` ne désigne ni une session, ni un agent, ni un build, ni une IA, un script, un
-//      pipeline… (lexique fermé) ;
-//   2. `decide_par` porte une décision humaine RÉFÉRENCÉE, sous l'une de ces trois formes :
-//      un identifiant de décision (D-N), une entrée de ledger (« ledger » suivi d'un numéro, ou
-//      « seq N »), une citation humaine DATÉE (texte entre guillemets d'au moins 10 caractères
-//      et une date AAAA-MM-JJ ou JJ/MM/AAAA, dans `decide_par`).
-// La FORME de la référence est jugée, jamais son existence : une référence inventée passe
-// (déclaré en `non_juge`). Un nom d'humain seul (« le commanditaire du produit ») ne suffit plus.
-const RE_DESIGNE_UNE_MACHINE = lexique(['session', 'agent', 'build', 'ia', 'claude', 'assistant',
-  'modèle', 'pipeline', 'script', 'bot', 'orchestrateur', 'automatique', 'automatiquement'])
-const RE_DECISION_ID = new RegExp(`${AVANT}D-\\d+${APRES}`, 'u')
-const RE_LEDGER = new RegExp(`ledger[^\\n]{0,60}?\\d|${AVANT}seq\\.?\\s*[:#]?\\s*\\d+`, 'iu')
-const RE_CITATION = /[«"“][^»"”]{10,}[»"”]/u
-const RE_DATE_CITEE = /\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}/
-
-function defautDuDecideur (decidePar) {
-  const t = typeof decidePar === 'string' ? decidePar.trim() : ''
-  if (t === '') return '' // l'absence est déjà nommée par le contrat commun
-  if (RE_DESIGNE_UNE_MACHINE.test(t)) {
-    return `\`decide_par\` « ${t} » désigne une session, un agent ou un build : un écart de ` +
-      'surface implicite est une décision humaine (loi n° 3, « l\'oubli n\'existe pas »). ' +
-      'Nommer l\'humain qui a décidé, avec sa décision référencée (identifiant D-N, entrée de ' +
-      'ledger, ou citation humaine datée)'
-  }
-  const reference = RE_DECISION_ID.test(t) || RE_LEDGER.test(t) ||
-    (RE_CITATION.test(t) && RE_DATE_CITEE.test(t))
-  if (!reference) {
-    return `\`decide_par\` « ${t} » ne porte aucune décision humaine référencée : ajouter un ` +
-      'identifiant de décision (D-N), une entrée de ledger (« ledger seq N »), ou une citation ' +
-      'humaine datée (« … » et une date AAAA-MM-JJ) — un nom seul n\'atteste pas la décision'
-  }
-  return ''
-}
+// TF-2119 — QUI décide d'un écart de surface implicite : une décision humaine RÉFÉRENCÉE. Les deux
+// conditions du décideur (aucune session, aucun agent, aucun build ; identifiant D-N, entrée de
+// ledger ou citation humaine datée) vivent dans `_contrat.mjs` (`defautDuDecideur`) depuis
+// TF-2132, qui les étend à `ecarts_exigences_socle` (E10).
 
 /**
  * Ce qui manque à un écart pour tenir. Chaîne vide = l'écart tient — contrat commun, puis les
