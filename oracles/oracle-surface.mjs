@@ -1,7 +1,7 @@
 // oracle-surface — couverture de la surface énumérée.
 // Usage : node oracle-surface.mjs <EXIGENCES.json> [--seuil 95]
 // CDC §7.3 — règles S1 à S3 ; S4 surface implicite SaaS (TF-0811) ; S5 surface implicite d'un
-// registre, en avertissement (TF-1655). Écho amont du défaut fondateur de Forge Tests :
+// registre, en avertissement (TF-1655) ; S6 clé `parcours` du référentiel (TF-2253). Écho amont du défaut fondateur de Forge Tests :
 // tout élément inventorié et non couvert est NOMMÉ, jamais fondu dans un pourcentage.
 //
 // RC-1 (retour premier produit réel) : sous le seuil, un élément non couvert reste bloquant
@@ -14,7 +14,7 @@ import {
   charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart, defautDuDecideur
 } from './_contrat.mjs'
 
-const VERSION = '1.6.0'
+const VERSION = '1.7.0'
 const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 
 // S4 — la surface implicite : chaque candidat d'office est RETENU ou ÉCARTÉ explicitement.
@@ -463,6 +463,111 @@ for (const [i, e] of ref.exigences.entries()) {
   }
 }
 
+// S6 — la clé `parcours` du référentiel, parcours par parcours (TF-2253). forge-tests exige un e2e
+// par case parcours x rôle (`parcours:<parcours>@<rôle>`, TF-2207) déclarée par la clé racine
+// `parcours` d'EXIGENCES.json : « une entrée est un nom, ou { nom, roles } », `id` en alias
+// (personas.parcours_declares de forge-tests, convention de cette forge-là). Sans la clé, ce pan
+// n'exige rien de plus qu'avant, et l'oubli est invisible. Chaque élément de surface de type
+// `parcours` doit donc y figurer, avec les rôles de la surface qui l'exécutent.
+//   aucun élément `parcours`                          -> PASS motivé, la clé n'est pas due
+//   éléments `parcours`, clé absente                  -> SANS_OBJET nommant chaque parcours
+//                                                        (règle neuve, référentiels déjà scellés)
+//   clé présente, entrée juste                        -> PASS, un constat par parcours
+//   clé présente, fausse (non tableau, parcours sans entrée, `roles` absent alors que la surface
+//   énumère des rôles, rôle hors surface, entrée orpheline, rôle de la surface absent des clés
+//   racine `roles` et `personas` — sans persona, forge-tests rend NA) -> FAIL, l'élément NOMMÉ
+// Les noms se comparent comme le fait forge-tests (`_cle` : sans accent, minuscules, tirets).
+{
+  const tous = surface ?? []
+  const cleDe = (t) => String(t ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+  const parcoursSurface = tous.filter(s => s?.type === 'parcours')
+  const rolesSurface = tous.filter(s => s?.type === 'role')
+  const rolesConnus = new Set(rolesSurface.map(s => cleDe(s?.libelle)))
+  const brut = ref.parcours
+
+  if (parcoursSurface.length === 0) {
+    constats.push(constat('S6', PASS, 'surface[]',
+      'aucun élément de surface de type `parcours` : la clé `parcours` (un e2e par rôle, ' +
+      'forge-tests TF-2207) n\'est pas due'))
+  } else if (brut === undefined) {
+    for (const p of parcoursSurface) {
+      constats.push(constat('S6', SANS_OBJET, `surface[] (${p.id})`,
+        `avertissement non bloquant — « ${p.libelle} » : parcours énuméré sans la clé racine ` +
+        '`parcours` d\'EXIGENCES.json, donc sans case parcours x rôle : forge-tests n\'exigera ' +
+        'aucun e2e par rôle pour lui. À écrire : { "id": "' + p.id + '", "nom": "' + p.libelle +
+        '", "roles": [libellés des rôles de la surface qui l\'exécutent] }, et la clé racine ' +
+        '`roles` (libellés des rôles de la surface), sans laquelle le pan est sans objet'))
+    }
+  } else if (!Array.isArray(brut)) {
+    constats.push(constat('S6', FAIL, 'parcours',
+      'champ présent mais non tableau — attendu [{ id, nom, roles }] ou des noms de parcours'))
+  } else {
+    const entrees = brut.map((e, i) => {
+      const nom = typeof e === 'string' ? e : (typeof e?.nom === 'string' ? e.nom : '')
+      return { i, e, nom, cle: cleDe(nom), objet: e !== null && typeof e === 'object' && !Array.isArray(e) }
+    })
+    const cles = new Set(parcoursSurface.map(p => cleDe(p.libelle)))
+    for (const x of entrees) {
+      if (x.cle === '' || !cles.has(x.cle)) {
+        constats.push(constat('S6', FAIL, `parcours[${x.i}]`,
+          x.cle === ''
+            ? 'entrée sans nom : attendu un nom de parcours, ou { nom, roles }'
+            : `« ${x.nom} » : entrée qui ne désigne aucun élément de surface de type \`parcours\` ` +
+              '— forge-tests exigerait des e2e pour un parcours que la surface ne porte pas'))
+      }
+    }
+    // Sans persona déclaré, le pan `parcours-personas` de forge-tests est SANS OBJET (mesuré le
+    // 06/11/2026 : verdict NA, aucune case parcours x rôle) : la clé `parcours` ne sert que si les
+    // rôles sont déclarés aux clés racine `roles` ou `personas`, nom d'une chaîne ou d'un objet.
+    const declares = new Set([...(Array.isArray(ref.roles) ? ref.roles : []),
+      ...(Array.isArray(ref.personas) ? ref.personas : [])]
+      .flatMap(r => typeof r === 'string' ? [r] : ['nom', 'libelle', 'role', 'persona', 'name', 'id'].map(c => r?.[c]))
+      .map(cleDe).filter(Boolean))
+    const sansPersona = rolesSurface.filter(s => !declares.has(cleDe(s.libelle)))
+    if (sansPersona.length > 0) {
+      constats.push(constat('S6', FAIL, 'roles',
+        `rôle(s) de la surface absent(s) des clés racine \`roles\` et \`personas\` : ` +
+        `${sansPersona.map(s => s.libelle).join(', ')} — sans persona déclaré, forge-tests ne ` +
+        'forme aucune case parcours x rôle (pan sans objet). À écrire : `roles` : les libellés ' +
+        'des rôles de la surface'))
+    }
+    for (const p of parcoursSurface) {
+      const cle = cleDe(p.libelle)
+      const x = entrees.find(y => y.cle === cle)
+      const ou = x ? `parcours[${x.i}] (${p.id})` : `surface[] (${p.id})`
+      if (!x) {
+        constats.push(constat('S6', FAIL, ou,
+          `« ${p.libelle} » : parcours énuméré sans entrée dans la clé \`parcours\` — aucun e2e par ` +
+          'rôle ne sera exigé pour lui. À ajouter : { "id": "' + p.id + '", "nom": "' + p.libelle +
+          '", "roles": [...] }'))
+        continue
+      }
+      const roles = x.objet && Array.isArray(x.e.roles) ? x.e.roles : null
+      const defauts = []
+      if (x.objet && x.e.id !== undefined && x.e.id !== p.id) {
+        defauts.push(`\`id\` ${JSON.stringify(x.e.id)} diffère de celui de la surface (${p.id})`)
+      }
+      if (rolesSurface.length > 0) {
+        if (roles === null || roles.length === 0) {
+          defauts.push('`roles` absent ou vide alors que la surface énumère des rôles (' +
+            rolesSurface.map(s => s.libelle).join(', ') + ') : sans lui, forge-tests ne sait pas ' +
+            'quelles cases parcours x rôle exiger')
+        } else {
+          const inconnus = roles.filter(r => !rolesConnus.has(cleDe(r)))
+          if (inconnus.length > 0) {
+            defauts.push(`rôle(s) absent(s) de la surface : ${inconnus.join(', ')}`)
+          }
+        }
+      }
+      constats.push(defauts.length === 0
+        ? constat('S6', PASS, ou, `« ${p.libelle} » déclaré dans la clé \`parcours\`` +
+          (roles && roles.length > 0 ? ` pour ${roles.join(', ')}` : ''))
+        : constat('S6', FAIL, ou, `« ${p.libelle} » : ${defauts.join(' ; ')}`))
+    }
+  }
+}
+
 emettre({
   oracle: 'oracle-surface',
   version: VERSION,
@@ -517,6 +622,12 @@ emettre({
     'Le contenu de la 404 elle-même — gabarit, statut HTTP conservé, `noindex`, préfixe de ' +
       'langue : les cinq critères de P-2 se vérifient sur la page servie (MEP, contrôle M-9 ; ' +
       'contrôle exécutable chez forge-tests), jamais sur un référentiel d\'exigences.',
+    'Les RÔLES qui exécutent chaque parcours (S6, TF-2253) : S6 vérifie que la clé `parcours` ' +
+      'existe, que chaque parcours de la surface y figure et que ses rôles sont des rôles de la ' +
+      'surface. Que ces rôles soient les bons relève de l\'entrant et du commanditaire. Une clé ' +
+      'ABSENTE avertit sans bloquer (règle neuve, opposable à des référentiels déjà scellés). ' +
+      'Le format est celui de forge-tests, lu chez lui et non importé : un changement de sa ' +
+      'convention n\'est pas vu ici.',
     'La nature de REGISTRE du produit (S5, TF-1655), inférée d\'un lexique fermé sur les ' +
       'libellés de type `objet` (registre, inventaire, catalogue, portefeuille, répertoire, ' +
       'annuaire, cartographie, parc) : un registre nommé autrement reste invisible pour S5, et ' +

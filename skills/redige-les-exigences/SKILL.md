@@ -1,7 +1,7 @@
 ---
 name: redige-les-exigences
 description: Rédige le référentiel d'exigences d'un produit — chaque exigence atomique, identifiée de façon stable, assortie d'un critère d'acceptation binaire ou chiffré, d'un palier MVP/V1/V2, d'un statut fait constaté ou hypothèse, et d'un lien vers l'élément de surface couvert — puis le fait juger par quatre oracles exécutés. Produit EXIGENCES.md et EXIGENCES.json, la source unique dont toutes les vues aval sont dérivées. Use when / déclencher dès qu'il faut transformer un besoin, un cadrage ou une surface fonctionnelle en spécification opposable, écrire des exigences testables, poser des critères d'acceptation, arbitrer un périmètre MVP, ou produire le PRD d'un produit à construire. Ne pas déclencher pour qualifier l'entrant (→ qualifie-l-entrant), énumérer la surface (→ enumere-la-surface), dériver les vues aval (→ derive-les-vues), ni pour produire epics, stories ou architecture d'implémentation (→ étape C de la SaaS Forge, moteur BMAD).
-version: 1.5.1
+version: 1.6.0
 ---
 
 # Rédige les exigences
@@ -42,6 +42,10 @@ d'identifiant jamais réaffecté.
                    nomme Workers ou Pages, Supabase et GitHub Actions : 17 questions à trancher,
                    chacune avec son fait daté et sa source)
 4. Artefacts     → EXIGENCES.json (source) + EXIGENCES.md (lecture humaine)
+   Parcours      → à la création de CHAQUE parcours de la surface : une entrée { id, nom, roles }
+                   dans la clé racine `parcours`, et les rôles de la surface dans la clé racine
+                   `roles` : c'est ce que forge-tests lit pour exiger un e2e par parcours × rôle
+                   (references/schema-referentiel.md, oracle-surface S6)
 5. Contrôle      → node oracles/oracle-exigences.mjs EXIGENCES.json
                    node oracles/oracle-tracabilite.mjs EXIGENCES.json
                    node oracles/oracle-surface.mjs EXIGENCES.json
@@ -78,6 +82,14 @@ portée par une exigence → PASS, écartée avec un motif d'au moins vingt cara
 → PASS imprimé « [ÉCARTÉ] », ni l'un ni l'autre → **FAIL**, la candidate nommée. Aucune condition
 d'applicabilité n'est inférée : un produit sans donnée de production ou sans élément interactif
 écrit son écart, il ne compte pas sur l'oracle pour le deviner.
+
+**Un parcours se déclare pour chaque rôle (TF-2253).** Forge-tests exige un test de bout en bout
+par case « parcours × rôle », et il la lit dans le référentiel : clé racine `parcours` (une entrée
+`{ id, nom, roles }` par élément de surface de type `parcours`) et clé racine `roles` (les libellés
+des rôles de la surface). Sans elles, son pan n'exige rien de plus qu'avant, et personne ne le voit.
+`roles` d'un parcours vient de l'entrant ; à défaut, tous les rôles de la surface, noté comme
+hypothèse. `oracle-surface` **S6** juge la clé : absente, il avertit sans bloquer (référentiel
+antérieur) ; présente et fausse, il échoue en nommant le parcours ou le rôle.
 
 **Une exigence remonte jusqu'à l'intention (TF-1680).** Le besoin parent ne dit ni le moyen
 choisi, ni l'alternative écartée, ni l'effet attendu. Quand le produit tient sa cascade ISTO

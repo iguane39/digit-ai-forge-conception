@@ -13,6 +13,8 @@ trois vues aval en sont dérivées. Une modification se fait dans le JSON, jamai
 | `identifiants_retires` | tableau de chaînes | Les identifiants morts. **Jamais réaffectés** |
 | `ecarts_surface_implicite` | tableau | **Facultatif.** Les candidats d'office de la surface implicite délibérément écartés — `oracle-surface` S4 |
 | `ecarts_exigences_socle` | tableau | **Facultatif.** Les exigences socle candidates délibérément écartées — `oracle-exigences` E10 |
+| `parcours` | tableau | **Dû dès qu'un parcours est énuméré.** Une entrée `{ id, nom, roles }` par élément de surface de type `parcours` — `oracle-surface` S6 (TF-2253) |
+| `roles` | tableau de chaînes | **Dû avec `parcours`, dès que la surface énumère des rôles.** Les libellés des éléments de surface de type `role` — `oracle-surface` S6 (TF-2253) |
 | `besoins` | tableau | `id`, `enonce`, `source` (facultatif) |
 | `surface` | tableau | `id`, `type`, `libelle` — repris de `SURFACE.md` |
 | `exigences` | tableau | Les 8 champs ci-dessous |
@@ -70,6 +72,27 @@ Le champ est **facultatif** : un référentiel écrit avant TF-1680 reste valide
 peut tenir sa cascade sans jamais écrire le champ. T6 ne juge de la cascade que ce dont la
 remontée dépend. Le reste (validation tracée de l'intention, indicateurs, alternatives,
 historique) se juge par `oracles/oracle-cascade-isto.mjs` du pilot.
+
+`parcours` et `roles` — deux clés racine (TF-2253), écrites à la création d'un parcours. Ce n'est pas
+une convention de cette forge : c'est le format que **forge-tests** lit (adaptateur
+`parcours-personas`, `personas.parcours_declares`, TF-2207). Il exige un test de bout en bout par
+case « parcours × rôle » ; sans la clé `parcours`, ce pan n'exige rien de plus qu'avant, et sans
+persona déclaré (clés racine `roles` ou `personas`) il rend « sans objet » : mesuré le 06/11/2026,
+verdict `NA` et aucune case.
+
+| Clé | Contenu | Règle |
+|---|---|---|
+| `parcours` | une entrée par élément de surface de type `parcours` : `{ "id": "S-03", "nom": "Demande de congé", "roles": ["Opérateur", "Approbateur"] }` | `nom` = le libellé de la surface (comparé sans accent ni casse, comme forge-tests) ; `id` = l'identifiant de la surface ; `roles` = les libellés des éléments de type `role` qui exécutent le parcours |
+| `roles` | `["Opérateur", "Approbateur"]` | tous les libellés des éléments de surface de type `role` ; forge-tests en forme ses personas |
+
+Les `roles` d'un parcours viennent de l'entrant. À défaut de mieux, le défaut est **tous les rôles de
+la surface**, et il se note comme hypothèse dans `EXIGENCES.md` : forge-tests exigera alors un e2e
+par rôle, ce que le commanditaire restreint en citant sa source. Une surface sans aucun élément de
+type `role` écrit les entrées sans `roles` (un nom suffit). `oracle-surface` **S6** juge : la clé
+absente avertit sans bloquer (référentiel antérieur à TF-2253, aucune migration due) ; la clé
+présente échoue si un parcours de la surface n'y figure pas, si une entrée n'en désigne aucun, si
+`roles` manque ou nomme un rôle hors surface, ou si un rôle de la surface n'est déclaré ni en
+`roles` ni en `personas`.
 
 `ecarts_surface_implicite` — tableau, à la racine du référentiel (TF-0811). Une entrée par
 candidat de la surface implicite **écarté** : `{ element, motif, decide_par, date }`.

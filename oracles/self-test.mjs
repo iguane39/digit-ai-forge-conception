@@ -1145,6 +1145,140 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-2253 : S6, la cle `parcours` d'EXIGENCES.json (parcours x role) ------------
+// Fait (campagne du 06/11/2026, TF-2207 de forge-tests) : forge-tests exige un e2e par case
+// parcours x role declaree par la cle `parcours` du referentiel. Aucune etape de la conception
+// ne l'ecrivait : sans elle, le pan « n'exige rien de plus qu'avant » et la case manquante est
+// invisible. S6 confronte les elements de surface de type `parcours` a cette cle. Regle NEUVE
+// opposable a des referentiels deja scelles : une cle ABSENTE avertit (SANS_OBJET, exit inchange,
+// meme idiome que S5, C5 et T6) ; une cle PRESENTE mais fausse echoue, parce que le referentiel a
+// alors choisi de la declarer. Convention lue chez forge-tests (personas.parcours_declares) :
+// une entree est un nom, ou { nom, roles } ; `id` en alias. Etats joues :
+//   1. cle complete, roles tous connus                  -> 2 PASS, exit 0
+//   2. cle absente (l'etat d'avant TF-2253)             -> 2 avertissements NOMMES, exit 0
+//   3. un parcours sans entree                          -> FAIL qui le nomme, exit 1
+//   4. entree sans `roles` alors que la surface en a    -> FAIL qui le nomme, exit 1
+//   5. role qui n'est pas de la surface                 -> FAIL qui nomme le role, exit 1
+//   6. entree qui ne designe aucun parcours de surface  -> FAIL qui la nomme, exit 1
+//   7. cle non tableau                                  -> FAIL, exit 1
+//   8. surface sans role : une entree sans `roles` tient -> PASS, exit 0
+//   9. aucun parcours en surface                        -> 1 PASS motive, exit 0
+//  10. remedes joues : cle ecrite (2) et entree ajoutee (3) -> PASS, exit 0
+//  11. cle juste, roles de la surface declares nulle part  -> FAIL (forge-tests rendrait NA), puis remede
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2253-'))
+  try {
+    const OPERATEUR = { id: 'S-01', type: 'role', libelle: 'Opérateur' }
+    const APPROBATEUR = { id: 'S-02', type: 'role', libelle: 'Approbateur' }
+    const DEMANDE = { id: 'S-03', type: 'parcours', libelle: 'Demande de congé' }
+    const VALIDATION = { id: 'S-04', type: 'parcours', libelle: 'Validation de congé' }
+    const E_DEMANDE = { id: 'S-03', nom: 'Demande de congé', roles: ['Opérateur', 'Approbateur'] }
+    const E_VALIDATION = { id: 'S-04', nom: 'Validation de congé', roles: ['Approbateur'] }
+    // `roles` : la cle racine que forge-tests lit pour former des personas (sans elle, son pan
+    // parcours-personas rend NA, mesure du 06/11/2026) ; posee d'office, retiree par le cas 11.
+    const referentiel = (surface, parcours, { sansRoles = false } = {}) => {
+      const ref = {
+        projet: 'Fixture TF-2253 (cle parcours)',
+        ...(sansRoles ? {} : { roles: surface.filter(s => s.type === 'role').map(s => s.libelle) }),
+        besoins: [{ id: 'B-01', enonce: 'Poser et valider un conge.' }],
+        surface,
+        exigences: surface.map((s, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: `Le produit sert ${s.libelle}.`,
+          critere: 'La ressource est affichee.',
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-2253' },
+          surface: [s.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (parcours !== undefined) ref.parcours = parcours
+      return ref
+    }
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-surface.mjs', [chemin])
+      const s6 = (r.rapport?.constats ?? []).filter(x => x.regle === 'S6')
+      return {
+        code: r.code,
+        s6,
+        avert: s6.filter(x => x.statut === 'SANS_OBJET'),
+        fails: s6.filter(x => x.statut === 'FAIL'),
+        dit: (x, ...fragments) => fragments.every(f => `${x.ou} ${x.message}`.includes(f))
+      }
+    }
+    const S = [OPERATEUR, APPROBATEUR, DEMANDE, VALIDATION]
+
+    const complet = jouer('1-complet', referentiel(S, [E_DEMANDE, E_VALIDATION]))
+    const absente = jouer('2-cle-absente', referentiel(S))
+    const manquant = jouer('3-un-parcours-sans-entree', referentiel(S, [E_DEMANDE]))
+    const sansRoles = jouer('4-sans-roles', referentiel(S, [E_DEMANDE, { id: 'S-04', nom: 'Validation de congé' }]))
+    const roleInconnu = jouer('5-role-inconnu', referentiel(S, [E_DEMANDE, { ...E_VALIDATION, roles: ['Directeur'] }]))
+    const orphelin = jouer('6-orphelin', referentiel(S, [E_DEMANDE, E_VALIDATION, { nom: 'Parcours fantôme', roles: ['Opérateur'] }]))
+    const nonTableau = jouer('7-non-tableau', referentiel(S, { 'Demande de congé': ['Opérateur'] }))
+    const sansRole = jouer('8-sans-role', referentiel([DEMANDE, VALIDATION], ['Demande de congé', { nom: 'Validation de congé' }]))
+    const sansParcours = jouer('9-sans-parcours', referentiel([OPERATEUR, APPROBATEUR]))
+    const sansPersona = jouer('11-sans-persona', referentiel(S, [E_DEMANDE, E_VALIDATION], { sansRoles: true }))
+    const refSansPersona = referentiel(S, [E_DEMANDE, E_VALIDATION], { sansRoles: true })
+    refSansPersona.personas = ['Opérateur', { nom: 'Approbateur' }]
+    const remedePersona = jouer('11b-remede-personas', refSansPersona)
+    // Les remedes sont appliques AUX referentiels en defaut (cas 2 et 3), tels que le message les prescrit.
+    const refAbsente = referentiel(S)
+    refAbsente.parcours = S.filter(s => s.type === 'parcours').map(s => ({ id: s.id, nom: s.libelle, roles: ['Opérateur', 'Approbateur'] }))
+    const refManquant = referentiel(S, [E_DEMANDE])
+    refManquant.parcours.push(E_VALIDATION)
+    const remedeCle = jouer('10a-remede-cle-ecrite', refAbsente)
+    const remedeEntree = jouer('10b-remede-entree-ajoutee', refManquant)
+
+    const cas = [
+      ['1. cle complete, roles tous connus -> 2 PASS (un par parcours), exit 0',
+        complet.code === 0 && complet.s6.length === 2 && complet.s6.every(x => x.statut === 'PASS')],
+      ['2. cle absente -> 2 avertissements qui NOMMENT les parcours, exit 0 (non bloquant)',
+        absente.code === 0 && absente.avert.length === 2 &&
+        absente.avert.some(x => absente.dit(x, 'Demande de congé')) &&
+        absente.avert.some(x => absente.dit(x, 'Validation de congé'))],
+      ['3. un parcours sans entree -> FAIL qui le nomme, exit 1',
+        manquant.code === 1 && manquant.fails.length === 1 && manquant.dit(manquant.fails[0], 'Validation de congé')],
+      ['4. entree sans `roles` alors que la surface en a -> FAIL qui nomme le parcours, exit 1',
+        sansRoles.code === 1 && sansRoles.fails.length === 1 && sansRoles.dit(sansRoles.fails[0], 'Validation de congé', 'roles')],
+      ['5. role absent de la surface -> FAIL qui nomme le role, exit 1',
+        roleInconnu.code === 1 && roleInconnu.fails.length === 1 && roleInconnu.dit(roleInconnu.fails[0], 'Directeur')],
+      ['6. entree qui ne designe aucun parcours de surface -> FAIL qui la nomme, exit 1',
+        orphelin.code === 1 && orphelin.fails.length === 1 && orphelin.dit(orphelin.fails[0], 'Parcours fantôme')],
+      ['7. cle non tableau -> FAIL, exit 1',
+        nonTableau.code === 1 && nonTableau.fails.length === 1 && nonTableau.dit(nonTableau.fails[0], 'tableau')],
+      ['8. surface sans role : une entree sans `roles` tient -> 2 PASS, exit 0',
+        sansRole.code === 0 && sansRole.s6.length === 2 && sansRole.s6.every(x => x.statut === 'PASS')],
+      ['9. aucun parcours en surface -> 1 PASS motive, exit 0',
+        sansParcours.code === 0 && sansParcours.s6.length === 1 && sansParcours.s6[0].statut === 'PASS' &&
+        sansParcours.s6[0].message.includes("n'est pas due")],
+      ['10a. remede de 2 joue : la cle ecrite -> plus aucun avertissement, exit 0',
+        remedeCle.code === 0 && remedeCle.avert.length === 0 && remedeCle.s6.every(x => x.statut === 'PASS')],
+      ['10b. remede de 3 joue : l\'entree ajoutee -> plus aucun FAIL, exit 0',
+        remedeEntree.code === 0 && remedeEntree.fails.length === 0],
+      ['11. cle `parcours` juste mais roles de la surface declares nulle part -> FAIL qui les nomme, exit 1',
+        sansPersona.code === 1 && sansPersona.fails.length === 1 &&
+        sansPersona.dit(sansPersona.fails[0], 'Opérateur', 'Approbateur', 'sans objet')],
+      ['11b. remede de 11 joue : les roles declares a la cle `personas` (chaine ou objet) -> exit 0',
+        remedePersona.code === 0 && remedePersona.fails.length === 0]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-surface.mjs (branche TF-2253, S6 cle parcours, fixtures ephemeres, 2 sens + remedes)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${complet.code} 2=${absente.code} 3=${manquant.code} ` +
+        `4=${sansRoles.code} 5=${roleInconnu.code} 6=${orphelin.code} 7=${nonTableau.code} ` +
+        `8=${sansRole.code} 9=${sansParcours.code}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 // --- branche TF-2119 : un ecart de surface implicite est une DECISION HUMAINE REFERENCEE -----
 // Fait (lot de Produit-86 du 03/11/2026) : l'onboarding a ete ecarte avec `decide_par` « la
 // session de build », S4 a rendu PASS, et le porteur juge cet ecart contraire a la loi n° 3
