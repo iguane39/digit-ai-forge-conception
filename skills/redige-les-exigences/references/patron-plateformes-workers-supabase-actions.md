@@ -243,7 +243,19 @@ dans le référentiel.
 | Q16 | Où se fixent les valeurs publiques connues à la construction ? | variable de build ; variable d'exécution | variable d'exécution, sauf besoin de les figer dans le paquet | exigence | les variables de build ne sont pas lisibles à l'exécution [S10] |
 | Q17 | Qui supprime les prévisualisations d'une pull request fermée ? | `wrangler preview delete` à la fermeture ; la suppression automatique à la limite | suppression à la fermeture | exigence | [S4][S7] |
 
-## 7. Hypothèses non résolues
+## 7. Réglages de sécurité de la plateforme
+
+Une plateforme livre certaines options de sécurité dans leur état d'origine, souvent le moins sûr, et le produit hérite de cet état si personne ne le change. Le pilot tient la liste de ces réglages dans un registre daté et sourcé, `references/REGLAGES-SURS-PAR-DEFAUT.json`. Ce patron n'en recopie aucun réglage, aucune commande et aucune valeur : une page d'éditeur change, et le registre se relit à chaque run.
+
+**Lire le registre.** `node scripts/reglages-plateforme.mjs --plateformes <liste>`, avec les plateformes que l'entrant nomme (Cloudflare, Supabase, GitHub). Le script cherche le registre sous `$FORGE_ROOT/digit-ai-factory/references/`, puis dans `digit-ai-factory` à côté de ce dépôt, ou à l'adresse de `--registre`. Registre introuvable ou entrée incohérente : exit 2, et le run le dit au lieu d'écrire « aucun réglage ». Une plateforme nommée sans entrée au registre est nommée à la sortie.
+
+**Un réglage classé `defaut` devient une exigence.** Le gabarit porte l'énoncé, le critère (la commande `cmd_lire` de l'entrée retourne la valeur `attendu` de cette entrée), le palier MVP, le statut « fait constaté » avec l'adresse et la date de lecture de l'entrée, et `hors_surface`. Le run ajoute `id`, `besoin` et `cotation`. Le critère renvoie à l'entrée sans recopier `attendu` ; `cmd_lire` et `attendu` s'écrivent en clair dans `EXIGENCES.md`, à côté de l'exigence, pour l'audit.
+
+**Un réglage classé `decision` devient une question de conception.** Le gabarit porte deux options : appliquer, avec le coût que le registre lit dans ses critères non tenus (offre payante, flux nominal modifié, réglage hors API) ; écarter, avec un écart décidé par un humain et référencé. Le run y ajoute sa recommandation et pose la question selon le format des questions de la méthode (indicées, option recommandée, défaut appliqué). Défaut en l'absence de réponse : ne pas appliquer, noté comme hypothèse non résolue ; l'écart reste nommé, jamais nu. La réponse se range en exigence (appliquer, avec l'`attendu` de l'entrée) ou en « hors de portée » de `ENTRANT.md` avec une décision humaine référencée.
+
+**Ce que ce patron ne fait pas.** Il ne joue aucune commande du registre. Appliquer les réglages à la création du projet relève de forge-development, les relire en campagne de forge-tests, les contrôler avant la mise en production de forge-ops.
+
+## 8. Hypothèses non résolues
 
 - Les motifs de redirection du paragraphe 3 sont déduits ; aucun n'a été rejoué sur un projet
   Supabase de test. À rejouer avant de les inscrire comme critère d'acceptation [S19][S4].

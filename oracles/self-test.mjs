@@ -14,6 +14,9 @@ import { dirname, join } from 'node:path'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { createHash } from 'node:crypto'
+// TF-2226 : les cles du registre des reglages surs, telles que l'outil de lecture les exige ; le patron
+// ne peut nommer qu'une cle que l'outil connait (regle PP7).
+import { CLES as CLES_REGISTRE_REGLAGES } from '../scripts/reglages-plateforme.mjs'
 // TF-0823 : le calcul de la matrice complete vit a part (`matrice.mjs`), pour qu'un humain
 // puisse l'imprimer sans jouer toute la recette -- `node oracles/matrice.mjs`. Ce module
 // CALCULE ; le jugement est ici, dans la branche TF-0823.
@@ -3114,6 +3117,9 @@ ${processus}
 // appele par SKILL.md de redige-les-exigences et par le README (loi 1 : un fichier que rien n'appelle n'existe pas).
 // Preuve : le patron reel passe ; la fixture verte passe ; la fixture rouge declenche PP1 a PP5 ; cinq mutations
 // du patron reel declenchent chacune UNE seule regle ; un SKILL.md qui ne cite pas le patron declenche PP6.
+// TF-2226 : PP7 la section « Reglages de securite de la plateforme » existe et nomme le registre du pilot,
+// son outil de lecture, les classements et des cles que l'outil connait ; PP8 elle ne recopie aucune commande
+// du registre ; PP9 l'outil est appele par SKILL.md et le README.
 {
   const PATRON_NOM = 'patron-plateformes-workers-supabase-actions.md'
   const PATRON_FICHIER = join(ICI, '..', 'skills', 'redige-les-exigences', 'references', PATRON_NOM)
@@ -3129,7 +3135,7 @@ ${processus}
   const SEPARATEUR = /^\s*\|[\s:|-]+\|\s*$/
 
   // Rend la liste des regles violees (chaque element : { regle, msg }).
-  function jugerPatron (texte, { skill, readme } = {}) {
+  function jugerPatron (texte, { skill, readme, reglages } = {}) {
     const ko = []
     const m = texte.replace(/^﻿/, '').match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n([\s\S]*)$/)
     const fm = m ? m[1] : ''
@@ -3178,6 +3184,32 @@ ${processus}
     // PP6 (seulement si on fournit les textes appelants)
     if (skill !== undefined && !skill.includes(PATRON_NOM)) ko.push({ regle: 'PP6', msg: 'SKILL.md de redige-les-exigences ne cite pas le patron' })
     if (readme !== undefined && !readme.includes(PATRON_NOM.replace(/\.md$/, ''))) ko.push({ regle: 'PP6', msg: 'le README ne cite pas le patron' })
+    // PP7, PP8 (TF-2226, seulement si on fournit les cles du registre) : la section « Reglages de securite
+    // de la plateforme » existe, nomme le registre du pilot, l'outil qui le lit, les deux classements et les
+    // cles qu'elle emploie (connues de l'outil) ; elle ne recopie aucune commande du registre (loi n° 4).
+    if (reglages !== undefined) {
+      const debut = L.findIndex(l => /^##\s+\d+\.\s+Réglages de sécurité de la plateforme\s*$/.test(l))
+      const fin = debut === -1 ? -1 : L.findIndex((l, i) => i > debut && /^##\s/.test(l))
+      const section = debut === -1 ? '' : L.slice(debut, fin === -1 ? undefined : fin).join('\n')
+      if (debut === -1) {
+        ko.push({ regle: 'PP7', msg: 'section « Réglages de sécurité de la plateforme » absente' })
+      } else {
+        for (const attendu of ['references/REGLAGES-SURS-PAR-DEFAUT.json', 'scripts/reglages-plateforme.mjs',
+          '`defaut`', '`decision`', 'coût', 'hypothèse']) {
+          if (!section.includes(attendu)) ko.push({ regle: 'PP7', msg: `la section ne nomme pas ${attendu}` })
+        }
+        for (const cle of ['cmd_lire', 'attendu']) {
+          if (!section.includes(`\`${cle}\``)) ko.push({ regle: 'PP7', msg: `la section ne nomme pas la cle \`${cle}\`` })
+          if (!reglages.cles.includes(cle)) ko.push({ regle: 'PP7', msg: `la cle \`${cle}\` n'existe pas dans le registre lu par l'outil` })
+        }
+        if (/\bcurl\b|\bgh api\b|https?:\/\/api\./.test(section)) {
+          ko.push({ regle: 'PP8', msg: 'la section recopie une commande du registre (curl, gh api ou adresse d\'API)' })
+        }
+      }
+    }
+    // PP9 (TF-2226) : l'outil de lecture est appele par SKILL.md et par le README (loi 1).
+    if (reglages !== undefined && skill !== undefined && !skill.includes('reglages-plateforme.mjs')) ko.push({ regle: 'PP9', msg: 'SKILL.md ne cite pas scripts/reglages-plateforme.mjs' })
+    if (reglages !== undefined && readme !== undefined && !readme.includes('reglages-plateforme.mjs')) ko.push({ regle: 'PP9', msg: 'le README ne cite pas scripts/reglages-plateforme.mjs' })
     return ko
   }
   const regles = (ko) => [...new Set(ko.map(k => k.regle))].sort().join(',')
@@ -3189,12 +3221,20 @@ ${processus}
   const verte = lire(join(ICI, 'fixtures', 'patron-plateformes-verte', 'PATRON.md')) ?? ''
   const rouge = lire(join(ICI, 'fixtures', 'patron-plateformes-rouge', 'PATRON.md')) ?? ''
 
-  const koReel = reel === null ? [{ regle: 'PP0', msg: `patron absent : ${PATRON_NOM}` }] : jugerPatron(reel, { skill: skillTexte, readme: readmeTexte })
+  const REGL = { cles: CLES_REGISTRE_REGLAGES }
+  const koReel = reel === null ? [{ regle: 'PP0', msg: `patron absent : ${PATRON_NOM}` }] : jugerPatron(reel, { skill: skillTexte, readme: readmeTexte, reglages: REGL })
   const base = reel ?? ''
-  const mutation = (f) => regles(jugerPatron(f(base), { skill: skillTexte, readme: readmeTexte }))
+  const sansSection = (t) => {
+    const l = t.split(/\r?\n/)
+    const d = l.findIndex(x => /^##\s+\d+\.\s+Réglages de sécurité/.test(x))
+    const f = l.findIndex((x, i) => i > d && /^##\s/.test(x))
+    return d === -1 ? t : [...l.slice(0, d), ...l.slice(f)].join('\n')
+  }
+  const juge = (o) => regles(jugerPatron(base, { skill: skillTexte, readme: readmeTexte, reglages: REGL, ...o }))
+  const mutation = (f) => regles(jugerPatron(f(base), { skill: skillTexte, readme: readmeTexte, reglages: REGL }))
   const retireLuLe = (t) => { let fait = false; return t.split(/\r?\n/).filter(l => (!fait && /^\s+lu_le:/.test(l)) ? !(fait = true) : true).join('\n') }
   const cas = [
-    [`1. le patron reel passe PP1 a PP6 (${koReel.length} violation(s))`, reel !== null && koReel.length === 0],
+    [`1. le patron reel passe PP1 a PP9 (${koReel.length} violation(s))`, reel !== null && koReel.length === 0],
     ['2. fixture verte : aucune violation PP1 a PP5', regles(jugerPatron(verte)) === ''],
     [`3. fixture rouge : PP1,PP2,PP3,PP4,PP5 declenchees (${regles(jugerPatron(rouge))})`, regles(jugerPatron(rouge)) === 'PP1,PP2,PP3,PP4,PP5'],
     ['4. mutation : une source sans lu_le declenche PP1 seule', reel !== null && mutation(retireLuLe) === 'PP1'],
@@ -3202,7 +3242,13 @@ ${processus}
     ['6. mutation : une source citee mais non definie declenche PP3 seule', reel !== null && mutation(t => t + '\n\nVoir [S99].\n') === 'PP3'],
     ['7. mutation : une affectation NOM=valeur declenche PP4 seule', reel !== null && mutation(t => t + '\n\nSUPABASE_SECRET_KEY=valeur\n') === 'PP4'],
     ['8. mutation : la section des hypotheses renommee declenche PP5 seule', reel !== null && mutation(t => t.replace(/Hypothèses non résolues/g, 'Autres points')) === 'PP5'],
-    ['9. un SKILL.md qui ne cite pas le patron declenche PP6', regles(jugerPatron(base, { skill: skillTexte.split(PATRON_NOM).join('autre.md'), readme: readmeTexte })) === 'PP6']
+    ['9. un SKILL.md qui ne cite pas le patron declenche PP6', regles(jugerPatron(base, { skill: skillTexte.split(PATRON_NOM).join('autre.md'), readme: readmeTexte, reglages: REGL })) === 'PP6'],
+    ['10. mutation (TF-2226) : la section des reglages de securite retiree declenche PP7 seule', reel !== null && mutation(sansSection) === 'PP7'],
+    ['11. mutation (TF-2226) : une commande du registre recopiee (curl) dans la section declenche PP8 seule', reel !== null && mutation(t => t.replace(/^(##\s+\d+\.\s+Réglages de sécurité.*)$/m, '$1\n\ncurl -sS -X PUT https://api.supabase.com/v1/projects/x/ssl-enforcement\n')) === 'PP8'],
+    ['12. mutation (TF-2226) : outil de lecture non nomme dans la section declenche PP7 seule', reel !== null && mutation(t => t.split('scripts/reglages-plateforme.mjs').join('scripts/autre.mjs')) === 'PP7'],
+    ['13. (TF-2226) une cle du registre inconnue de outil (attendu retire de ses cles) declenche PP7 seule', reel !== null && juge({ reglages: { cles: CLES_REGISTRE_REGLAGES.filter(c => c !== 'attendu') } }) === 'PP7'],
+    ['14. (TF-2226) un SKILL.md qui ne cite pas outil de lecture declenche PP9 seule', juge({ skill: skillTexte.split('reglages-plateforme.mjs').join('autre.mjs') }) === 'PP9'],
+    ['15. (TF-2226) un README qui ne cite pas outil de lecture declenche PP9 seule', juge({ readme: readmeTexte.split('reglages-plateforme.mjs').join('autre.mjs') }) === 'PP9']
   ]
   const ko = cas.filter(([, ok]) => !ok)
   console.log(`${PATRON_NOM} (branche TF-2010, patron de plateformes : sources, absence de valeur, appel)`)

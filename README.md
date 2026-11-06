@@ -390,6 +390,17 @@ plateformes ; la branche TF-2010 de la recette refuse un patron dont une ligne n
 dont une source n'est pas datée, qui porte une valeur (clé, affectation, adresse de projet), ou que
 ni `SKILL.md` ni ce README n'appellent. Le déploiement lui-même relève de forge-ops.
 
+**Les réglages de sécurité de la plateforme (TF-2226).** Une plateforme livre des options de sécurité
+dans leur état d'origine, et le produit en hérite si rien ne les change. Le pilot en tient la liste
+dans `references/REGLAGES-SURS-PAR-DEFAUT.json`, datée et sourcée. `node scripts/reglages-plateforme.mjs
+--plateformes Cloudflare,Supabase,GitHub` la lit (`$FORGE_ROOT/digit-ai-factory`, sinon le dépôt voisin,
+sinon `--registre`) et rend un gabarit d'exigence vérifiable par réglage classé `defaut` et une question
+de conception, avec ses options et son coût, par réglage classé `decision` ; registre introuvable : exit 2,
+jamais « aucun réglage ». Le patron (section 7) dit quoi en faire et ne recopie aucune commande du
+registre ; la branche TF-2010 de la recette y ajoute PP7 à PP9. L'outil a sa recette,
+`node scripts/reglages-plateforme.self-test.mjs`, sur une copie du registre jamais sur le fichier du
+pilot, et elle joue les exigences rendues contre les oracles de la forge.
+
 ## Ce que la forge ne fait pas
 
 - Pas de PRD d'implémentation, d'epics, de stories, d'architecture — c'est l'étape C de la
