@@ -125,6 +125,12 @@ const LISTE_PRONOMS = [
 // était lu dans « réelle » (refus d'un critère juste) et « ça » comme « celle-là », dont un bord
 // est accentué, n'étaient jamais atteints (garde muette là où elle devait parler).
 const RE_PRONOMS = new RegExp(`${AVANT}(${LISTE_PRONOMS.join('|')})${APRES}`, 'giu')
+// TF-2283 — un littéral CITÉ n'est pas du français : l'attendu Cloudflare `always_use_https = on`
+// portait « on » comme valeur d'API, et E8 le refusait comme pronom indéfini. Un passage entre
+// accents graves ou entre guillemets (droits ", typographiques “ ” ou français « ») est retiré du
+// texte AVANT la lecture d'E8. Le pronom NU (« on vérifie que… ») reste refusé. Les apostrophes
+// droites ne délimitent rien : elles sont l'élision du français (« l'utilisateur »).
+const RE_LITTERAL_CITE = /`[^`\n]+`|"[^"\n]+"|“[^”\n]+”|«[^»\n]+»/gu
 
 // E9 — caractéristiques d'ensemble (ISO/IEC/IEEE 29148 : *complete*, *consistent*), étude P-10
 // §3.3 M2. Contrôle mécanique, pas sémantique : deux exigences du même besoin, partageant un
@@ -295,7 +301,7 @@ for (const [i, e] of exigences.entries()) {
   }
 
   // E8 — absolus/superlatifs et pronoms personnels/indéfinis, énoncé et critère.
-  const texteE8 = `${enonce} ${critere}`
+  const texteE8 = `${enonce} ${critere}`.replace(RE_LITTERAL_CITE, ' ')
   const trouvesE8 = [...new Set([
     ...[...texteE8.matchAll(RE_ABSOLUS)].map(m => m[0].toLowerCase()),
     ...[...texteE8.matchAll(RE_POURCENT_TOTAL)].map(m => m[0].trim()),

@@ -660,6 +660,74 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-2283 : E8 exempte un litteral CITE, jamais le pronom nu -----------------
+// Constat de TF-2226 : un critere qui cite l'attendu Cloudflare `always_use_https = on` etait
+// refuse (« absolus/pronoms non vérifiables : on »), la valeur d'API etant lue comme le pronom
+// indefini. La regle retire desormais un passage cite (accents graves, guillemets droits,
+// typographiques « “ ” » ou francais « « » ») AVANT lecture. Deux sens, sur la VERTE partagee :
+//   VERT  -- le litteral cite passe, sous chacune des quatre formes de citation ;
+//   ROUGE -- le pronom nu (« On verifie que… »), l'absolu nu et le litteral NON ferme echouent
+//            toujours : sans eux, on aurait eteint la regle au lieu de l'exempter.
+// Fixtures ephemeres derivees de la VERTE (une seule exigence change), comme TF-0799.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2283-'))
+  try {
+    const base = JSON.parse(readFileSync(join(VERTE, 'EXIGENCES.json'), 'utf8'))
+    const juger = (nom, critere) => {
+      const ref = JSON.parse(JSON.stringify(base))
+      ref.exigences.find(e => e.id === 'E-001').critere = critere
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + '\n')
+      const r = lancer('oracle-exigences.mjs', [chemin])
+      const surE001 = (r.rapport?.constats ?? []).filter(c => String(c.ou).includes('E-001'))
+      return {
+        code: r.code,
+        statut: (regle) => surE001.find(c => c.regle === regle)?.statut,
+        message: (regle) => surE001.find(c => c.regle === regle)?.message ?? ''
+      }
+    }
+    const verts = {
+      'accents-graves': 'Le réglage `always_use_https = on` est présent dans la zone.',
+      'guillemets-droits': 'Le réglage "always_use_https = on" est présent dans la zone.',
+      'guillemets-typographiques': 'Le réglage “always_use_https = on” est présent dans la zone.',
+      'guillemets-francais': 'Le réglage « always_use_https = on » est présent dans la zone.'
+    }
+    const jugesVerts = Object.entries(verts).map(([nom, c]) => [nom, juger(`vert-${nom}`, c)])
+    const pronomNu = juger('rouge-pronom-nu', 'On vérifie que le réglage est présent dans la zone.')
+    const pronomAuxCotes = juger('rouge-pronom-aux-cotes',
+      'On vérifie que `always_use_https = on` est présent dans la zone.')
+    const absoluNu = juger('rouge-absolu-nu',
+      'Le réglage `always_use_https = on` est toujours présent dans la zone.')
+    const nonFerme = juger('rouge-non-ferme',
+      'Le réglage `always_use_https = on est présent dans la zone.')
+
+    const cas = [
+      ...jugesVerts.map(([nom, r]) => [
+        `VERT -- E8 admet le litteral cite (${nom}) : PASS et recette entiere verte`,
+        r.code === 0 && r.statut('E8') === 'PASS']),
+      ['ROUGE -- le pronom NU « On verifie que… » echoue toujours (FAIL nommant « on »)',
+        pronomNu.code === 1 && pronomNu.statut('E8') === 'FAIL' &&
+        /: on$/.test(pronomNu.message('E8'))],
+      ['ROUGE -- le litteral cite n\'abrite pas le pronom nu a ses cotes (FAIL nommant « on »)',
+        pronomAuxCotes.code === 1 && pronomAuxCotes.statut('E8') === 'FAIL' &&
+        /: on$/.test(pronomAuxCotes.message('E8'))],
+      ['ROUGE -- l\'absolu NU « toujours » echoue toujours a cote d\'un litteral cite',
+        absoluNu.code === 1 && absoluNu.statut('E8') === 'FAIL' &&
+        absoluNu.message('E8').includes('toujours')],
+      ['ROUGE -- un accent grave NON ferme n\'exempte rien (le « on » reste refuse)',
+        nonFerme.code === 1 && nonFerme.statut('E8') === 'FAIL' &&
+        /: on$/.test(nonFerme.message('E8'))]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences.mjs (branche TF-2283, fixtures ephemeres, 2 sens)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 // --- branche TF-0811 : S4 juge, et l'ecart explicite a un lieu ou s'ecrire ---------------
 // TF-0804 avait pose S4 en avertissement NON BLOQUANT, pour une seule raison : EXIGENCES.json
 // n'offrait aucun champ ou porter l'ecart explicite d'un candidat d'office -- un FAIL aurait
