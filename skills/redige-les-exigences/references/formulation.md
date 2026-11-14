@@ -112,6 +112,31 @@ pronom sans antécédent mécanique n'a pas de sujet vérifiable ; un absolu n'a
 bornée. Distincte d'E4 : E4 attrape le ressenti (« robuste »), E8 attrape l'absence de sujet ou
 de borne.
 
+*Exemption des littéraux cités (TF-2283, TF-2291, TF-2537)* : un littéral cité n'est pas du
+français, et E8 ne le lit pas — la valeur d'API `always_use_https = on` porte « on » sans que ce
+soit le pronom. L'oracle applique l'exemption ainsi, et pas plus largement :
+
+| Forme citée | Lue par E8 ? | Exemple |
+|---|---|---|
+| Entre accents graves, fermés sur la même ligne | **Non, sans borne de longueur** | `always_use_https = on` |
+| Entre guillemets (droits `"…"`, typographiques `“…”`, français `« … »`), un seul mot | Non | « on » |
+| Entre guillemets, 2 à 4 mots, sans pronom en position de sujet | Non | « mode : on » |
+| Entre guillemets, 5 mots ou plus | **Oui** | « Tous les champs sont vérifiés ici » |
+| Entre guillemets, 2 à 4 mots dont un pronom en position de sujet | **Oui** | « Elle est affichée » |
+| Passage non fermé sur la même ligne (délimiteur orphelin, ou passage sur deux lignes) | **Oui**, comme du texte nu | un accent grave ouvert, jamais refermé |
+
+Un pronom n'est pas en position de sujet quand il est la valeur d'une affectation (`= on`,
+`: on`) ou le seul mot du passage. Les apostrophes droites ne délimitent rien : elles sont
+l'élision du français (« l'utilisateur »). Le pronom nu (« On vérifie que… ») reste refusé.
+
+**La limite, à connaître avant de citer** : la borne des 4 mots ne s'applique qu'aux guillemets.
+Une phrase entière entre accents graves échappe encore à E8 : `Elle est affichée à la saisie` et
+`Tous les champs sont vérifiés à la saisie` passent, mesuré le 14/11/2026 sur l'oracle à 1494dda
+(E8 PASS, exit 0), alors que les mêmes phrases entre guillemets sont refusées. E8 ne protège donc
+pas d'une phrase mise entre accents graves. Réserver les accents graves au code, à un identifiant ou
+à une valeur d'API ; écrire une phrase en toutes lettres, sans pronom ni absolu. Dans la borne des guillemets, un absolu isolé (« Tous les champs requis », 4 mots) est
+exempté lui aussi : l'exemption lit les pronoms en position de sujet, pas les absolus.
+
 **E9** — caractéristique d'*ensemble*, jugée sur le référentiel entier, pas exigence par
 exigence : aucun couple d'exigences du même besoin, sur le même élément de surface, dont les
 critères ne diffèrent que par un couple de prédicats antonymes (`est autorisé` / `est
