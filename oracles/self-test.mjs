@@ -669,6 +669,11 @@ for (const o of ORACLES) {
 //   ROUGE -- le pronom nu (« On verifie que… »), l'absolu nu et le litteral NON ferme echouent
 //            toujours : sans eux, on aurait eteint la regle au lieu de l'exempter.
 // Fixtures ephemeres derivees de la VERTE (une seule exigence change), comme TF-0799.
+// TF-2291 borne l'exemption aux LITTERAUX : une phrase entiere mise entre guillemets (plus de
+// 4 mots, ou un pronom en position de sujet) est lue par E8, la valeur d'API citee reste exemptee.
+//   VERT  -- la valeur d'API seule (« "on" »), et un passage de 4 mots sans pronom sujet ;
+//   ROUGE -- « Elle est affichee » (pronom sujet, 3 mots), « Si on clique » (pronom non initial),
+//            et un passage de 5 mots a absolu, sous les guillemets droits, typographiques et francais.
 {
   const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2283-'))
   try {
@@ -700,8 +705,37 @@ for (const o of ORACLES) {
       'Le réglage `always_use_https = on` est toujours présent dans la zone.')
     const nonFerme = juger('rouge-non-ferme',
       'Le réglage `always_use_https = on est présent dans la zone.')
+    // TF-2291 : l'exemption se borne aux litteraux.
+    const valeurSeule = juger('vert-valeur-seule', 'Le réglage "on" est présent dans la zone.')
+    const borneHaute = juger('vert-quatre-mots', 'Le réglage « est toujours actif ici » est présent dans la zone.')
+    const phrasesRouges = Object.entries({
+      'guillemets-droits': 'Le message "Elle est affichée" est présent dans la zone.',
+      'guillemets-typographiques': 'Le message “Elle est affichée” est présent dans la zone.',
+      'guillemets-francais': 'Le message « Elle est affichée » est présent dans la zone.'
+    }).map(([nom, c]) => [nom, juger(`rouge-phrase-${nom}`, c)])
+    const pronomNonInitial = juger('rouge-pronom-non-initial',
+      'Le message « Si on clique » est présent dans la zone.')
+    const phraseLongue = juger('rouge-phrase-longue',
+      'Le message « Le réglage est toujours actif » est présent dans la zone.')
+    const backtickPhrase = juger('vert-backtick-phrase',
+      'Le message `Le réglage est toujours actif ici` est présent dans la zone.')
 
     const cas = [
+      ['VERT -- TF-2291 : la valeur d\'API citee seule (« "on" ») reste exemptee',
+        valeurSeule.code === 0 && valeurSeule.statut('E8') === 'PASS'],
+      ['VERT -- TF-2291 : un passage de 4 mots sans pronom sujet reste un litteral (borne haute)',
+        borneHaute.code === 0 && borneHaute.statut('E8') === 'PASS'],
+      ['VERT -- TF-2291 : l\'accent grave designe du code, exempte sans borne de longueur',
+        backtickPhrase.code === 0 && backtickPhrase.statut('E8') === 'PASS'],
+      ...phrasesRouges.map(([nom, r]) => [
+        `ROUGE -- TF-2291 : la phrase « Elle est affichee » entre guillemets echoue (${nom}, FAIL nommant « elle »)`,
+        r.code === 1 && r.statut('E8') === 'FAIL' && /: elle$/.test(r.message('E8'))]),
+      ['ROUGE -- TF-2291 : un pronom non initial (« Si on clique ») n\'est pas une valeur d\'affectation',
+        pronomNonInitial.code === 1 && pronomNonInitial.statut('E8') === 'FAIL' &&
+        /: on$/.test(pronomNonInitial.message('E8'))],
+      ['ROUGE -- TF-2291 : un passage de 5 mots depasse la borne (FAIL nommant « toujours »)',
+        phraseLongue.code === 1 && phraseLongue.statut('E8') === 'FAIL' &&
+        phraseLongue.message('E8').includes('toujours')],
       ...jugesVerts.map(([nom, r]) => [
         `VERT -- E8 admet le litteral cite (${nom}) : PASS et recette entiere verte`,
         r.code === 0 && r.statut('E8') === 'PASS']),
