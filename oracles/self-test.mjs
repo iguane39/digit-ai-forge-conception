@@ -674,6 +674,8 @@ for (const o of ORACLES) {
 //   VERT  -- la valeur d'API seule (« "on" »), et un passage de 4 mots sans pronom sujet ;
 //   ROUGE -- « Elle est affichee » (pronom sujet, 3 mots), « Si on clique » (pronom non initial),
 //            et un passage de 5 mots a absolu, sous les guillemets droits, typographiques et francais.
+// TF-2569 etend la borne aux accents graves, qui etaient exemptes sans borne : une phrase entiere
+// entre accents graves est lue par E8, l'identifiant et le chemin restent exemptes.
 {
   const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2283-'))
   try {
@@ -717,16 +719,29 @@ for (const o of ORACLES) {
       'Le message « Si on clique » est présent dans la zone.')
     const phraseLongue = juger('rouge-phrase-longue',
       'Le message « Le réglage est toujours actif » est présent dans la zone.')
-    const backtickPhrase = juger('vert-backtick-phrase',
-      'Le message `Le réglage est toujours actif ici` est présent dans la zone.')
+    // TF-2569 : la meme borne vaut sous les accents graves (litteral court exempte, phrase lue).
+    const backtickIdentifiant = juger('vert-backtick-identifiant',
+      'Le champ `ON_DELETE` est présent dans la zone.')
+    const backtickChemin = juger('vert-backtick-chemin',
+      'Le fichier `src/on/elle.mjs` est présent dans la zone.')
+    const backtickPhrasesRouges = Object.entries({
+      'pronom-sujet': ['Le message `Elle est affichée` est présent dans la zone.', /: elle$/],
+      'absolu-7-mots': ['Le message `Tous les champs sont vérifiés à la saisie` est présent dans la zone.', /: tous$/],
+      'pronom-nu-long': ['Le message `On vérifie que le champ est présent à la saisie` est présent dans la zone.', /: on$/]
+    }).map(([nom, [c, motif]]) => [nom, juger(`rouge-backtick-${nom}`, c), motif])
 
     const cas = [
       ['VERT -- TF-2291 : la valeur d\'API citee seule (« "on" ») reste exemptee',
         valeurSeule.code === 0 && valeurSeule.statut('E8') === 'PASS'],
       ['VERT -- TF-2291 : un passage de 4 mots sans pronom sujet reste un litteral (borne haute)',
         borneHaute.code === 0 && borneHaute.statut('E8') === 'PASS'],
-      ['VERT -- TF-2291 : l\'accent grave designe du code, exempte sans borne de longueur',
-        backtickPhrase.code === 0 && backtickPhrase.statut('E8') === 'PASS'],
+      ['VERT -- TF-2569 : un identifiant entre accents graves (`ON_DELETE`) reste exempte',
+        backtickIdentifiant.code === 0 && backtickIdentifiant.statut('E8') === 'PASS'],
+      ['VERT -- TF-2569 : un chemin entre accents graves (`src/on/elle.mjs`) reste exempte',
+        backtickChemin.code === 0 && backtickChemin.statut('E8') === 'PASS'],
+      ...backtickPhrasesRouges.map(([nom, r, motif]) => [
+        `ROUGE -- TF-2569 : une phrase entiere entre accents graves echoue (${nom}, FAIL nommant le mot refuse)`,
+        r.code === 1 && r.statut('E8') === 'FAIL' && motif.test(r.message('E8'))]),
       ...phrasesRouges.map(([nom, r]) => [
         `ROUGE -- TF-2291 : la phrase « Elle est affichee » entre guillemets echoue (${nom}, FAIL nommant « elle »)`,
         r.code === 1 && r.statut('E8') === 'FAIL' && /: elle$/.test(r.message('E8'))]),

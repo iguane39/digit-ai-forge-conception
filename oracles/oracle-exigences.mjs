@@ -130,13 +130,15 @@ const RE_PRONOMS = new RegExp(`${AVANT}(${LISTE_PRONOMS.join('|')})${APRES}`, 'g
 // accents graves ou entre guillemets (droits ", typographiques “ ” ou français « ») est retiré du
 // texte AVANT la lecture d'E8. Le pronom NU (« on vérifie que… ») reste refusé. Les apostrophes
 // droites ne délimitent rien : elles sont l'élision du français (« l'utilisateur »).
-// TF-2291 — l'exemption se BORNE aux littéraux : un passage entre accents graves est du code, retiré
-// sans borne ; un passage entre guillemets ne l'est que s'il tient en MAX_MOTS_LITTERAL mots au plus
-// et ne porte aucun pronom en position de sujet. Une phrase entière mise entre guillemets
-// (« Elle est affichée », « Tous les champs sont vérifiés à la saisie ») reste lue par E8. Un pronom
-// n'est pas sujet quand il est la valeur d'une affectation (`= on`, `: on`) ou le seul mot du passage
-// (`"on"`) : c'est la valeur d'API de TF-2283.
-const RE_LITTERAL_CITE = /`[^`\n]+`|"([^"\n]+)"|“([^”\n]+)”|«([^»\n]+)»/gu
+// TF-2291 — l'exemption se BORNE aux littéraux : un passage entre guillemets ne l'est que s'il tient
+// en MAX_MOTS_LITTERAL mots au plus et ne porte aucun pronom en position de sujet. Une phrase entière
+// mise entre guillemets (« Elle est affichée », « Tous les champs sont vérifiés à la saisie ») reste
+// lue par E8. Un pronom n'est pas sujet quand il est la valeur d'une affectation (`= on`, `: on`) ou
+// le seul mot du passage (`"on"`) : c'est la valeur d'API de TF-2283.
+// TF-2569 — la même borne vaut pour les accents graves : ils étaient exemptés sans borne, et une
+// phrase entière entre accents graves (`Elle est affichée à la saisie`) échappait à E8. Seul le
+// littéral COURT (identifiant, chemin, valeur d'API) est exempté, quelle que soit la forme citée.
+const RE_LITTERAL_CITE = /`([^`\n]+)`|"([^"\n]+)"|“([^”\n]+)”|«([^»\n]+)»/gu
 const MAX_MOTS_LITTERAL = 4
 
 function estLitteral (passage) {
@@ -148,9 +150,9 @@ function estLitteral (passage) {
 }
 
 function retirerLitterauxCites (texte) {
-  return texte.replace(RE_LITTERAL_CITE, (cite, g1, g2, g3) => {
-    const passage = g1 ?? g2 ?? g3
-    return passage === undefined || estLitteral(passage) ? ' ' : cite
+  return texte.replace(RE_LITTERAL_CITE, (cite, g1, g2, g3, g4) => {
+    const passage = g1 ?? g2 ?? g3 ?? g4
+    return estLitteral(passage) ? ' ' : cite
   })
 }
 
