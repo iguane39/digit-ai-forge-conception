@@ -73,6 +73,15 @@ peut tenir sa cascade sans jamais écrire le champ. T6 ne juge de la cascade que
 remontée dépend. Le reste (validation tracée de l'intention, indicateurs, alternatives,
 historique) se juge par `oracles/oracle-cascade-isto.mjs` du pilot.
 
+**T7, les parties prenantes de la cascade (TF-2660).** Quand `--cascade` est fourni, T7 lit
+`parties_prenantes[]` de la cascade contre ce référentiel : le `role` de chaque partie est un rôle
+du référentiel (clé racine `roles`, ou élément de surface de type `role`), et ce rôle figure dans
+`roles` d'au moins une entrée de la clé racine `parcours` — sans cette clé, T7 échoue en nommant le
+rôle. Au moins une partie porte `utilisateur_final: true` (champ additionnel de la partie
+prenante : celle qui s'en sert chaque jour), et au moins une citation de `intention.citations[]`
+a pour `source` une entrée de ledger (« ledger seq N », ni session ni agent). T7 juge la FORME de
+la référence, jamais que l'entrée existe au ledger.
+
 `parcours` et `roles` — deux clés racine (TF-2253), écrites à la création d'un parcours. Ce n'est pas
 une convention de cette forge : c'est le format que **forge-tests** lit (adaptateur
 `parcours-personas`, `personas.parcours_declares`, TF-2207). Il exige un test de bout en bout par

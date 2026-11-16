@@ -1,7 +1,7 @@
 <!-- source: cascade/CASCADE.json -->
-<!-- source-sha256: f81d19f9dcbc5606bdea84d50ccacd5b60979453ac60b55d949e41744114aabd -->
-<!-- referentiel-sha256: f68ec60f477e6091e868b0c2f4348b3459e54fb418c4f6f949996c213465efe6 -->
-<!-- corps-sha256: de19c7c04fd1c3f86a9311a77312ca39d06a23bc7f5a86b815bb9ab90f95fe08 -->
+<!-- source-sha256: 4ab56587b0047a45cf76c9077f6a325cb205459d1d14d659eca1a971b885f6c5 -->
+<!-- referentiel-sha256: 816d05d0535fc179438df703103309b2f56e56cd7ca4ed54a44d9d8b4fa4c989 -->
+<!-- corps-sha256: b67d2a5795f5a013866443a40ec5f5433c545446af1ba668bb66e0a1df72c420 -->
 ---
 role: cascade du produit — intention, stratégie, tactique, opérationnel, puis test rétro (references/INTENTION.md du pilot) ; vue dérivée, jamais éditée à la main
 sources_de_verite: [cascade/CASCADE.json, EXIGENCES.json]
@@ -25,6 +25,10 @@ Ce que le demandeur cherche, dans ses mots :
 >
 > — Cahier des charges client, section 1 « Contexte »
 
+> « Mes salariés s'en servent chaque semaine pour déclarer leurs absences ; aujourd'hui ils m'écrivent un courriel. »
+>
+> — Réponse du porteur à la question fermée de l'ouverture, ledger seq 12
+
 **Reformulation** : Le responsable veut cesser d'être l'intermédiaire des déclarations d'absence tout en gardant la vue sur la présence de son équipe.
 
 **Validée** le 2026-10-14 par le commanditaire du produit (fixture de recette : validation simulée, aucune entrée de ledger réelle).
@@ -32,6 +36,9 @@ Ce que le demandeur cherche, dans ses mots :
 | Partie prenante | Rôle | Ce qu'elle cherche |
 |---|---|---|
 | PP-1 | responsable d'équipe | ne plus relayer les déclarations |
+| PP-2 | salarié | déclarer son absence seul, sans attendre l'accord du responsable |
+
+**Arbitrage** : L'intention du salarié prime sur le contrôle du responsable : la déclaration se fait sans relais, et le responsable garde la vue sur la présence de son équipe.
 
 **Contraintes** : C-1 Conservation des données d'absence pendant 60 mois. (Politique de conservation, version en vigueur)
 

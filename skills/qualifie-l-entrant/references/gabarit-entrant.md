@@ -22,6 +22,11 @@ d'entrée, règles de gestion, contraintes non fonctionnelles, vocabulaire.
 
 C'est la matière d'`enumere-la-surface`. Une catégorie vide se déclare vide.
 
+Ligne obligatoire **Utilisateur final** (TF-2660) : la réponse du porteur à la question fermée de
+l'ouverture (qui s'en sert chaque jour, pour quoi faire, que fait-il aujourd'hui), citée mot pour
+mot avec son entrée de ledger (« ledger seq N »). Sans réponse : « question posée, sans réponse »
+et l'utilisateur final retenu est marqué hypothèse. Jamais déduite d'une fiche ou d'un comparatif.
+
 ## 4. Hors de portée
 
 Ce que cet entrant **ne peut pas** donner, repris de la colonne correspondante de
@@ -66,3 +71,4 @@ Si **non** : les questions `a/b/c` suivent, et le document s'arrête là. Aucune
 | 2 | Aucun chiffre non tracé | `node oracles/oracle-claims.mjs` sur le référentiel aval |
 | 3 | Le seuil est tranché explicitement, pas éludé | section 5 |
 | 4 | Ce qui manque est **nommé**, pas résumé | section 4 |
+| 5 | L'utilisateur final est cité avec son entrée de ledger, ou marqué hypothèse | section 3, ligne « Utilisateur final » |

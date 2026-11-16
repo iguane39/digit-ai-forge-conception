@@ -161,6 +161,16 @@ const RE_LEDGER = new RegExp(`ledger[^\\n]{0,60}?\\d|${AVANT}seq\\.?\\s*[:#]?\\s
 const RE_CITATION = /[«"“][^»"”]{10,}[»"”]/u
 const RE_DATE_CITEE = /\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}\/\d{4}/
 
+/**
+ * TF-2660 — une source de citation « issue d'une réponse humaine du ledger » : elle porte une
+ * entrée de ledger (« ledger … N » ou « seq N ») et ne désigne ni une session, ni un agent, ni
+ * un build. La FORME de la référence est jugée, jamais son existence (déclaré en `non_juge`).
+ */
+export const citationHumaineDuLedger = (source) => {
+  const t = typeof source === 'string' ? source.trim() : ''
+  return t !== '' && RE_LEDGER.test(t) && !RE_DESIGNE_UNE_MACHINE.test(t)
+}
+
 export function defautDuDecideur (decidePar, objet = 'un écart de surface implicite') {
   const t = typeof decidePar === 'string' ? decidePar.trim() : ''
   if (t === '') return '' // l'absence est déjà nommée par le contrat commun

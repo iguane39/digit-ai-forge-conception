@@ -89,6 +89,8 @@ const CORPS_PROFIL_ROUGE = join(ICI, 'fixtures', 'corps-de-vue-profil-rouge')
 // l'exigence dit TAC-1, et ne cite plus E-006 nulle part. T1 a T4 y restent verts.
 const CASCADE_VERTE = join(ICI, 'fixtures', 'cascade-verte')
 const CASCADE_ROUGE = join(ICI, 'fixtures', 'cascade-rouge')
+// TF-2660 : fixture DEDIEE de T7 -- la cascade verte sans utilisateur final ni citation du ledger.
+const CASCADE_USAGER_ROUGE = join(ICI, 'fixtures', 'cascade-utilisateur-rouge')
 // TF-1686 : fixtures DEDIEES de la vue de la cascade, rangees comme chez un produit
 // (EXIGENCES.json, cascade/CASCADE.json, CASCADE.md cote a cote). La verte est la sortie de
 // `scripts/vue-cascade.mjs` ; la rouge ne porte que sa cascade, modifiee APRES le scellement
@@ -139,6 +141,15 @@ const ORACLES = [
     regles: ['T6'],
     args: (dossier) => [join(CASCADE_VERTE, 'EXIGENCES.json'), '--cascade',
       join(dossier === VERTE ? CASCADE_VERTE : CASCADE_ROUGE, 'CASCADE.json')]
+  },
+  {
+    // TF-2660 : T7 SEULE, sur ses fixtures dediees. Meme referentiel des deux cotes ; la rouge est
+    // la cascade verte privee de son utilisateur final et de sa citation du ledger -- T6 y reste
+    // vert, le seul FAIL possible est celui d'une cascade qui ne sert personne chaque jour.
+    fichier: 'oracle-tracabilite.mjs',
+    regles: ['T7'],
+    args: (dossier) => [join(CASCADE_VERTE, 'EXIGENCES.json'), '--cascade',
+      join(dossier === VERTE ? CASCADE_VERTE : CASCADE_USAGER_ROUGE, 'CASCADE.json')]
   },
   {
     // TF-1686 : T3 sur la vue de la cascade, dont la source est la cascade et non le referentiel.
@@ -1776,6 +1787,104 @@ for (const o of ORACLES) {
     for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
     console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
     if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-2660 : T7, chaque partie prenante a un role et un parcours, un utilisateur final ---
+// Retour du 13/11/2026 (Produit-82, RT-42) : apres deux runs, le produit etait concu pour des
+// programmes alors qu'il visait des personnes ; les roles du referentiel et la partie prenante
+// client ne nommaient aucun utilisateur final, l'intention etait reconstruite sans une phrase du
+// porteur sur l'usage, et tous les oracles de conception rendaient PASS. T7 juge, sur la cascade :
+// un role du referentiel et un parcours par partie prenante, un utilisateur final nomme, une
+// citation d'intention venue d'une reponse humaine du ledger. La verte (cascade-verte) et la rouge
+// (cascade-utilisateur-rouge) jouent les deux sens dans la boucle ; ici, un FAIL par defaut isole,
+// et le remede du message, joue.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2660-'))
+  try {
+    const refVerte = JSON.parse(readFileSync(join(CASCADE_VERTE, 'EXIGENCES.json'), 'utf8'))
+    const casVerte = JSON.parse(readFileSync(join(CASCADE_VERTE, 'CASCADE.json'), 'utf8'))
+    const copie = (o) => JSON.parse(JSON.stringify(o))
+    const jouer = (nom, ref, cascade) => {
+      const eChemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(eChemin, JSON.stringify(ref, null, 2) + NL)
+      const args = [eChemin]
+      if (cascade !== undefined) {
+        const cChemin = join(tmp, `CASCADE-${nom}.json`)
+        writeFileSync(cChemin, JSON.stringify(cascade, null, 2) + NL)
+        args.push('--cascade', cChemin)
+      }
+      const r = lancer('oracle-tracabilite.mjs', args)
+      const t7 = (r.rapport?.constats ?? []).filter(c => c.regle === 'T7')
+      return {
+        code: r.code, t7, fails: t7.filter(c => c.statut === 'FAIL'),
+        autres: (r.rapport?.constats ?? []).filter(c => c.statut === 'FAIL' && c.regle !== 'T7')
+      }
+    }
+    const avec = (modifier) => { const c = copie(casVerte); modifier(c); return c }
+    const sansPartie = jouer('1-sans-partie', refVerte, avec(c => { c.parties_prenantes = [] }))
+    const sansFinal = jouer('2-sans-utilisateur-final', refVerte,
+      avec(c => { c.parties_prenantes = c.parties_prenantes.filter(p => p.id === 'PP-1') }))
+    const citationSession = jouer('3-citation-de-la-session', refVerte, avec(c => {
+      c.intention.citations = [{ texte: 'Reconstruite depuis une fiche de comparaison.', source: 'reconstruite par la session de build, ledger seq 3' }]
+    }))
+    const citationSansLedger = jouer('4-citation-sans-ledger', refVerte, avec(c => {
+      c.intention.citations = [{ texte: 'Je veux que mes salariés déclarent leurs absences.', source: 'Cahier des charges client, section 1' }]
+    }))
+    const roleInconnu = jouer('5-role-inconnu', refVerte, avec(c => { c.parties_prenantes[1].role = 'programme partenaire' }))
+    const sansParcours = jouer('6-role-sans-parcours', (() => {
+      const r = copie(refVerte); r.parcours = r.parcours.map(p => ({ ...p, roles: ['Responsable'] })); return r
+    })(), casVerte)
+    const refAnterieur = jouer('7-referentiel-sans-cle-parcours', (() => {
+      const r = copie(refVerte); delete r.parcours; delete r.roles; return r
+    })(), casVerte)
+    const remede = jouer('8-remede', refVerte, avec(c => {
+      c.parties_prenantes = c.parties_prenantes.filter(p => p.id === 'PP-1')
+      c.intention.citations = c.intention.citations.filter(x => !x.source.includes('ledger'))
+      c.parties_prenantes.push({ id: 'PP-2', role: 'salarié', intention: 'déclarer seul', utilisateur_final: true })
+      c.intention.citations.push({ texte: "Mes salariés s'en servent chaque semaine.", source: 'Réponse du porteur, ledger seq 12' })
+    }))
+    const sansCascade = jouer('9-sans-cascade', refVerte)
+    const verte = jouer('10-fixture-verte', refVerte, casVerte)
+
+    const cas = [
+      ['1. aucune partie prenante -> FAIL qui pose la question fermee de l\'ouverture',
+        sansPartie.code === 1 && sansPartie.fails.some(c => c.message.includes('aucune partie prenante') && c.message.includes('qui s\'en sert chaque jour'))],
+      ['2. parties prenantes sans utilisateur final -> un seul FAIL, qui le nomme (le rouge de TF-2660)',
+        sansFinal.code === 1 && sansFinal.fails.length === 1 && sansFinal.autres.length === 0 &&
+        sansFinal.fails[0].message.includes('utilisateur_final: true')],
+      ['3. citation de la session, meme avec « ledger seq » -> FAIL citation (une session n\'est pas le porteur)',
+        citationSession.code === 1 && citationSession.fails.length === 1 &&
+        citationSession.fails[0].message.includes('réponse humaine du ledger')],
+      ['4. citation sans entree de ledger -> FAIL citation',
+        citationSansLedger.code === 1 && citationSansLedger.fails.length === 1 &&
+        citationSansLedger.fails[0].message.includes('réponse humaine du ledger')],
+      ['5. role absent du referentiel -> FAIL qui le nomme et liste les roles',
+        roleInconnu.code === 1 && roleInconnu.fails.length === 1 &&
+        roleInconnu.fails[0].message.includes('programme partenaire') && roleInconnu.fails[0].message.includes('Salarié')],
+      ['6. role sans parcours -> FAIL « n\'a aucun parcours » sur ce role seul',
+        sansParcours.code === 1 && sansParcours.fails.length === 1 &&
+        sansParcours.fails[0].message.includes('Salarié') && sansParcours.fails[0].message.includes('aucun parcours')],
+      ['7. referentiel sans cle `parcours` -> FAIL par partie prenante, cle S6 nommee (aucune migration silencieuse)',
+        refAnterieur.code === 1 && refAnterieur.fails.length >= 2 &&
+        refAnterieur.fails.every(c => c.message.includes('ne correspond à aucun rôle') || c.message.includes('parcours'))],
+      ['8. remede joue : utilisateur final nomme et citation du ledger -> T7 PASS, exit 0',
+        remede.code === 0 && remede.fails.length === 0 && remede.t7.length === 4],
+      ['9. sans --cascade -> aucun constat T7, exit 0 : rien ne change pour un referentiel sans cascade',
+        sansCascade.code === 0 && sansCascade.t7.length === 0],
+      ['10. fixture verte de la cascade -> T7 PASS sur 4 constats (2 parties, utilisateur final, citation)',
+        verte.code === 0 && verte.fails.length === 0 && verte.t7.length === 4]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-tracabilite.mjs (branche TF-2660, T7 parties prenantes de la cascade, fixtures ephemeres, un FAIL isole par cas + remede)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : ${[sansPartie, sansFinal, citationSession, citationSansLedger, roleInconnu, sansParcours, refAnterieur, remede, sansCascade, verte].map((x, i) => `${i + 1}=${x.code}`).join(' ')}`)
+    }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
   }

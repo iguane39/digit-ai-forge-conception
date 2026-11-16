@@ -10,6 +10,10 @@
       {
         "texte": "Je veux que mes salariés déclarent leurs absences sans passer par moi, et savoir qui est absent un jour donné.",
         "source": "Cahier des charges client, section 1 « Contexte »"
+      },
+      {
+        "texte": "Mes salariés s'en servent chaque semaine pour déclarer leurs absences ; aujourd'hui ils m'écrivent un courriel.",
+        "source": "Réponse du porteur à la question fermée de l'ouverture, ledger seq 12"
       }
     ],
     "reformulation": "Le responsable veut cesser d'être l'intermédiaire des déclarations d'absence tout en gardant la vue sur la présence de son équipe.",
@@ -24,9 +28,15 @@
       "id": "PP-1",
       "role": "responsable d'équipe",
       "intention": "ne plus relayer les déclarations"
+    },
+    {
+      "id": "PP-2",
+      "role": "salarié",
+      "intention": "déclarer son absence seul, sans attendre l'accord du responsable",
+      "utilisateur_final": true
     }
   ],
-  "arbitrage": "",
+  "arbitrage": "L'intention du salarié prime sur le contrôle du responsable : la déclaration se fait sans relais, et le responsable garde la vue sur la présence de son équipe.",
   "contraintes": [
     {
       "id": "C-1",

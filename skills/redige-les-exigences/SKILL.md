@@ -1,7 +1,7 @@
 ---
 name: redige-les-exigences
 description: Rédige le référentiel d'exigences d'un produit — chaque exigence atomique, identifiée de façon stable, assortie d'un critère d'acceptation binaire ou chiffré, d'un palier MVP/V1/V2, d'un statut fait constaté ou hypothèse, et d'un lien vers l'élément de surface couvert — puis le fait juger par quatre oracles exécutés. Produit EXIGENCES.md et EXIGENCES.json, la source unique dont toutes les vues aval sont dérivées. Use when / déclencher dès qu'il faut transformer un besoin, un cadrage ou une surface fonctionnelle en spécification opposable, écrire des exigences testables, poser des critères d'acceptation, arbitrer un périmètre MVP, ou produire le PRD d'un produit à construire. Ne pas déclencher pour qualifier l'entrant (→ qualifie-l-entrant), énumérer la surface (→ enumere-la-surface), dériver les vues aval (→ derive-les-vues), ni pour produire epics, stories ou architecture d'implémentation (→ étape C de la SaaS Forge, moteur BMAD).
-version: 1.8.0
+version: 1.9.0
 ---
 
 # Rédige les exigences
@@ -101,8 +101,11 @@ choisi, ni l'alternative écartée, ni l'effet attendu. Quand le produit tient s
 (`cascade/CASCADE.json`, format `pilot/cascade-isto@1` du pilot), chaque exigence y est citée
 par une tactique et une seule. Elle peut porter en plus le champ facultatif `tactique`
 (`TAC-1`). `node oracles/oracle-tracabilite.mjs EXIGENCES.json --cascade cascade/CASCADE.json`
-rejoue alors la chaîne exigence → tactique → stratégie → intention (règle **T6**). Sans
-cascade, T6 rend un SANS_OBJET motivé. Détail : `references/schema-referentiel.md`, champ
+rejoue alors la chaîne exigence → tactique → stratégie → intention (règle **T6**), puis juge ce
+que la remontée ne voit pas (règle **T7**, TF-2660) : chaque partie prenante de la cascade tient un
+rôle du référentiel et a un parcours dans la clé racine `parcours`, l'une d'elles est l'utilisateur
+final (`utilisateur_final: true`), et une citation de l'intention vient d'une réponse humaine du
+ledger. Sans cascade, T6 rend un SANS_OBJET motivé et T7 ne juge rien. Détail : `references/schema-referentiel.md`, champ
 `tactique`.
 
 ## Le périmètre est un champ, pas un document

@@ -35,6 +35,11 @@
       "date": "2026-08-04"
     }
   ],
+  "roles": ["Salarié", "Responsable"],
+  "parcours": [
+    { "id": "S-05", "nom": "Déclaration d'une absence", "roles": ["Salarié", "Responsable"] },
+    { "id": "S-06", "nom": "Export mensuel des absences (palier V2)", "roles": ["Responsable"] }
+  ],
   "besoins": [
     {
       "id": "B-01",

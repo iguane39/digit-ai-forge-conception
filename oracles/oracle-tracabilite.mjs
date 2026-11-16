@@ -1,14 +1,15 @@
 // oracle-tracabilite — bijection besoin ↔ exigence ↔ critère, et régénérabilité des vues.
 // Usage : node oracle-tracabilite.mjs <EXIGENCES.json> [--vue <fichier>]... [--cascade <CASCADE.json>]
-// CDC §7.2 — règles T1 à T5 ; T6 remontée ISTO exigence → tactique → stratégie → intention (TF-1680).
+// CDC §7.2 — règles T1 à T5 ; T6 remontée ISTO exigence → tactique → stratégie → intention (TF-1680) ;
+// T7 parties prenantes de la cascade : rôle, parcours, utilisateur final, citation du ledger (TF-2660).
 // T3 juge aussi la vue de la cascade, scellée sur la cascade et sur le référentiel (TF-1686).
 
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { createHash } from 'node:crypto'
-import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, NATURES } from './_contrat.mjs'
+import { charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, NATURES, citationHumaineDuLedger } from './_contrat.mjs'
 
-const VERSION = '1.3.0'
+const VERSION = '1.4.0'
 const EN_TETE_SOURCE = /<!--\s*source-sha256:\s*([0-9a-f]{64})\s*-->/i
 
 // TF-0818 : l'empreinte de la SOURCE prouve d'où vient la vue, jamais ce qu'elle contient.
@@ -374,6 +375,87 @@ if (cheminCascade === null) {
           `la cascade cite ${id}, ${retirees.has(id) ? 'identifiant RETIRÉ du référentiel' : 'absente du référentiel'}`))
       }
     }
+
+    // --- T7 : chaque partie prenante a un rôle et un parcours, un utilisateur final est nommé ---
+    // TF-2660 (Produit-82, 13/11/2026) : après deux runs, le porteur constate que le produit a été
+    // conçu pour des programmes alors qu'il visait des personnes qui connaissent à peine l'IA. Les
+    // rôles du référentiel et la partie prenante client ne nommaient aucun utilisateur final,
+    // l'intention avait été reconstruite sans une phrase du porteur sur l'usage, aucun parcours ne
+    // livrait la valeur à une personne : T6 et tous les oracles de conception rendaient PASS.
+    // T7 juge ce que la remontée ISTO ne voit pas, sur la même cascade :
+    //   1. chaque partie prenante porte un `role` du référentiel ET un parcours qui le sert
+    //      (clé racine `parcours[].roles`, le format de `oracle-surface` S6) ;
+    //   2. au moins une partie prenante est marquée `utilisateur_final: true` : celle qui s'en
+    //      sert chaque jour ;
+    //   3. au moins une citation de l'intention vient d'une réponse humaine du ledger (« ledger seq
+    //      N »), jamais d'une reconstruction par la session.
+    const parties = Array.isArray(cascade.parties_prenantes) ? cascade.parties_prenantes : []
+    const norm = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+    const mots = (t) => norm(t).split(' ').filter(m => m.length > 2)
+    // « responsable d'équipe » (cascade) et « Responsable » (référentiel) désignent le même rôle :
+    // les mots du plus court sont tous dans le plus long.
+    const memeRole = (a, b) => {
+      const [x, y] = [mots(a), mots(b)]
+      if (x.length === 0 || y.length === 0) return false
+      const [court, long] = x.length <= y.length ? [x, y] : [y, x]
+      return court.every(m => long.includes(m))
+    }
+    const rolesRef = [
+      ...(Array.isArray(ref.roles) ? ref.roles : []),
+      ...(Array.isArray(ref.surface) ? ref.surface.filter(s => s?.type === 'role').map(s => s.libelle) : [])
+    ].filter(plein)
+    const parcoursRef = Array.isArray(ref.parcours) ? ref.parcours : []
+    if (parties.length === 0) {
+      constats.push(constat('T7', FAIL, `${cheminCascade} (parties_prenantes)`,
+        'aucune partie prenante déclarée : personne n\'est nommé comme se servant du produit — ' +
+        'poser au porteur la question fermée de l\'ouverture (qui s\'en sert chaque jour, pour ' +
+        'quoi, que fait-il aujourd\'hui) et déclarer la partie qui en résulte'))
+    }
+    for (const [i, p] of parties.entries()) {
+      const ou = `${cheminCascade} (parties_prenantes[${i}]${plein(p?.id) ? ` ${p.id}` : ''})`
+      if (!plein(p?.role)) {
+        constats.push(constat('T7', FAIL, ou, 'partie prenante sans `role` : le rôle du référentiel qu\'elle tient n\'est pas nommé'))
+        continue
+      }
+      const role = rolesRef.find(r => memeRole(r, p.role))
+      if (!role) {
+        constats.push(constat('T7', FAIL, ou,
+          `le rôle « ${p.role} » ne correspond à aucun rôle du référentiel` +
+          (rolesRef.length ? ` (rôles : ${[...new Set(rolesRef)].join(', ')})` : ' (le référentiel ne déclare aucun rôle)') +
+          ' — une partie prenante qui n\'a pas de rôle n\'a pas de parcours'))
+        continue
+      }
+      const parcours = parcoursRef.filter(pc => Array.isArray(pc?.roles) && pc.roles.some(r => memeRole(r, role)))
+      if (parcours.length === 0) {
+        constats.push(constat('T7', FAIL, ou,
+          `le rôle « ${role} » n'a aucun parcours : aucune entrée de la clé racine \`parcours\` ne le ` +
+          'liste dans `roles` (format de `oracle-surface` S6) — la valeur n\'est livrée à personne ' +
+          'sous ce rôle'))
+        continue
+      }
+      constats.push(constat('T7', PASS, ou,
+        `${p.id ?? 'partie prenante'} → rôle « ${role} » → parcours ${parcours.map(pc => pc.id).join(', ')}`))
+    }
+    if (parties.length > 0) {
+      const finaux = parties.filter(p => p?.utilisateur_final === true)
+      constats.push(finaux.length > 0
+        ? constat('T7', PASS, `${cheminCascade} (parties_prenantes)`,
+          `utilisateur final nommé : ${finaux.map(p => p.id ?? p.role).join(', ')}`)
+        : constat('T7', FAIL, `${cheminCascade} (parties_prenantes)`,
+          'aucune partie prenante n\'est l\'utilisateur final (`utilisateur_final: true`) : celui ' +
+          'qui s\'en sert chaque jour n\'est nommé nulle part — la cascade sert le commanditaire ' +
+          'seul'))
+    }
+    const citations = Array.isArray(cascade.intention?.citations) ? cascade.intention.citations : []
+    const duLedger = citations.filter(c => plein(c?.texte) && citationHumaineDuLedger(c?.source))
+    constats.push(duLedger.length > 0
+      ? constat('T7', PASS, `${cheminCascade} (intention)`,
+        `${duLedger.length} citation(s) issue(s) d'une réponse humaine du ledger`)
+      : constat('T7', FAIL, `${cheminCascade} (intention)`,
+        'aucune citation de l\'intention ne vient d\'une réponse humaine du ledger (`source` : ' +
+        '« ledger seq N », sans session ni agent) : l\'intention a été reconstruite sans une phrase ' +
+        'du porteur sur l\'usage — poser la question fermée de l\'ouverture et citer sa réponse'))
   }
 }
 
