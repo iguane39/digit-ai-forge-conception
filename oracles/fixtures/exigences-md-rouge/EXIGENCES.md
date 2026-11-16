@@ -6,7 +6,7 @@
 >
 > - **P1** — la section 6 « Relevé des oracles » est absente du gabarit.
 > - **P2** — la section 4 « Hypothèses » est présente mais VIDE.
-> - **P3** — la section 7 existe et n'est pas vide, mais aucune des trois entrées d'
+> - **P3** — la section 7 existe et n'est pas vide, mais aucune des quatre entrées d'
 >   `ecarts_exigences_socle` n'y est écrite : c'est le défaut fondateur, l'écart saisi
 >   directement dans le JSON sans que personne ne l'ait décidé en prose.
 > - **P4** — la section 3 de `SURFACE.md` existe et écarte autre chose que les deux entrées

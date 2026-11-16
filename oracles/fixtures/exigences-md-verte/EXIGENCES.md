@@ -1,7 +1,7 @@
 # Référentiel d'exigences — Portail de réservation de salles
 
 > Fixture TF-0822, **sens vert** : le gabarit est complet, les sections 4 et 7 sont non vides,
-> et chacune des trois entrées d'`ecarts_exigences_socle` du référentiel voisin est transcrite
+> et chacune des quatre entrées d'`ecarts_exigences_socle` du référentiel voisin est transcrite
 > en section 7, clé et motif. `oracle-exigences-md` y rend PASS sur P1, P2, P3 et P4.
 
 ## 1. Origine
@@ -51,9 +51,9 @@ Onze éléments de surface énumérés, onze couverts : 100 %. Aucun élément n
 
 ## 7. Ce que le référentiel ne dit pas
 
-Les trois **exigences socle candidates** proposées d'office ont été examinées. Aucune n'est
+Les quatre **exigences socle candidates** proposées d'office ont été examinées. Aucune n'est
 retenue au palier MVP, et chacune est écartée ci-dessous plutôt que passée sous silence. Ces
-trois lignes sont transcrites telles quelles dans le champ `ecarts_exigences_socle` du
+quatre lignes sont transcrites telles quelles dans le champ `ecarts_exigences_socle` du
 référentiel — la prose est ici la source, le champ en est la copie.
 
 | clé | motif | décidé par | date |
@@ -61,6 +61,7 @@ référentiel — la prose est ici la source, le champ en est la copie.
 | `donnees-demonstration` | portail réservé aux collaborateurs authentifiés : aucun jeu de démonstration n'est prévu, et aucun environnement de démonstration n'est ouvert | le commanditaire du produit (décision D-11) | 2026-09-05 |
 | `donnees-volatiles` | les salles et leurs créneaux sont saisis par les services généraux depuis le produit : aucun catalogue ni tarif figé dans le code n'existe | le commanditaire du produit (décision D-12) | 2026-09-05 |
 | `effet-observable` | chaque exigence de ce référentiel porte déjà son critère observable ; aucune règle transverse supplémentaire n'est retenue au palier MVP | le commanditaire du produit (décision D-13) | 2026-09-05 |
+| `identite-unique` | produit interne sans compte propre : l'accès se règle dans l'annuaire de l'entreprise, qui tient déjà une seule porte humaine et une identité par personne hors du produit | le commanditaire du produit (décision D-14) | 2026-09-05 |
 
 Reste hors du référentiel, et attendu d'une décision : le sort des réservations récurrentes,
 la politique de rétention des créneaux passés, et l'ouverture éventuelle du portail à des

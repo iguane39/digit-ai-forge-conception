@@ -87,8 +87,9 @@ Cette vue est le seul aval qui reçoit le champ : `MISSION.md` ne le porte pas (
 **Section « Exigences socle écartées » (TF-0814).** Même forme, dérivée du champ racine
 `ecarts_exigences_socle` : quatre colonnes reprises telles quelles — `element` · `motif` ·
 `decide_par` · `date`. Elle dit au design ce que le référentiel **ne demande pas** parmi les
-trois exigences socle candidates (données de démonstration invisibles en production, données
-volatiles éditables/datées/sourcées, effet observable de tout élément interactif) et sur décision
+quatre exigences socle candidates (données de démonstration invisibles en production, données
+volatiles éditables/datées/sourcées, effet observable de tout élément interactif, identité unique
+par personne) et sur décision
 de qui. Champ facultatif à la lecture ; absent ou vide, la section est produite quand même et
 porte la mention *(aucun écart déclaré)*. Comme la précédente, cette vue est le seul aval qui la
 reçoit.

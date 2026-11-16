@@ -1,6 +1,6 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: d9398e33486c4a08045e67950c68b62961ed67af18ee2fc6d1dd4167f2453fdc -->
-<!-- corps-sha256: 4fac5cc96dccb1c3647dbb3d401ce541fb78c3dc68820f9a9d2c4d19171db8cd -->
+<!-- source-sha256: 81809ac1560cbc8144ef6fd0228c328b5061b3c91639df79541fa056a59f4873 -->
+<!-- corps-sha256: d92a2c80fe92e2a47fe79f8faf1af9305ce8a772c92869b2019d1ecd97fe7248 -->
 
 # Fiche de cadrage design — Catalogue de formations internes
 
@@ -37,10 +37,11 @@ jamais un arbitrage : `oracle-exigences` E10 le refuse.
 | Candidate écartée | Motif | Décidé par | Date |
 |---|---|---|---|
 | `donnees-demonstration` | le produit n'embarque aucun jeu de démonstration : la recette se fait sur un extrait anonymisé du catalogue réel, déposé hors du binaire livré | le commanditaire du produit (décision D-1) | 2026-09-05 |
+| `identite-unique` | produit interne sans compte propre : l'accès se règle dans l'annuaire de l'entreprise, qui tient déjà une seule porte humaine et une identité par personne hors du produit | le commanditaire du produit (décision D-2) | 2026-09-05 |
 
-Les deux autres candidates sont **retenues** : la donnée volatile par E-003, qui date et source
+Deux des trois autres candidates sont **retenues** : la donnée volatile par E-003, qui date et source
 le tarif servi, et l'effet observable par E-004. Le design hérite donc des deux, et n'a aucun
-écran de démonstration à prévoir.
+écran de démonstration ni de gestion des comptes à prévoir (l'identité unique est écartée ci-dessus).
 
 ## Hors du champ de cette vue
 

@@ -104,7 +104,7 @@ export const lexique = (motifs) => new RegExp(`${AVANT}(${motifs.join('|')})s?${
  *
  * Deux champs racine portent désormais des écarts : `ecarts_surface_implicite` (les seize
  * candidats d'office de la surface implicite, `oracle-surface` S4) et `ecarts_exigences_socle`
- * (les trois exigences socle candidates, `oracle-exigences` E10). Ce qui fait qu'un écart
+ * (les quatre exigences socle candidates, `oracle-exigences` E10). Ce qui fait qu'un écart
  * TIENT ne dépend pas de la liste close visée : deux définitions divergeraient au premier
  * correctif, et « écarté explicitement » cesserait de vouloir dire la même chose selon la
  * règle qui lit. La liste des clés recevables est donc le seul paramètre.

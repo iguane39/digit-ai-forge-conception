@@ -1,7 +1,7 @@
 ---
 name: derive-les-vues
 description: Dérive du référentiel d'exigences les trois vues attendues par les forges aval — la fiche de cadrage 6 champs de Forge Design, la configuration de mission de la SaaS Forge, et l'export d'identifiants consommable par le champ risque de Forge Tests — chacune scellée par DEUX empreintes, sa source (vue périmée détectée) et son corps (vue amputée détectée). Use when / déclencher dès qu'un référentiel d'exigences existe et qu'il faut le passer à une forge aval, produire une fiche de cadrage design, préparer le cadrage d'une mission SaaS Forge, exporter des identifiants d'exigence pour une campagne de tests, régénérer des vues après modification du référentiel, dériver la vue de la cascade ISTO, ou décliner un rétro-modèle en documentations par audience (vues par profil PO / CSM / utilisateur, scellées elles aussi par le double sceau). Ne pas déclencher pour rédiger ou modifier les exigences (→ redige-les-exigences), ni pour exécuter une forge aval — ce verbe dépose des artefacts, il n'invoque personne.
-version: 1.7.1
+version: 1.7.2
 ---
 
 # Dérive les vues
@@ -105,14 +105,15 @@ L'oracle qui juge la même chose côté source est `oracle-surface` S4.
 
 Même mécanique, même vue, autre champ racine : `ecarts_exigences_socle` porte les **exigences
 socle candidates** écartées (données de démonstration invisibles en production, données volatiles
-éditables/datées/sourcées, effet observable de tout élément interactif). `CADRAGE-DESIGN.md`
+éditables/datées/sourcées, effet observable de tout élément interactif, identité unique par
+personne). `CADRAGE-DESIGN.md`
 porte donc une seconde section dérivée, une ligne par candidate écartée avec son motif, qui l'a
 décidé et quand. Champ facultatif à la lecture, section produite quand même — *(aucun écart
 déclaré)* quand il est absent ou vide.
 
 Ce verbe **ne décide aucun écart et n'en invente aucun** : il traduit ceux que le référentiel
 porte déjà, eux-mêmes transcrits de la section 7 « Ce que le référentiel ne dit pas »
-d'`EXIGENCES.md`. Format des quatre champs et liste close des trois clés :
+d'`EXIGENCES.md`. Format des quatre champs et liste close des quatre clés :
 `redige-les-exigences/references/schema-referentiel.md`. L'oracle qui juge la même chose côté
 source est `oracle-exigences` E10.
 

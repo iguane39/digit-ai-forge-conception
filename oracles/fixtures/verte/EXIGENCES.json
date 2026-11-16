@@ -27,6 +27,12 @@
       "motif": "l'effet de chaque geste est déjà porté exigence par exigence (E-001, E-002, E-004), avec son critère observable : aucune règle transverse supplémentaire n'est retenue au palier MVP",
       "decide_par": "le commanditaire du produit (décision D-3)",
       "date": "2026-08-04"
+    },
+    {
+      "element": "identite-unique",
+      "motif": "produit interne sans compte propre : l'accès se règle dans l'annuaire de l'entreprise, qui tient déjà une seule porte humaine et une identité par personne hors du produit",
+      "decide_par": "le commanditaire du produit (décision D-4)",
+      "date": "2026-08-04"
     }
   ],
   "besoins": [

@@ -1912,6 +1912,13 @@ for (const o of ORACLES) {
         surface: { id: 'S-03', type: 'parcours', libelle: 'Inscription a une session' },
         enonce: 'Chaque élément interactif du produit produit un effet observable.',
         critere: "Un message de confirmation est affiché après l'envoi du formulaire d'inscription."
+      },
+      // TF-2611 : la quatrieme candidate, l'identite unique (une porte humaine par environnement,
+      // une identite par personne, les fonctions portees par des affectations).
+      identite: {
+        surface: { id: 'S-04', type: 'regle', libelle: 'Identite unique par personne' },
+        enonce: "Le produit n'ouvre qu'une seule porte humaine par environnement, avec une identité par personne.",
+        critere: 'Un second compte créé pour la même personne est rejeté.'
       }
     }
     const ECART_VALIDE = {
@@ -1961,9 +1968,21 @@ for (const o of ORACLES) {
       }
     }
 
-    const TOUTES = ['demonstration', 'volatiles', 'effet']
-    const SANS_DEMO = ['volatiles', 'effet']
-    const completes = jouer('1-trois-candidates', referentiel(TOUTES))
+    const TOUTES = ['demonstration', 'volatiles', 'effet', 'identite']
+    const SANS_DEMO = ['volatiles', 'effet', 'identite']
+    const SANS_IDENTITE = ['demonstration', 'volatiles', 'effet']
+    // TF-2611 : l'ecart de la quatrieme candidate, motif d'au moins 20 caracteres, decision referencee.
+    const ECART_IDENTITE = {
+      element: 'identite-unique',
+      motif: "produit interne sans compte propre : l'acces se regle dans l'annuaire de l'entreprise, hors du produit",
+      decide_par: 'le commanditaire du produit (décision D-2)',
+      date: '2026-11-16'
+    }
+    const completes = jouer('1-quatre-candidates', referentiel(TOUTES))
+    const identiteNue = jouer('8-identite-sans-retenue-ni-ecart', referentiel(SANS_IDENTITE))
+    const identiteEcartee = jouer('9-identite-ecartee', referentiel(SANS_IDENTITE, [ECART_IDENTITE]))
+    const identiteMotifCourt = jouer('10-identite-motif-court',
+      referentiel(SANS_IDENTITE, [{ ...ECART_IDENTITE, motif: 'pas utile' }]))
     const ecartee = jouer('2-ecart-valide', referentiel(SANS_DEMO, [ECART_VALIDE]))
     const oubli = jouer('3-aucun-ecart', referentiel(SANS_DEMO))
     const motifCourt = jouer('4-motif-trop-court',
@@ -1982,8 +2001,8 @@ for (const o of ORACLES) {
     const vueCadrage = readFileSync(join(SOCLE_VERTE, 'CADRAGE-DESIGN.md'), 'utf8')
 
     const cas = [
-      ["1. les trois candidates portees, aucun champ d'ecart -> PASS (referentiel anterieur)",
-        completes.code === 0 && completes.fails.length === 0 && completes.e10.length === 3],
+      ["1. les quatre candidates portees, aucun champ d'ecart -> PASS (referentiel anterieur)",
+        completes.code === 0 && completes.fails.length === 0 && completes.e10.length === 4],
       ['2. candidate absente + ecart valide -> PASS imprime « [ECARTE] »',
         ecartee.code === 0 && ecartee.fails.length === 0 &&
         (ecartee.sur('donnees-demonstration')?.message ?? '').includes('[ÉCARTÉ]')],
@@ -2001,16 +2020,27 @@ for (const o of ORACLES) {
       ['7. vue derivee regeneree sur la fixture verte : T3 PASS et le champ y figure',
         sceau.code === 0 && t3?.statut === 'PASS' &&
         vueCadrage.includes('ecarts_exigences_socle') &&
-        vueCadrage.includes('donnees-demonstration')]
+        vueCadrage.includes('donnees-demonstration')],
+      // TF-2611 : la quatrieme candidate. Rouge, vert, et le temoin du motif lu.
+      ["8. identite unique ni retenue ni ecartee -> FAIL, la candidate NOMMEE (rouge de TF-2611)",
+        identiteNue.code === 1 && identiteNue.fails.length === 1 && identiteNue.autresFails.length === 0 &&
+        identiteNue.fails[0].message.includes('Une seule porte humaine par environnement, une identité par personne')],
+      ['9. identite unique ecartee, motif et decision referencee -> PASS « [ECARTE] » (le vert)',
+        identiteEcartee.code === 0 && identiteEcartee.fails.length === 0 &&
+        (identiteEcartee.sur('identite-unique')?.message ?? '').includes('[ÉCARTÉ]')],
+      ["10. ecart d'identite au motif trop court -> FAIL nommant `motif` (temoin : le motif est lu)",
+        identiteMotifCourt.code === 1 && identiteMotifCourt.fails.length === 1 &&
+        identiteMotifCourt.fails[0].message.includes('motif')]
     ]
     const ko = cas.filter(([, ok]) => !ok)
-    console.log('oracle-exigences.mjs (branche TF-0814, fixtures ephemeres, 3 etats + 3 temoins)')
+    console.log('oracle-exigences.mjs (branche TF-0814 et TF-2611, fixtures ephemeres, 3 etats + 3 temoins + la quatrieme candidate)')
     for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
     console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
     if (ko.length > 0) {
       echecs++
       console.log(`         exits obtenus : 1=${completes.code} 2=${ecartee.code} 3=${oubli.code} ` +
-        `4=${motifCourt.code} 5=${cleInconnue.code} 6=${dateInvalide.code} 7=${sceau.code}`)
+        `4=${motifCourt.code} 5=${cleInconnue.code} 6=${dateInvalide.code} 7=${sceau.code} ` +
+        `8=${identiteNue.code} 9=${identiteEcartee.code} 10=${identiteMotifCourt.code}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })
@@ -2048,6 +2078,12 @@ for (const o of ORACLES) {
         surface: { id: 'S-03', type: 'parcours', libelle: 'Inscription a une session' },
         enonce: 'Chaque élément interactif du produit produit un effet observable.',
         critere: "Un message de confirmation est affiché après l'envoi du formulaire d'inscription."
+      },
+      // TF-2611 : la quatrieme candidate reste portee, pour isoler la mesure sur les donnees de demonstration.
+      {
+        surface: { id: 'S-04', type: 'regle', libelle: 'Identite unique par personne' },
+        enonce: "Le produit n'ouvre qu'une seule porte humaine par environnement, avec une identité par personne.",
+        critere: 'Un second compte créé pour la même personne est rejeté.'
       }
     ]
     const ECART = (decidePar) => ({

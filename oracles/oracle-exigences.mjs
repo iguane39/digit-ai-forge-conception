@@ -8,7 +8,7 @@ import {
   defautDEcart, defautDuDecideur
 } from './_contrat.mjs'
 
-const VERSION = '1.4.0'
+const VERSION = '1.5.0'
 
 // --- Checklist versionnée ---------------------------------------------------
 
@@ -188,8 +188,8 @@ function normaliserReste (texte, predicat) {
 // E10 — les exigences socle candidates : chacune est RETENUE ou ÉCARTÉE explicitement.
 //
 // `redige-les-exigences/references/schema-referentiel.md`, section « Exigences socle
-// candidates », propose d'office TROIS exigences à la rédaction de tout référentiel, parce que
-// chacune porte une loi transverse constatée en production plutôt qu'une préférence : données
+// candidates », propose d'office QUATRE exigences (trois à l'origine, la quatrième depuis
+// TF-2611) à la rédaction de tout référentiel, parce que chacune porte une loi transverse constatée en production plutôt qu'une préférence : données
 // de démonstration invisibles hors de leur environnement (frontières d'environnement
 // explicites), données volatiles éditables/datées/sourcées (une donnée périssable est une
 // donnée, pas du code), effet observable de tout élément interactif (une affordance est câblée
@@ -240,6 +240,16 @@ const EXIGENCES_SOCLE = [
     libelle: 'Effet observable de tout élément interactif',
     motifs: ['effet observable', 'effet visible', 'élément interactif', 'éléments interactifs',
       'retour visuel', "changement d'état visible", 'message de confirmation', 'affordance']
+  },
+  // TF-2611 : le 12/11/2026 un porteur a refusé l'architecture d'accès d'un produit, trois portes
+  // humaines par environnement et deux systèmes de comptes issus de deux exigences, sans qu'aucune
+  // exigence socle candidate demande une identité unique. Quatrième candidate, même mécanique.
+  {
+    cle: 'identite-unique',
+    libelle: 'Une seule porte humaine par environnement, une identité par personne, les fonctions portées par des affectations',
+    motifs: ['identité unique', 'identité par personne', 'une seule identité',
+      'une seule porte', 'porte humaine', 'affectation de rôle', 'affectations de rôle',
+      "affectation d'un rôle", 'compte unique par personne']
   }
 ]
 for (const c of EXIGENCES_SOCLE) c.re = lexique(c.motifs)

@@ -122,7 +122,7 @@ veut dire la même chose des deux côtés, c'est un seul contrôle partagé (`or
 
 | Champ | Contrainte vérifiée par `oracle-exigences` E10 |
 |---|---|
-| `element` | l'une des trois clés de la liste close (« Exigences socle candidates » ci-dessous) |
+| `element` | l'une des quatre clés de la liste close (« Exigences socle candidates » ci-dessous) |
 | `motif` | chaîne d'au moins **20 caractères** — plus court, ce n'est pas une raison, c'est un mot |
 | `decide_par` | chaîne non vide — un écart est décidé par un humain, **avec sa décision référencée** (TF-2132, la condition de TF-2119 étendue au socle) : un identifiant `D-N`, une entrée de ledger (« ledger seq 412 »), ou une citation humaine datée (texte entre guillemets et date `AAAA-MM-JJ`). Ni une session, ni un agent, ni un build : E10 refuse |
 | `date` | `AAAA-MM-JJ` |
@@ -187,8 +187,8 @@ traçabilité en silence.
 
 ## Exigences socle candidates
 
-Trois lois transverses constatées en production, proposées d'office lors de la rédaction de
-tout référentiel touchant un produit avec données ou éléments interactifs — jamais imposées,
+Quatre lois transverses constatées en production, proposées d'office lors de la rédaction de
+tout référentiel touchant un produit avec données, éléments interactifs ou comptes — jamais imposées,
 jamais absentes en silence. Même mécanique que la surface implicite SaaS d'`enumere-la-surface` :
 chaque candidate est **retenue** (une exigence normale, avec `id`, critère et `surface` ou
 `hors_surface`) ou **écartée explicitement**, raison consignée en section 7 de `EXIGENCES.md`
@@ -201,6 +201,7 @@ chaque candidate est **retenue** (une exigence normale, avec `id`, critère et `
 | Données de démonstration invisibles en production | Un jeu de données de démo ne fuite jamais en production | En l'absence du drapeau d'environnement dédié (valeur par défaut : absent), aucune donnée de démonstration n'est affichée |
 | Données volatiles éditables, datées, sourcées | Catalogue, tarifs, taux : toute donnée qui change dans le temps vit en base, jamais en dur dans le code, avec sa date de mise à jour et sa source | Chaque enregistrement du catalogue porte un champ `mise_a_jour_le` et un champ `source` non vides |
 | Effet observable de tout élément interactif | Un contrôle sans effet observable est un défaut, jamais un détail | Chaque action déclenchée par un élément interactif produit un changement d'état visible ou un message |
+| Une seule porte humaine par environnement, une identité par personne, les fonctions portées par des affectations (TF-2611) | Un produit n'a pas deux systèmes de comptes : chaque personne a une identité, l'accès humain passe par une seule porte, et ce qu'elle peut faire vient de ses affectations (organisation, rôle), jamais d'un compte par fonction | Une seconde création de compte pour la même personne est rejetée ; l'environnement n'expose qu'une porte humaine, et le rôle d'une personne se lit dans ses affectations |
 
 Hors périmètre déclaré d'un coup : un produit sans données de production, sans catalogue ni
 tarif volatil, ou sans élément interactif écarte la ligne correspondante avec cette seule raison
@@ -208,7 +209,7 @@ tarif volatil, ou sans élément interactif écarte la ligne correspondante avec
 
 ### Les clés de la liste close, et où s'écrit un écart (TF-0814)
 
-Jusqu'au 05/09/2026, ces trois candidates-là avaient exactement le trou que la surface implicite
+Jusqu'au 05/09/2026, les trois premières candidates avaient exactement le trou que la surface implicite
 avait avant TF-0811 : la règle « retenue ou écartée explicitement » était écrite, mais l'écart ne
 vivait qu'en prose, en section 7, qu'**aucun** oracle de la forge ne prend en entrée — sur onze
 oracles, zéro ne lit `EXIGENCES.md`, et les huit qui jugent `EXIGENCES.json` n'avaient aucun
@@ -229,7 +230,7 @@ ailleurs :
 ]
 ```
 
-`element` prend l'une des trois **clés** de la liste close — c'est la table ci-dessus, vue par la
+`element` prend l'une des quatre **clés** de la liste close — c'est la table ci-dessus, vue par la
 machine :
 
 | Clé | Candidate |
@@ -237,6 +238,7 @@ machine :
 | `donnees-demonstration` | Données de démonstration invisibles en production |
 | `donnees-volatiles` | Données volatiles éditables, datées, sourcées |
 | `effet-observable` | Effet observable de tout élément interactif |
+| `identite-unique` | Une seule porte humaine par environnement, une identité par personne, les fonctions portées par des affectations |
 
 Ce que `oracle-exigences` **E10** juge alors, candidate par candidate, chacune **nommée** :
 
@@ -248,7 +250,7 @@ Ce que `oracle-exigences` **E10** juge alors, candidate par candidate, chacune *
 
 Il n'y a **pas de quatrième état**. Contrairement à `oracle-surface` S4, qui n'exige la surface
 implicite que si le produit a une surface web, E10 n'infère aucune condition d'applicabilité : le
-« hors périmètre d'un coup » ci-dessus s'écrit, il ne se devine pas. Trois lignes d'écart sont le
+« hors périmètre d'un coup » ci-dessus s'écrit, il ne se devine pas. Quatre lignes d'écart sont le
 prix de l'opposabilité — délibérément moins cher que de rendre l'omission indiscernable.
 
 Depuis **TF-0822** (06/09/2026), la transcription elle-même est vérifiée : `oracle-exigences-md`

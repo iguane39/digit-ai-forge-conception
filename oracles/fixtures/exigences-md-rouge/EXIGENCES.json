@@ -87,6 +87,12 @@
       "motif": "chaque exigence de ce référentiel porte déjà son critère observable ; aucune règle transverse supplémentaire n'est retenue au palier MVP",
       "decide_par": "le commanditaire du produit (décision D-13)",
       "date": "2026-09-05"
+    },
+    {
+      "element": "identite-unique",
+      "motif": "produit interne sans compte propre : l'accès se règle dans l'annuaire de l'entreprise, qui tient déjà une seule porte humaine et une identité par personne hors du produit",
+      "decide_par": "le commanditaire du produit (décision D-14)",
+      "date": "2026-09-05"
     }
   ],
   "besoins": [

@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: 08c38c8d5792398217c4b6bc6d4487e9c30e44c7ed5a60d64c9962b88e7eca66 -->
+<!-- source-sha256: 42bd006d40d8b3668ac9f1ffc35b2c1c8480434e8f5ddf28d9ac298861054b89 -->
 
 # Fiche de cadrage design — Portail de réservation de salles
 
@@ -65,9 +65,10 @@ jamais un arbitrage : `oracle-exigences` E10 le refuse.
 | `donnees-demonstration` | portail réservé aux collaborateurs authentifiés : aucun jeu de démonstration n'est prévu, et aucun environnement de démonstration n'est ouvert | le commanditaire du produit (décision D-11) | 2026-09-05 |
 | `donnees-volatiles` | les salles et leurs créneaux sont saisis par les services généraux depuis le produit : aucun catalogue ni tarif figé dans le code n'existe | le commanditaire du produit (décision D-12) | 2026-09-05 |
 | `effet-observable` | chaque exigence de ce référentiel porte déjà son critère observable ; aucune règle transverse supplémentaire n'est retenue au palier MVP | le commanditaire du produit (décision D-13) | 2026-09-05 |
+| `identite-unique` | produit interne sans compte propre : l'accès se règle dans l'annuaire de l'entreprise, qui tient déjà une seule porte humaine et une identité par personne hors du produit | le commanditaire du produit (décision D-14) | 2026-09-05 |
 
-Les trois candidates du schéma sont écartées : le design n'a donc à prévoir ni jeu de
-démonstration, ni écran d'édition de référentiel périssable, et hérite de l'effet observable
+Les quatre candidates du schéma sont écartées : le design n'a donc à prévoir ni jeu de
+démonstration, ni écran d'édition de référentiel périssable, ni écran de gestion des comptes, et hérite de l'effet observable
 exigence par exigence.
 
 ## Hors du champ de cette vue

@@ -1,5 +1,5 @@
 <!-- source: EXIGENCES.json -->
-<!-- source-sha256: eb90baa44112ef406061e21d691a2408b139e30d534de4bbe928515d3205ca3e -->
+<!-- source-sha256: b344f7e21c801b4a7e8ddcdd220807b220bf822b4a7450f7e9195d42c782f54d -->
 
 # Fiche de cadrage design — Suivi des demandes d'absence
 
@@ -38,9 +38,10 @@ jamais un arbitrage : `oracle-exigences` E10 le refuse.
 | `donnees-demonstration` | produit interne servi sur les seules données de l'entreprise : aucun jeu de démonstration n'est embarqué, la recette se fait sur un extrait anonymisé déposé hors du binaire livré | le commanditaire du produit (décision D-1) | 2026-08-04 |
 | `donnees-volatiles` | ni catalogue, ni tarif, ni barème : les seules données servies sont les demandes d'absence et les soldes, qui ne sont pas des référentiels périssables | le commanditaire du produit (décision D-2) | 2026-08-04 |
 | `effet-observable` | l'effet de chaque geste est déjà porté exigence par exigence (E-001, E-002, E-004), avec son critère observable : aucune règle transverse supplémentaire n'est retenue au palier MVP | le commanditaire du produit (décision D-3) | 2026-08-04 |
+| `identite-unique` | produit interne sans compte propre : l'accès se règle dans l'annuaire de l'entreprise, qui tient déjà une seule porte humaine et une identité par personne hors du produit | le commanditaire du produit (décision D-4) | 2026-08-04 |
 
-Les trois candidates du schéma sont écartées : le design n'a donc à prévoir ni jeu de
-démonstration, ni écran d'édition de référentiel périssable, et hérite de l'effet observable
+Les quatre candidates du schéma sont écartées : le design n'a donc à prévoir ni jeu de
+démonstration, ni écran d'édition de référentiel périssable, ni écran de gestion des comptes, et hérite de l'effet observable
 exigence par exigence.
 
 ## Hors du champ de cette vue
