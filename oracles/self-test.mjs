@@ -2298,6 +2298,172 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-2789 : un ecart d'exigence socle SANS OBJET se pose par une MESURE ----------
+// Fait (run du 16/11/2026) : un site sans authentification, dont le seul envoi est le formulaire de
+// contact, a du poser une decision humaine pour ecarter « identite unique par personne » (E10) ;
+// reponse du createur : « on se demande meme pourquoi tu me poses la question ». Quand l'objet de la
+// candidate n'existe pas, il n'y a rien a arbitrer : l'ecart porte `sans_objet: { commande, constat }`
+// et tient sans decideur humain. La decision humaine reste due quand l'objet existe (sans la cle).
+// La candidate de l'identite unique est seule mise en jeu (les trois autres restent portees).
+//   1. LE CAS REEL, avant : la session ecarte sans mesure       -> FAIL (inchange : sans mesure, rien ne change)
+//   2. le remede : meme ecart + `sans_objet` valide              -> PASS « [ECARTE] », la commande citee
+//   3. `sans_objet` sans commande                                -> FAIL nommant `sans_objet.commande`
+//   4. commande trop courte (« grep »)                           -> FAIL (temoin : la commande est lue)
+//   5. constat trop court (« 0 »)                                -> FAIL nommant `sans_objet.constat`
+//   6. `sans_objet` qui n'est pas un objet (« oui »)             -> FAIL
+//   7. mesure valide, motif trop court                           -> FAIL nommant `motif` (le contrat commun reste lu)
+//   8. mesure valide, `decide_par` vide                          -> FAIL nommant `decide_par` (qui consigne reste dit)
+//   9. mesure valide, cle hors de la liste close                 -> FAIL (la candidate reste nue)
+//  10. le decideur humain reference SANS mesure reste accepte    -> PASS « decide par » (la voie humaine est intacte)
+//  11. le FAIL d'une candidate sans ecart propose `sans_objet` (le remede propose est joue en 2)
+//  12. la prose declare la forme (SKILL.md et schema-referentiel.md) : une regle de l'oracle que le
+//      skill qui le mobilise ne decrit pas est le defaut de TF-2785, rejoue ici pour cette regle-ci
+// Fixtures ephemeres, comme TF-0814 et TF-2132 dont la branche reprend l'idiome.
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2789-'))
+  try {
+    const RETENUES = [
+      {
+        surface: { id: 'S-01', type: 'regle', libelle: 'Jeu de demonstration' },
+        enonce: 'Le jeu de démonstration reste invisible hors de son environnement dédié.',
+        critere: "En l'absence du drapeau d'environnement dédié, aucune donnée de démonstration n'est affichée."
+      },
+      {
+        surface: { id: 'S-02', type: 'objet', libelle: 'Catalogue des formations' },
+        enonce: 'Le catalogue des formations est édité en base, sans livraison de code.',
+        critere: 'La date de mise à jour et la source de chaque fiche du catalogue sont présentes, chacune non vide.'
+      },
+      {
+        surface: { id: 'S-03', type: 'parcours', libelle: 'Envoi du formulaire de contact' },
+        enonce: 'Chaque élément interactif du produit produit un effet observable.',
+        critere: "Un message de confirmation est affiché après l'envoi du formulaire de contact."
+      }
+    ]
+    const MESURE = {
+      commande: 'git grep -il -E "mot de passe|connexion|authentification" -- src',
+      constat: "0 fichier : aucun écran, aucune route et aucune table de comptes dans le dépôt"
+    }
+    const ECART = (extra) => ({
+      element: 'identite-unique',
+      motif: "site sans authentification : le seul envoi est le formulaire de contact, aucun compte n'existe",
+      decide_par: 'la session de conception',
+      date: '2026-11-16',
+      ...extra
+    })
+    const referentiel = (ecarts) => {
+      const ref = {
+        projet: 'Fixture TF-2789 (ecart sans objet, exigences socle)',
+        besoins: [{ id: 'B-01', enonce: 'Le produit doit tenir les lois transverses du socle.' }],
+        surface: RETENUES.map(c => c.surface),
+        exigences: RETENUES.map((c, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: c.enonce,
+          critere: c.critere,
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-2789' },
+          surface: [c.surface.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        }))
+      }
+      if (ecarts !== undefined) ref.ecarts_exigences_socle = ecarts
+      return ref
+    }
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-exigences.mjs', [chemin])
+      const constats = r.rapport?.constats ?? []
+      const e10 = constats.filter(c => c.regle === 'E10')
+      return {
+        code: r.code,
+        e10,
+        fails: e10.filter(c => c.statut === 'FAIL'),
+        autresFails: constats.filter(c => c.statut === 'FAIL' && c.regle !== 'E10'),
+        sur: (fragment) => e10.find(c => `${c.ou} ${c.message}`.includes(fragment))
+      }
+    }
+
+    const sessionSansMesure = jouer('1-session-sans-mesure', referentiel([ECART()]))
+    const sansObjet = jouer('2-sans-objet', referentiel([ECART({ sans_objet: MESURE })]))
+    const sansCommande = jouer('3-sans-commande',
+      referentiel([ECART({ sans_objet: { constat: MESURE.constat } })]))
+    const commandeCourte = jouer('4-commande-courte',
+      referentiel([ECART({ sans_objet: { ...MESURE, commande: 'grep' } })]))
+    const constatCourt = jouer('5-constat-court',
+      referentiel([ECART({ sans_objet: { ...MESURE, constat: '0' } })]))
+    const pasUnObjet = jouer('6-pas-un-objet', referentiel([ECART({ sans_objet: 'oui' })]))
+    const motifCourt = jouer('7-motif-court',
+      referentiel([ECART({ sans_objet: MESURE, motif: 'pas de compte' })]))
+    const sansSigne = jouer('8-decide-par-vide',
+      referentiel([ECART({ sans_objet: MESURE, decide_par: '' })]))
+    const cleInconnue = jouer('9-cle-hors-liste',
+      referentiel([ECART({ sans_objet: MESURE, element: 'identite' })]))
+    const humainSansMesure = jouer('10-humain-sans-mesure',
+      referentiel([ECART({ decide_par: 'le commanditaire du produit (décision D-3)' })]))
+    const sansEcart = jouer('11-aucun-ecart', referentiel())
+
+    const lire = (chemin) => readFileSync(join(ICI, '..', ...chemin.split('/')), 'utf8')
+    const skillTexte = lire('skills/redige-les-exigences/SKILL.md')
+    const schemaTexte = lire('skills/redige-les-exigences/references/schema-referentiel.md')
+
+    const cas = [
+      ['1. le cas reel -- la session ecarte sans mesure -> FAIL nommant `decide_par` (rien ne change sans `sans_objet`)',
+        sessionSansMesure.code === 1 && sessionSansMesure.fails.length === 1 &&
+        sessionSansMesure.autresFails.length === 0 &&
+        sessionSansMesure.fails[0].message.includes('désigne une session, un agent ou un build')],
+      ['2. remede joue -- meme ecart, `sans_objet` valide -> PASS « [ECARTE] », la commande et le constat cites',
+        sansObjet.code === 0 && sansObjet.fails.length === 0 &&
+        (sansObjet.sur('identite-unique')?.message ?? '').includes('[ÉCARTÉ]') &&
+        (sansObjet.sur('identite-unique')?.message ?? '').includes('sans objet') &&
+        (sansObjet.sur('identite-unique')?.message ?? '').includes(MESURE.commande)],
+      ['3. `sans_objet` sans commande -> FAIL nommant `sans_objet.commande`',
+        sansCommande.code === 1 && sansCommande.fails.length === 1 &&
+        sansCommande.fails[0].message.includes('sans_objet.commande')],
+      ['4. commande trop courte (« grep ») -> FAIL nommant `sans_objet.commande` (temoin : la commande est lue)',
+        commandeCourte.code === 1 && commandeCourte.fails.length === 1 &&
+        commandeCourte.fails[0].message.includes('sans_objet.commande')],
+      ['5. constat trop court (« 0 ») -> FAIL nommant `sans_objet.constat`',
+        constatCourt.code === 1 && constatCourt.fails.length === 1 &&
+        constatCourt.fails[0].message.includes('sans_objet.constat')],
+      ['6. `sans_objet` qui n\'est pas un objet -> FAIL',
+        pasUnObjet.code === 1 && pasUnObjet.fails.length === 1 &&
+        pasUnObjet.fails[0].message.includes('n\'est pas un objet')],
+      ['7. mesure valide, motif trop court -> FAIL nommant `motif` (le contrat commun reste lu)',
+        motifCourt.code === 1 && motifCourt.fails.length === 1 &&
+        motifCourt.fails[0].message.includes('motif')],
+      ['8. mesure valide, `decide_par` vide -> FAIL nommant `decide_par` (celui qui consigne reste dit)',
+        sansSigne.code === 1 && sansSigne.fails.length === 1 &&
+        sansSigne.fails[0].message.includes('decide_par')],
+      ['9. mesure valide, cle hors liste close -> FAIL sur l\'ecart ET sur la candidate restee nue',
+        cleInconnue.code === 1 && cleInconnue.fails.length === 2],
+      ['10. decideur humain reference SANS mesure -> PASS « decide par » (la voie humaine est intacte)',
+        humainSansMesure.code === 0 && humainSansMesure.fails.length === 0 &&
+        (humainSansMesure.sur('identite-unique')?.message ?? '').includes('décidé par') &&
+        !(humainSansMesure.sur('identite-unique')?.message ?? '').includes('sans objet')],
+      ['11. le FAIL d\'une candidate sans ecart propose `sans_objet { commande, constat }` (remede joue en 2)',
+        sansEcart.code === 1 && sansEcart.fails.length === 1 &&
+        sansEcart.fails[0].message.includes('sans_objet') &&
+        sansEcart.fails[0].message.includes('commande, constat')],
+      ['12. SKILL.md et schema-referentiel.md decrivent `sans_objet` (le skill ne reste pas en retard sur son oracle)',
+        skillTexte.includes('sans_objet') && schemaTexte.includes('sans_objet') &&
+        schemaTexte.includes('sans_objet.commande') && schemaTexte.includes('sans_objet.constat')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences.mjs (branche TF-2789, ecart sans objet pour E10, fixtures ephemeres, 8 rouges + remede + voie humaine intacte + prose)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${sessionSansMesure.code} 2=${sansObjet.code} 3=${sansCommande.code} ` +
+        `4=${commandeCourte.code} 5=${constatCourt.code} 6=${pasUnObjet.code} 7=${motifCourt.code} ` +
+        `8=${sansSigne.code} 9=${cleInconnue.code} 10=${humainSansMesure.code} 11=${sansEcart.code}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 // --- branche TF-0818 : le sceau prouvait la provenance, jamais le contenu -----------------
 // T3 compare l'empreinte que la vue PORTE a celle de sa SOURCE : elle dit d'ou vient la vue,
 // jamais ce qu'elle contient. Mesure du 05/09/2026 : la section « Surface implicite ecartee »

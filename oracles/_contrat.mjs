@@ -190,3 +190,36 @@ export function defautDuDecideur (decidePar, objet = 'un écart de surface impli
   }
   return ''
 }
+
+/**
+ * TF-2789 — un écart « sans objet » : la candidate vise un objet que le produit n'a pas, et une
+ * MESURE le prouve. Fait (run du 16/11/2026) : un site sans authentification, dont le seul envoi est
+ * le formulaire de contact, a dû poser une décision humaine pour écarter « identité unique par
+ * personne » ; réponse du créateur : « on se demande même pourquoi tu me poses la question ».
+ * Une décision humaine n'a de sens que là où l'objet existe et où écarter est un arbitrage. Quand
+ * l'objet n'existe pas, la session consigne la MESURE (la commande rejouable et ce qu'elle a
+ * rendu) et l'écart tient sans `decide_par` humain.
+ *
+ * Forme : `sans_objet: { commande, constat }` sur l'entrée de `ecarts_exigences_socle`. Seule la
+ * FORME est jugée (la commande existe et le constat dit ce qu'elle a rendu) ; ni l'exécution de la
+ * commande ni la vérité du constat ne le sont, et chaque oracle consommateur le déclare en `non_juge`.
+ * Rend la chaîne VIDE quand la mesure tient, sinon ce qui lui manque.
+ */
+export const COMMANDE_MINIMUM = 10 // caractères : « git grep -il auth » en compte 17, « grep » ne dit rien
+export const CONSTAT_MINIMUM = 20 // caractères : « 0 occurrence » ne dit pas sur quoi, une phrase le dit
+
+export function defautDeSansObjet (sansObjet) {
+  const texte = (v) => (typeof v === 'string' ? v.trim() : '')
+  if (!sansObjet || typeof sansObjet !== 'object' || Array.isArray(sansObjet)) {
+    return '`sans_objet` n\'est pas un objet — attendu { commande, constat }'
+  }
+  if (texte(sansObjet.commande).length < COMMANDE_MINIMUM) {
+    return `\`sans_objet.commande\` de ${texte(sansObjet.commande).length} caractère(s), minimum ` +
+      `${COMMANDE_MINIMUM} — la commande rejouable qui prouve l'absence de l'objet`
+  }
+  if (texte(sansObjet.constat).length < CONSTAT_MINIMUM) {
+    return `\`sans_objet.constat\` de ${texte(sansObjet.constat).length} caractère(s), minimum ` +
+      `${CONSTAT_MINIMUM} — ce que la commande a rendu, et sur quoi`
+  }
+  return ''
+}

@@ -5,10 +5,10 @@
 
 import {
   charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, PALIERS, NATURES, AVANT, APRES, lexique,
-  defautDEcart, defautDuDecideur
+  defautDEcart, defautDuDecideur, defautDeSansObjet
 } from './_contrat.mjs'
 
-const VERSION = '1.5.0'
+const VERSION = '1.6.0'
 
 // --- Checklist versionnée ---------------------------------------------------
 
@@ -212,6 +212,12 @@ function normaliserReste (texte, predicat) {
 // INFÉRÉE. Un produit sans donnée de production, sans référentiel périssable ou sans élément
 // interactif écarte la ligne correspondante « d'un coup », avec cette seule raison — la doctrine
 // le prévoit explicitement, et un écart écrit reste moins cher qu'une omission indiscernable.
+//
+// TF-2789 : l'écart d'une candidate dont l'OBJET n'existe pas dans le produit (aucun compte, aucune
+// donnée de démonstration) n'est pas un arbitrage, donc pas une décision humaine : il se pose avec
+// `sans_objet: { commande, constat }`, la mesure rejouable qui prouve l'absence, et E10 le tient
+// sans `decide_par` humain. Le FAIL ci-dessus (écart absent, ou décideur machine sans mesure) ne
+// bouge pas : sans `sans_objet`, l'objet est présumé exister et l'écart reste une décision humaine.
 //
 // Le champ est FACULTATIF à la lecture : absent = aucun écart déclaré. Un référentiel scellé
 // avant ce champ n'est donc jamais accusé d'un défaut de FORMAT — il est jugé sur la seule
@@ -425,8 +431,13 @@ if (surfaceRefE9.length === 0) {
       const cle = typeof e?.element === 'string' ? e.element.trim() : ''
       // TF-2132 : le décideur d'un écart au socle est une décision humaine RÉFÉRENCÉE, comme pour
       // la surface implicite (TF-2119) : le contrat commun seul acceptait « la session de build ».
-      const defaut = defautDEcart(e, CLES_SOCLE) ||
-        defautDuDecideur(e?.decide_par, 'un écart d\'exigence socle')
+      // TF-2789 : un écart « sans objet » (`sans_objet: { commande, constat }`) remplace la décision
+      // humaine par une MESURE : l'objet n'existe pas, il n'y a rien à arbitrer. Sans cette clé,
+      // rien ne change : l'objet est présumé exister, l'écart reste une décision humaine référencée.
+      const sansObjet = e?.sans_objet !== undefined
+      const defaut = defautDEcart(e, CLES_SOCLE) || (sansObjet
+        ? defautDeSansObjet(e.sans_objet)
+        : defautDuDecideur(e?.decide_par, 'un écart d\'exigence socle'))
       if (!CLES_SOCLE.includes(cle)) {
         constats.push(constat('E10', FAIL, `ecarts_exigences_socle[${i}]`,
           `écart rattaché à aucune exigence socle candidate : ${defaut}`))
@@ -447,9 +458,13 @@ if (surfaceRefE9.length === 0) {
       constats.push(constat('E10', PASS, `exigences[] (${porteuses.map(e => e?.id).join(', ')})`,
         `« ${c.libelle} » est portée par le référentiel`))
     } else if (ecart && ecart.defaut === '') {
+      const mesure = ecart.ecart.sans_objet
       constats.push(constat('E10', PASS, `ecarts_exigences_socle[${ecart.indice}] (${c.cle})`,
         `[ÉCARTÉ] « ${c.libelle} » — ${String(ecart.ecart.motif).trim()} ` +
-        `(décidé par ${String(ecart.ecart.decide_par).trim()}, ` +
+        (mesure !== undefined
+          ? `(sans objet, mesuré par « ${String(mesure.commande).trim()} » : ` +
+            `${String(mesure.constat).trim()} ; consigné par ${String(ecart.ecart.decide_par).trim()}, `
+          : `(décidé par ${String(ecart.ecart.decide_par).trim()}, `) +
         `le ${String(ecart.ecart.date).trim()})`))
     } else if (ecart) {
       constats.push(constat('E10', FAIL, `ecarts_exigences_socle[${ecart.indice}] (${c.cle})`,
@@ -462,7 +477,10 @@ if (surfaceRefE9.length === 0) {
         'de surface), ou à écarter EXPLICITEMENT en section 7 d\'`EXIGENCES.md`, transcrite ' +
         'dans `ecarts_exigences_socle` { element, motif, decide_par, date } — `decide_par` nomme ' +
         'l\'humain ET sa décision référencée (identifiant D-N, entrée de ledger, ou citation ' +
-        'humaine datée), jamais une session, un agent ou un build. La loi transverse ' +
+        'humaine datée), jamais une session, un agent ou un build. Quand une mesure prouve que ' +
+        'l\'objet n\'existe pas dans le produit (aucun compte, aucune donnée de démonstration…), ' +
+        'aucune décision humaine n\'est due : l\'écart porte `sans_objet` { commande, constat } — ' +
+        'la commande rejouable et ce qu\'elle a rendu (TF-2789). La loi transverse ' +
         'n° 3 ne connaît pas l\'absence par omission.'))
     }
   }
@@ -533,6 +551,10 @@ emettre({
       '(TF-2132). E10 juge la FORME de `decide_par` : aucune désignation d\'une session, d\'un ' +
       'agent ou d\'un build, et une décision référencée (identifiant D-N, entrée de ledger, ' +
       'citation humaine datée). Une référence de la bonne forme mais inventée passe.',
+    'La VÉRITÉ d\'un écart « sans objet » (TF-2789). E10 juge la FORME de `sans_objet` : une ' +
+      'commande d\'au moins 10 caractères et un constat d\'au moins 20. Il ne rejoue pas la commande ' +
+      'et ne juge pas que son résultat prouve l\'absence de l\'objet : un constat inventé passe, ' +
+      'comme une référence de décision inventée.',
     'La REFORMULATION qui convient à E11 : il compte les têtes de trois mots répétées, il ne juge ' +
       'ni que le sujet est superflu (une exigence EARS peut légitimement ouvrir par le même sujet) ' +
       'ni que l\'infinitif choisi est le bon. Avertissement, jamais un FAIL.',

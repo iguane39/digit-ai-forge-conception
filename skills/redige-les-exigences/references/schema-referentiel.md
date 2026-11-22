@@ -145,6 +145,37 @@ référentiel écrit avant TF-0814 n'est donc pas invalidé — il est jugé sur
 ses candidates. Il n'est en revanche pas facultatif dans les faits dès qu'une candidate manque :
 E10 rend alors FAIL, en la nommant.
 
+**Un écart « sans objet » se pose par une mesure, pas par une décision humaine (TF-2789).** Une
+décision humaine n'a de sens que là où l'objet de la candidate existe et où l'écarter est un
+arbitrage. Un site sans authentification, dont le seul envoi est le formulaire de contact, n'a
+aucune identité à rendre unique : le 16/11/2026 la décision posée sur ce point a coûté une question
+au créateur, qui a répondu « on se demande même pourquoi tu me poses la question ». Quand l'objet
+n'existe pas, l'entrée porte en plus la clé `sans_objet`, et la session la consigne seule :
+
+```json
+{
+  "element": "identite-unique",
+  "motif": "site sans authentification : le seul envoi est le formulaire de contact, aucun compte n'existe",
+  "decide_par": "la session de conception",
+  "date": "2026-11-16",
+  "sans_objet": {
+    "commande": "git grep -il -E \"mot de passe|connexion|authentification\" -- src",
+    "constat": "0 fichier : aucun écran, aucune route et aucune table de comptes dans le dépôt"
+  }
+}
+```
+
+| Champ | Contrainte vérifiée par `oracle-exigences` E10 |
+|---|---|
+| `sans_objet.commande` | chaîne d'au moins **10 caractères** : la commande rejouable qui prouve l'absence de l'objet |
+| `sans_objet.constat` | chaîne d'au moins **20 caractères** : ce que la commande a rendu, et sur quoi |
+
+Avec `sans_objet`, `decide_par` nomme seulement celui qui consigne (une session y est reçue) ; `element`,
+`motif` et `date` restent soumis aux mêmes contraintes. Sans `sans_objet`, rien ne change : l'objet est
+présumé exister et l'écart reste une décision humaine référencée. E10 juge la FORME de la mesure ; il ne
+rejoue pas la commande et ne juge pas que son résultat prouve l'absence (déclaré en `non_juge`). Une
+mesure qui montre que l'objet existe n'écarte rien : la candidate se retient.
+
 `source` — chaîne, sur un **besoin**. Un besoin n'a pas de `statut_epistemique` — ce
 formalisme est réservé aux exigences. Mais un `besoin.enonce` peut porter un chiffre (« réduire
 le délai de 30 % ») sans qu'aucun champ n'existe pour le sourcer : `source` comble ce trou.
@@ -254,7 +285,7 @@ Ce que `oracle-exigences` **E10** juge alors, candidate par candidate, chacune *
 | État | Verdict |
 |---|---|
 | Candidate portée par au moins une exigence | PASS |
-| Candidate absente + écart déclaré qui tient | PASS, message préfixé « [ÉCARTÉ] » |
+| Candidate absente + écart déclaré qui tient (décision humaine référencée, ou `sans_objet` mesuré) | PASS, message préfixé « [ÉCARTÉ] » |
 | Candidate absente + aucun écart, ou écart qui ne tient pas | **FAIL**, la candidate nommée |
 
 Il n'y a **pas de quatrième état**. Contrairement à `oracle-surface` S4, qui n'exige la surface
