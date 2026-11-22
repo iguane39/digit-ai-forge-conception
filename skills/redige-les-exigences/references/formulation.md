@@ -69,6 +69,30 @@ personnes les valident différemment, donc ils ne se testent pas.
 Le motif est toujours le même : **remplacer l'adjectif par ce qu'on mesurerait pour le
 contredire**. Si rien ne permettrait de le contredire, l'exigence n'en est pas une.
 
+## Un réglage se juge sur son effet, pas sur son enregistrement — E12
+
+Un réglage (paramètre, configuration, préférence, template) n'existe que par ce qu'il **change**.
+Un critère qui dit seulement qu'il est enregistré, affiché, journalisé ou « créé à partir de »
+mesure l'écriture, pas le réglage : un produit qui ne l'applique jamais le tient. Mesuré le
+22/11/2026 chez un produit dont `oracle-exigences` rendait 951/951 (chiffre du retour, non recompté) :
+E-041 (« enregistré et affiché »), E-042 (« journalisé ») et E-008 (« créé à partir du template »)
+étaient tenus alors que la configuration d'IA n'était jamais transmise au fournisseur (TF-2770).
+
+| Avant (mesure l'enregistrement) | Après (mesure l'effet) |
+|---|---|
+| Le modèle d'IA choisi est enregistré et affiché | Le modèle d'IA choisi est enregistré, et la requête envoyée au fournisseur porte l'identifiant de ce modèle |
+| Le réglage de température modifié est journalisé | Le réglage de température modifié est journalisé, et la réponse suivante est produite avec cette température |
+| L'agent est créé à partir du template | Les réglages de l'agent créé sont identiques à ceux du template choisi |
+
+`oracle-exigences` **E12** avertit (SANS_OBJET, jamais un FAIL) quand une exigence qui nomme un réglage a
+un critère à prédicat d'enregistrement (« enregistré », « journalisé », « stocké », « mémorisé »,
+« créé à partir de »…) et aucun effet nommé (« transmis », « appliqué », « pris en compte », « la requête »,
+« la réponse », « identique », « le comportement »…). Le remède : nommer ce que le réglage change,
+observable hors du réglage lui-même. **`non_juge`** : E12 lit des mots. Un effet cité n'est pas un effet
+tenu (« transmis » passe même si rien n'est transmis) : c'est à forge-tests d'observer l'effet. Le
+pendant côté socle est la candidate « effet observable de tout élément interactif »
+(`references/schema-referentiel.md`).
+
 ## Le piège du critère chiffré arbitraire
 
 Remplacer « rapide » par « 2 s » ne suffit pas si le 2 sort de nulle part. Deux issues, aucune
@@ -217,3 +241,4 @@ forge, pas un service nouveau.
 | « Améliorer les performances de 30 % » | Par rapport à quoi ? Base de comparaison absente | E3, et T4 sur la source du 30 % |
 | « La conversion et la consolidation sont asynchrones » | Rien sur la fin observable, l'échec, le délai, la reprise | EA4 |
 | « L'accès se fait par SSO via Entra ID / OIDC » | Rien sur la durée applicative, le renouvellement, l'expiration, le contexte | EA5 |
+| « Le modèle d'IA choisi est enregistré et affiché » | Mesure l'enregistrement du réglage, pas son effet : le code qui ne le transmet jamais tient le critère | E12 (avertissement) |

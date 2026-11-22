@@ -3437,6 +3437,85 @@ for (const o of ORACLES) {
   }
 }
 
+// --- branche TF-2770 : E12, un critere de reglage porte sur son EFFET (avertissement non bloquant) ----
+// Retour Produit-12 du 22/11/2026 (RS-41) : E-041 (« enregistre et affiche »), E-042 (« journalise »)
+// et E-008 (« cree a partir du template ») etaient tenus par un code dont la configuration d'IA n'etait
+// jamais transmise au fournisseur, et oracle-exigences rendait 951 sur 951. Regle NEUVE opposable a tous
+// les produits : AVERTISSEMENT (SANS_OBJET, exit inchange), jamais FAIL. Le referentiel de depart est
+// la fixture verte ; chaque cas lui ajoute UNE exigence de reglage (hors surface, pour ne rien changer
+// a E9) et ne juge que E12. Les trois criteres reels du retour sont les trois rouges ; le remede est
+// joue dans les deux sens (un effet nomme, puis « identique au template »), et les deux limites
+// declarees sont prouvees : sans reglage nomme la regle se tait, et un effet CITE n'est pas un effet
+// TENU (la regle est lexicale, le non_juge le dit).
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'e12-'))
+  try {
+    const base = JSON.parse(readFileSync(join(VERTE, 'EXIGENCES.json'), 'utf8'))
+    const reglage = (id, enonce, critere) => ({
+      id, besoin: base.exigences[0].besoin, enonce, critere, palier: 'MVP',
+      statut_epistemique: { nature: 'hypothèse', validation: 'fixture TF-2770' },
+      surface: [], hors_surface: 'réglage transverse du produit',
+      cotation: { impact: 3, confiance: 3, effort: 2 }
+    })
+    const juger = (nom, exigence) => {
+      const ref = JSON.parse(JSON.stringify(base))
+      if (exigence !== undefined) ref.exigences.push(exigence)
+      const chemin = join(tmp, `${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref), 'utf8')
+      const r = lancer('oracle-exigences.mjs', [chemin])
+      const constats = r.rapport?.constats ?? []
+      return {
+        code: r.code,
+        c: constats.filter(x => x.regle === 'E12'),
+        autres: constats.filter(x => x.statut === 'FAIL' && x.regle !== 'E10')
+      }
+    }
+    const temoin = lancer('oracle-exigences.mjs', [join(VERTE, 'EXIGENCES.json')])
+    const verte = juger('verte')
+    const ENONCE_IA = "L'administrateur choisit le modèle d'IA dans la configuration de l'agent."
+    const e041 = juger('e041', reglage('E-041', ENONCE_IA, "Le modèle choisi est enregistré et affiché dans la fiche de l'agent."))
+    const e042 = juger('e042', reglage('E-042', 'Le changement de réglage de température est tracé.', 'Le réglage de température modifié est journalisé.'))
+    const e008 = juger('e008', reglage('E-090', "L'administrateur crée un agent depuis un template.", "L'agent est créé à partir du template choisi."))
+    const remede1 = juger('remede-effet', reglage('E-041', ENONCE_IA,
+      "Le modèle choisi est enregistré, et la requête envoyée au fournisseur porte l'identifiant de ce modèle."))
+    const remede2 = juger('remede-template', reglage('E-090', "L'administrateur crée un agent depuis un template.",
+      "Les réglages de l'agent créé sont identiques à ceux du template choisi."))
+    const sansReglage = juger('sans-reglage', reglage('E-045', "Le salarié enregistre une demande d'absence.", 'La demande est enregistrée avec un identifiant propre.'))
+    const effetCite = juger('effet-cite', reglage('E-041', ENONCE_IA, 'Le modèle choisi est enregistré et transmis au fournisseur.'))
+    const lire = (chemin) => readFileSync(join(ICI, '..', ...chemin.split('/')), 'utf8')
+    const formulation = lire('skills/redige-les-exigences/references/formulation.md')
+    const skill = lire('skills/redige-les-exigences/SKILL.md')
+    const avert = (r, id) => r.c.some(x => x.statut === 'SANS_OBJET' && x.ou.includes(id))
+    const cas = [
+      ['1. vert : la fixture verte ne declenche aucun avertissement E12 (et son exit reste celui de la recette)',
+        verte.c.length === 1 && verte.c[0].statut === 'PASS' && verte.code === temoin.code],
+      ['2. rouge E-041 « enregistre et affiche » -> avertissement SANS_OBJET qui nomme E-041, exit inchange',
+        avert(e041, 'E-041') && e041.c.length === 1 && e041.code === temoin.code && e041.autres.length === 0],
+      ['3. rouge E-042 « journalise » -> avertissement SANS_OBJET qui nomme E-042, exit inchange',
+        avert(e042, 'E-042') && e042.code === temoin.code && e042.autres.length === 0],
+      ['4. rouge « cree a partir du template » (E-008 du retour, E-090 ici : E-008 existe deja dans la verte) -> avertissement SANS_OBJET qui nomme E-090, exit inchange',
+        avert(e008, 'E-090') && e008.code === temoin.code && e008.autres.length === 0],
+      ['5. remede joue : le critere nomme son effet (la requete envoyee porte le modele) -> E12 PASS',
+        remede1.c.length === 1 && remede1.c[0].statut === 'PASS' && remede1.code === temoin.code],
+      ['6. remede joue : « identiques a ceux du template » -> E12 PASS',
+        remede2.c.length === 1 && remede2.c[0].statut === 'PASS' && remede2.code === temoin.code],
+      ['7. limite declaree : sans reglage nomme la regle se tait (« enregistree » seul reste admis)',
+        sansReglage.c.length === 1 && sansReglage.c[0].statut === 'PASS'],
+      ['8. limite declaree : un effet CITE (« transmis ») passe, E12 est lexicale -- c\'est dit en non_juge',
+        effetCite.c.length === 1 && effetCite.c[0].statut === 'PASS'],
+      ['9. formulation.md et SKILL.md decrivent E12 (le skill ne reste pas en retard sur son oracle)',
+        formulation.includes('E12') && skill.includes('E12')]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-exigences.mjs (branche TF-2770, E12 : critere de reglage sans effet nomme, fixtures ephemeres, 3 rouges reels + 2 remedes + 2 limites)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) echecs++
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
 // --- branche TF-1564 : CM2 (processus) et C5 (invariants du metier, avertissement non bloquant) ----
 // Retour Produit-12 du 01/10/2026 (RC-6) : aucun artefact de conception ne portait le modele du
 // metier. CM2 n'est pas jouee par la rouge generale (sa section « Processus » manque, CM1 la dit) :

@@ -8,7 +8,7 @@ import {
   defautDEcart, defautDuDecideur, defautDeSansObjet
 } from './_contrat.mjs'
 
-const VERSION = '1.6.0'
+const VERSION = '1.7.0'
 
 // --- Checklist versionnée ---------------------------------------------------
 
@@ -526,6 +526,60 @@ for (const [colonne, lignes] of [
     : constat('E11', PASS, colonne, 'aucune tête d\'énoncé répétée au-delà du seuil'))
 }
 
+// --- E12 : un critère de réglage porte sur l'EFFET du réglage, pas sur son enregistrement ----
+
+// TF-2770 (retour Produit-12 du 22/11/2026, RS-41). E-041 (« enregistré et affiché »), E-042
+// (« journalisé ») et E-008 (« créé à partir du template ») étaient tenus par un code dont la
+// configuration d'IA n'était jamais transmise au fournisseur, et l'oracle rendait 951/951 (chiffre du retour, non recompté) :
+// le critère mesurait que le réglage est ÉCRIT, il aurait dû mesurer ce que le réglage CHANGE.
+// Un critère de réglage qui ne dit que « enregistré », « journalisé », « stocké » ou « créé à partir
+// de » sans nommer aucun effet est tenu par un produit dont le réglage ne sert à rien.
+//
+// Contrôle lexical, pas sémantique, et volontairement étroit : il ne lit que les exigences dont
+// l'énoncé ou le critère nomme un réglage (RE_REGLAGE), ne retient qu'un prédicat d'ENREGISTREMENT
+// (RE_ENREGISTREMENT : « affiché » seul n'en est pas un, l'affichage d'une valeur est déjà un effet
+// sur l'écran), et se tait dès que le critère nomme un effet (RE_EFFET : transmis, appliqué, pris en
+// compte, la requête, la réponse, le comportement, identique…). AVERTISSEMENT non bloquant
+// (SANS_OBJET, exit inchangé), jamais FAIL : même idiome que E11 et C5, règle neuve opposable à tous
+// les produits, et la liste d'effets ci-dessous n'est pas exhaustive — un effet cité n'est pas un
+// effet tenu, et un effet nommé autrement que par ces mots déclenche l'avertissement à tort.
+const RE_REGLAGE = lexique(['réglage', 'paramètre', 'paramétrage', 'paramétré', 'paramétrée',
+  'configuration', 'configuré', 'configurée', 'configure', 'configurer', 'préférence', 'template',
+  'option'])
+const RE_ENREGISTREMENT = lexique(['enregistré', 'enregistrée', 'journalisé', 'journalisée',
+  'stocké', 'stockée', 'sauvegardé', 'sauvegardée', 'mémorisé', 'mémorisée', 'consigné',
+  'consignée', 'créé à partir', 'créée à partir'])
+const RE_EFFET = lexique(['transmis', 'transmise', 'transmet', 'transmettent', 'envoyé à',
+  'envoyée à', 'envoyé au', 'envoyée au', 'appliqué', 'appliquée', 'applique', 'appliquent',
+  'pris en compte', 'prise en compte', 'respecté', 'respectée', 'utilisé par', 'utilisée par',
+  'utilisé pour', 'utilisée pour', 'effet', 'comportement', 'modifie', 'modifient', 'change',
+  'changent', 'la requête', 'la réponse', "l'appel", 'hérite', 'hérité', 'héritée', 'reprend',
+  'reprennent', 'identique', 'les mêmes', 'le même'])
+{
+  let reglages = 0
+  let avertis = 0
+  for (const [i, e] of exigences.entries()) {
+    const ou = e?.id ? `exigences[${i}] (${e.id})` : `exigences[${i}]`
+    const enonce = typeof e?.enonce === 'string' ? e.enonce : ''
+    const critere = typeof e?.critere === 'string' ? e.critere : ''
+    if (!RE_REGLAGE.test(`${enonce} ${critere}`)) continue
+    reglages++
+    const enregistre = critere.match(RE_ENREGISTREMENT)
+    if (!enregistre || RE_EFFET.test(critere)) continue
+    avertis++
+    constats.push(constat('E12', SANS_OBJET, ou,
+      `avertissement non bloquant : le critère d'un réglage mesure son enregistrement (« ${enregistre[0].toLowerCase()} ») ` +
+      'et ne nomme aucun effet — un produit qui n\'applique jamais le réglage le tient. Nommer ce que ' +
+      'le réglage change, observable hors du réglage lui-même (la requête envoyée au fournisseur porte ' +
+      'la valeur choisie, la sortie diffère, le comportement change)'))
+  }
+  if (avertis === 0) {
+    constats.push(constat('E12', PASS, 'exigences[]', reglages === 0
+      ? 'aucune exigence ne nomme un réglage'
+      : `${reglages} exigence(s) de réglage jugée(s), aucun critère limité à l'enregistrement`))
+  }
+}
+
 emettre({
   oracle: 'oracle-exigences',
   version: VERSION,
@@ -558,6 +612,10 @@ emettre({
     'La REFORMULATION qui convient à E11 : il compte les têtes de trois mots répétées, il ne juge ' +
       'ni que le sujet est superflu (une exigence EARS peut légitimement ouvrir par le même sujet) ' +
       'ni que l\'infinitif choisi est le bon. Avertissement, jamais un FAIL.',
+    'L\'EFFET réel d\'un réglage (TF-2770). E12 lit un lexique fermé sur le critère : il avertit qu\'un ' +
+      'critère de réglage ne dit qu\'« enregistré » sans nommer d\'effet, il ne juge ni que l\'effet ' +
+      'nommé est le bon, ni que le produit livré l\'applique — un critère qui cite « transmis » ' +
+      'passe E12 même si le code ne transmet rien. Cela relève de forge-tests, qui doit observer l\'effet.',
     'Le RESPECT effectif d\'une candidate retenue par le produit livré : E10 juge que le ' +
       'référentiel la porte, jamais que le code la tient. Cela relève de forge-tests et de la ' +
       'MEP, jamais d\'un référentiel d\'exigences.'

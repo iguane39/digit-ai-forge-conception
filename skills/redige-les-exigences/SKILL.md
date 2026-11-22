@@ -1,7 +1,7 @@
 ---
 name: redige-les-exigences
 description: Rédige le référentiel d'exigences d'un produit — chaque exigence atomique, identifiée de façon stable, assortie d'un critère d'acceptation binaire ou chiffré, d'un palier MVP/V1/V2, d'un statut fait constaté ou hypothèse, et d'un lien vers l'élément de surface couvert — puis le fait juger par quatre oracles exécutés. Produit EXIGENCES.md et EXIGENCES.json, la source unique dont toutes les vues aval sont dérivées. Use when / déclencher dès qu'il faut transformer un besoin, un cadrage ou une surface fonctionnelle en spécification opposable, écrire des exigences testables, poser des critères d'acceptation, arbitrer un périmètre MVP, ou produire le PRD d'un produit à construire. Ne pas déclencher pour qualifier l'entrant (→ qualifie-l-entrant), énumérer la surface (→ enumere-la-surface), dériver les vues aval (→ derive-les-vues), ni pour produire epics, stories ou architecture d'implémentation (→ étape C de la SaaS Forge, moteur BMAD).
-version: 1.10.0
+version: 1.11.0
 ---
 
 # Rédige les exigences
@@ -128,6 +128,13 @@ Un énoncé mal écrit se corrige. Un critère non testable rend l'exigence inut
 trois forges aval — et invisible, parce qu'il se lit très bien.
 
 Grammaire, liste fermée des prédicats observables, contre-exemples : `references/formulation.md`.
+
+**Un réglage se critère sur son effet (TF-2770).** « Enregistré et affiché », « journalisé » ou « créé à
+partir du template » mesurent l'écriture d'un réglage, pas ce qu'il change : un produit qui ne
+l'applique jamais tient le critère (un produit dont la configuration d'IA n'était jamais transmise
+passait `oracle-exigences` à 951/951, chiffre du retour, non recompté). Le critère nomme l'effet observable (« la requête envoyée au
+fournisseur porte le modèle choisi »). `oracle-exigences` **E12** avertit, sans bloquer, d'un critère de
+réglage à prédicat d'enregistrement qui ne nomme aucun effet.
 
 ## La boucle
 
