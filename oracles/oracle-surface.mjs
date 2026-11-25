@@ -1,7 +1,8 @@
 // oracle-surface — couverture de la surface énumérée.
 // Usage : node oracle-surface.mjs <EXIGENCES.json> [--seuil 95]
 // CDC §7.3 — règles S1 à S3 ; S4 surface implicite SaaS (TF-0811) ; S5 surface implicite d'un
-// registre, en avertissement (TF-1655) ; S6 clé `parcours` du référentiel (TF-2253). Écho amont du défaut fondateur de Forge Tests :
+// registre, en avertissement (TF-1655) ; S6 clé `parcours` du référentiel (TF-2253) ; S7 fonctions
+// de base de l'outil de référence, retenues ou écartées (TF-2854). Écho amont du défaut fondateur de Forge Tests :
 // tout élément inventorié et non couvert est NOMMÉ, jamais fondu dans un pourcentage.
 //
 // RC-1 (retour premier produit réel) : sous le seuil, un élément non couvert reste bloquant
@@ -11,10 +12,10 @@
 // de l'élément.
 
 import {
-  charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart, defautDuDecideur
+  charger, constat, emettre, erreur, PASS, FAIL, SANS_OBJET, lexique, defautDEcart, defautDuDecideur, MOTIF_MINIMUM
 } from './_contrat.mjs'
 
-const VERSION = '1.7.0'
+const VERSION = '1.8.0'
 const SEUIL_DEFAUT = 95 // CDC question ouverte (d) : 95 % en MVP, 100 % en V1
 
 // S4 — la surface implicite : chaque candidat d'office est RETENU ou ÉCARTÉ explicitement.
@@ -568,6 +569,161 @@ for (const [i, e] of ref.exigences.entries()) {
   }
 }
 
+// S7 — les fonctions de base de l'outil de référence, fonction par fonction (TF-2854).
+//
+// Fait (lot de Produit-82 du 25/11/2026, RT-48) : la décision D-29 (a) visait des personnes qui se
+// passent d'un abonnement aux outils de conversation du marché. La dérivation a produit 14
+// exigences sans la liste des conversations passées, fonction de base de ces outils, et le porteur
+// l'a relevée 12 jours plus tard. Profil de la 404 (TF-0804) : personne ne conçoit ce qu'un outil
+// connu fait déjà, parce que l'entrant le tient pour acquis. L'énumération de la surface part de
+// ce que l'entrant DIT ; elle ne voit jamais ce que l'outil à remplacer offre sans qu'on le dise.
+//
+// Le référentiel porte donc, quand l'entrant nomme un outil de référence ou un usage à remplacer,
+// la clé racine `outils_de_reference` : un tableau `{ nom, source, fonctions }`, chaque fonction de
+// base de l'outil rendue
+//   — `retenue` : `{ fonction, statut, surface: [S-nn…] }`, chaque élément cité existe à la surface
+//     et une exigence au moins le couvre (une retenue sans exigence est un voeu) ;
+//   — `ecartee` : `{ fonction, statut, motif, decide_par, date }`, au même format qu'un écart de
+//     surface implicite : motif d'au moins 20 caractères, décision humaine RÉFÉRENCÉE (TF-2119).
+//
+// Même mécanique que S5 et S6, parce que la règle est neuve et opposable à des référentiels déjà
+// scellés :
+//   clé absente, aucun besoin ne parle de remplacer un outil -> PASS motivé, la clé n'est pas due
+//   clé absente, un besoin ou l'entrant le dit              -> SANS_OBJET (avertissement non
+//                                                              bloquant) qui nomme où
+//   clé présente, juste                                     -> un PASS par fonction
+//   clé présente, fausse                                    -> FAIL qui nomme l'outil ou la fonction
+// La condition d'applicabilité est INFÉRÉE d'un lexique fermé (déclaré en `non_juge`) : l'oracle ne
+// sait pas ce que fait un outil, il vérifie qu'une liste a été écrite et que chaque ligne est
+// tranchée. Un entrant qui parle de « remplacer » autre chose qu'un outil du marché solde
+// l'avertissement par `outils_de_reference: []` accompagné de `outils_de_reference_constat`.
+{
+  const FONCTIONS_MINIMUM = 3 // un inventaire, pas une mention : trois fonctions au moins par outil
+  const MARQUEURS_REMPLACEMENT = ['remplac(?:er|e|ement|ant)', 'se pass(?:er|e|ent) (?:de|du|des|d[\'’])',
+    'abonnements? (?:à|au|aux)', 'sans abonnement', 'alternatives? (?:à|au|aux)',
+    'équivalents? (?:de|du|des|d[\'’])', 'à la place (?:de|du|des|d[\'’])', 'outils? de référence',
+    'outils? du marché', 'outils? existants?', 'solutions? du marché']
+  const RE_REMPLACEMENT = lexique(MARQUEURS_REMPLACEMENT)
+  const texte = (v) => (typeof v === 'string' ? v.trim() : '')
+  const cleDe = (t) => texte(t).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ').trim()
+
+  const brut = ref.outils_de_reference
+  const tous = surface ?? []
+  const connus = new Set(tous.map(s => s?.id))
+  const couvertPar = new Map() // élément de surface -> identifiants des exigences qui le couvrent
+  for (const e of ref.exigences) {
+    for (const s of Array.isArray(e?.surface) ? e.surface : []) {
+      couvertPar.set(s, [...(couvertPar.get(s) ?? []), e?.id ?? '(sans id)'])
+    }
+  }
+
+  if (brut === undefined) {
+    const lieux = []
+    const cherche = (ou, t) => { const m = RE_REMPLACEMENT.exec(texte(t)); if (m) lieux.push(`${ou} (« ${m[0]} »)`) }
+    for (const [i, b] of (Array.isArray(ref.besoins) ? ref.besoins : []).entries()) {
+      cherche(`besoins[${i}]${b?.id ? ` (${b.id})` : ''}`, b?.enonce)
+      cherche(`besoins[${i}].source`, b?.source)
+    }
+    cherche('entrant.libelle', ref.entrant?.libelle)
+    constats.push(lieux.length === 0
+      ? constat('S7', PASS, 'besoins[]',
+        'aucun besoin ni l\'entrant ne nomme un outil de référence ni un usage à remplacer : la clé ' +
+        '`outils_de_reference` (fonctions de base de l\'outil) n\'est pas due — typologie-surface.md, ' +
+        '« Les fonctions de base d\'un outil de référence »')
+      : constat('S7', SANS_OBJET, lieux.join(' ; '),
+        'avertissement non bloquant — l\'entrant semble nommer un outil de référence ou un usage à ' +
+        'remplacer, et le référentiel n\'a pas la clé racine `outils_de_reference`. À écrire : ' +
+        '{ nom, source, fonctions: [{ fonction, statut: "retenue", surface: [S-nn] } ou { fonction, ' +
+        'statut: "ecartee", motif, decide_par, date }] } — chaque fonction de base de l\'outil retenue ' +
+        '(un élément de surface couvert par une exigence) ou écartée par une décision humaine ' +
+        'référencée. Si l\'entrant ne nomme aucun outil du marché : `outils_de_reference: []` et ' +
+        '`outils_de_reference_constat` (ce qui a été relu)'))
+  } else if (!Array.isArray(brut)) {
+    constats.push(constat('S7', FAIL, 'outils_de_reference',
+      'champ présent mais non tableau — attendu [{ nom, source, fonctions }]'))
+  } else if (brut.length === 0) {
+    const constatLu = texte(ref.outils_de_reference_constat)
+    constats.push(constatLu.length >= MOTIF_MINIMUM
+      ? constat('S7', PASS, 'outils_de_reference',
+        `aucun outil de référence déclaré, constat écrit : ${constatLu}`)
+      : constat('S7', FAIL, 'outils_de_reference',
+        'tableau vide sans `outils_de_reference_constat` d\'au moins ' + MOTIF_MINIMUM + ' caractères : ' +
+        'un tableau vide qui ne dit pas ce qui a été relu est un oubli indiscernable de la décision'))
+  } else {
+    for (const [i, o] of brut.entries()) {
+      const ouOutil = `outils_de_reference[${i}]`
+      if (!o || typeof o !== 'object' || Array.isArray(o)) {
+        constats.push(constat('S7', FAIL, ouOutil, 'entrée non objet — attendu { nom, source, fonctions }'))
+        continue
+      }
+      const nom = texte(o.nom)
+      const defautsOutil = []
+      if (nom === '') defautsOutil.push('`nom` absent ou vide')
+      if (texte(o.source) === '') defautsOutil.push('`source` absente ou vide (où l\'entrant nomme l\'outil)')
+      if (!Array.isArray(o.fonctions)) defautsOutil.push('`fonctions` absent ou non tableau')
+      else if (o.fonctions.length < FONCTIONS_MINIMUM) {
+        defautsOutil.push(`inventaire de ${o.fonctions.length} fonction(s), minimum ${FONCTIONS_MINIMUM} : ` +
+          'une mention n\'est pas un inventaire des fonctions de base')
+      }
+      if (defautsOutil.length > 0) {
+        constats.push(constat('S7', FAIL, ouOutil, `« ${nom || '(sans nom)'} » : ${defautsOutil.join(' ; ')}`))
+      }
+      if (!Array.isArray(o.fonctions)) continue
+
+      const vues = new Map() // clé normalisée de la fonction -> { indice, libelle }
+      for (const [j, f] of o.fonctions.entries()) {
+        const ou = `${ouOutil}.fonctions[${j}]`
+        const libelle = texte(f?.fonction)
+        if (libelle === '') {
+          constats.push(constat('S7', FAIL, ou, 'entrée sans `fonction` : attendu le nom de la fonction de base de l\'outil'))
+          continue
+        }
+        const cle = cleDe(libelle)
+        if (vues.has(cle)) {
+          const premiere = vues.get(cle)
+          constats.push(constat('S7', FAIL, ou,
+            `« ${premiere.libelle} » est écrite deux fois (fonctions[${premiere.indice}] et fonctions[${j}]) : ` +
+            'une fonction se tranche une fois, retenue ou écartée'))
+          continue
+        }
+        vues.set(cle, { indice: j, libelle })
+        const statut = cleDe(f.statut)
+        if (statut === 'retenue') {
+          const liens = Array.isArray(f.surface) ? f.surface.map(texte).filter(Boolean) : []
+          const inconnus = liens.filter(s => !connus.has(s))
+          const sansExigence = liens.filter(s => connus.has(s) && !couvertPar.has(s))
+          if (liens.length === 0) {
+            constats.push(constat('S7', FAIL, ou,
+              `« ${libelle} » retenue sans \`surface\` : une fonction retenue cite l'élément de surface qui la porte`))
+          } else if (inconnus.length > 0) {
+            constats.push(constat('S7', FAIL, ou,
+              `« ${libelle} » retenue, éléments de surface inconnus : ${inconnus.join(', ')}`))
+          } else if (sansExigence.length > 0) {
+            constats.push(constat('S7', FAIL, ou,
+              `« ${libelle} » retenue, mais aucune exigence ne couvre ${sansExigence.join(', ')} : ` +
+              'retenir une fonction, c\'est la couvrir par une exigence'))
+          } else {
+            constats.push(constat('S7', PASS, ou,
+              `« ${libelle} » retenue — ${liens.map(s => `${s} (${couvertPar.get(s).join(', ')})`).join(', ')}`))
+          }
+        } else if (statut === 'ecartee') {
+          const defaut = defautDEcart({ element: libelle, motif: f.motif, decide_par: f.decide_par, date: f.date }, [libelle]) ||
+            defautDuDecideur(f.decide_par, 'l\'écart d\'une fonction de l\'outil de référence')
+          constats.push(defaut === ''
+            ? constat('S7', PASS, ou,
+              `[ÉCARTÉE] « ${libelle} » — ${texte(f.motif)} (décidé par ${texte(f.decide_par)}, le ${texte(f.date)})`)
+            : constat('S7', FAIL, ou, `« ${libelle} » écartée, et son écart ne tient pas : ${defaut}`))
+        } else {
+          constats.push(constat('S7', FAIL, ou,
+            `« ${libelle} » : \`statut\` ${texte(f.statut) === '' ? 'absent' : `« ${texte(f.statut)} » inconnu`} — ` +
+            'attendu `retenue` ou `ecartee`, jamais une fonction laissée sans réponse'))
+        }
+      }
+    }
+  }
+}
+
 emettre({
   oracle: 'oracle-surface',
   version: VERSION,
@@ -633,6 +789,19 @@ emettre({
       'annuaire, cartographie, parc) : un registre nommé autrement reste invisible pour S5, et ' +
       'un objet qui emploie ces mots sans être un registre réveille le bloc pour rien — ce ' +
       'second cas se solde par trois écarts déclarés. S5 avertit sans bloquer : règle neuve, ' +
-      'opposable à des référentiels déjà scellés.'
+      'opposable à des référentiels déjà scellés.',
+    'La COMPLÉTUDE de l\'inventaire des fonctions de base d\'un outil de référence (S7, TF-2854) : ' +
+      'l\'oracle ignore ce que fait l\'outil nommé, il juge qu\'une liste d\'au moins trois ' +
+      'fonctions a été écrite et que chacune est tranchée. Qu\'elle soit exhaustive relève de ' +
+      'l\'observation datée de l\'outil (ENTRANT.md section 7) et du commanditaire. Le plancher de ' +
+      'trois fonctions est un seuil de forme, pas une mesure de complétude.',
+    'Le fait que l\'entrant NOMME un outil de référence ou un usage à remplacer (S7), inféré d\'un ' +
+      'lexique fermé sur les besoins et le libellé de l\'entrant (remplacer, se passer de, ' +
+      'alternative à, équivalent de, outil du marché…) : un entrant qui le dit autrement reste ' +
+      'invisible, et un besoin qui emploie ces mots pour autre chose réveille l\'avertissement pour ' +
+      'rien, soldé par `outils_de_reference: []` et son constat. L\'EXISTENCE de la décision humaine ' +
+      'qu\'une fonction écartée référence, et la vérité d\'un constat de tableau vide, ne sont pas ' +
+      'jugées : seule la forme l\'est. Une fonction retenue l\'est par sa couverture en exigence, ' +
+      'jamais par sa présence effective dans le produit livré (forge-tests et la MEP).'
   ]
 })

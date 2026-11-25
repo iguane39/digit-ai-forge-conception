@@ -1,8 +1,8 @@
 {
   "matrice_attendue": "forge-conception",
-  "version": "1.4.0",
-  "date": "2026-10-14",
-  "etablie_par": "TF-1335, APRES la correction de l'enonce E-007 dans fixtures/verte/EXIGENCES.json (terme ambigu EA2 retire) ; fixture cascade-verte ajoutee par TF-1680 (2026-10-14), quatre cellules neuves toutes PASS, aucune cellule existante changee ; fixture vue-cascade-verte ajoutee par TF-1686 (2026-10-14), quatre cellules neuves toutes PASS, aucune cellule existante changee",
+  "version": "1.5.0",
+  "date": "2026-11-25",
+  "etablie_par": "TF-1335, APRES la correction de l'enonce E-007 dans fixtures/verte/EXIGENCES.json (terme ambigu EA2 retire) ; fixture cascade-verte ajoutee par TF-1680 (2026-10-14), quatre cellules neuves toutes PASS, aucune cellule existante changee ; fixture vue-cascade-verte ajoutee par TF-1686 (2026-10-14), quatre cellules neuves toutes PASS, aucune cellule existante changee ; fixtures outil-reference-verte et outil-reference-rouge ajoutees par TF-2854 (2026-11-25), huit cellules neuves (la seule FAIL est oracle-surface sur la rouge, S7), aucune cellule existante changee",
   "pourquoi": "Le self-test associait un couple (fixture verte, fixture rouge) a un oracle et ne disait rien des autres verdicts qu'une fixture rend. Chaque regle neuve posee sur un oracle PARTAGE pouvait donc faire basculer une fixture voisine en silence. Cette donnee est la reference : `node oracles/self-test.mjs` recalcule la matrice complete et compare cellule a cellule ; un verdict qui differe est un echec de recette nommant la fixture et l'oracle.",
   "comment_mettre_a_jour": "Mettre a jour cette donnee est un GESTE EXPLICITE, dans le commit qui change la regle — jamais un effet de bord. `node oracles/matrice.mjs` imprime la matrice courante et le bloc `cellules` pret a coller ; ajouter la ligne correspondante dans `bascules` avec sa date et sa cause, et avancer `version` et `date` ci-dessus.",
   "legende": {
@@ -131,6 +131,18 @@
     "exigences-socle-verte": {
       "oracle-exigences": "PASS",
       "oracle-tracabilite": "PASS",
+      "oracle-surface": "PASS",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "outil-reference-rouge": {
+      "oracle-exigences": "PASS",
+      "oracle-surface": "FAIL",
+      "oracle-claims": "PASS",
+      "oracle-ears": "PASS"
+    },
+    "outil-reference-verte": {
+      "oracle-exigences": "PASS",
       "oracle-surface": "PASS",
       "oracle-claims": "PASS",
       "oracle-ears": "PASS"

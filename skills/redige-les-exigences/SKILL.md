@@ -1,7 +1,7 @@
 ---
 name: redige-les-exigences
 description: Rédige le référentiel d'exigences d'un produit — chaque exigence atomique, identifiée de façon stable, assortie d'un critère d'acceptation binaire ou chiffré, d'un palier MVP/V1/V2, d'un statut fait constaté ou hypothèse, et d'un lien vers l'élément de surface couvert — puis le fait juger par quatre oracles exécutés. Produit EXIGENCES.md et EXIGENCES.json, la source unique dont toutes les vues aval sont dérivées. Use when / déclencher dès qu'il faut transformer un besoin, un cadrage ou une surface fonctionnelle en spécification opposable, écrire des exigences testables, poser des critères d'acceptation, arbitrer un périmètre MVP, ou produire le PRD d'un produit à construire. Ne pas déclencher pour qualifier l'entrant (→ qualifie-l-entrant), énumérer la surface (→ enumere-la-surface), dériver les vues aval (→ derive-les-vues), ni pour produire epics, stories ou architecture d'implémentation (→ étape C de la SaaS Forge, moteur BMAD).
-version: 1.11.0
+version: 1.12.0
 ---
 
 # Rédige les exigences
@@ -50,6 +50,9 @@ d'identifiant jamais réaffecté.
                    dans la clé racine `parcours`, et les rôles de la surface dans la clé racine
                    `roles` : c'est ce que forge-tests lit pour exiger un e2e par parcours × rôle
                    (references/schema-referentiel.md, oracle-surface S6)
+   Outil remplacé → si l'entrant nomme un outil de référence ou un usage à remplacer : chaque
+                   fonction de base de l'outil est retenue (exigence) ou écartée, dans la clé
+                   racine `outils_de_reference` (references/schema-referentiel.md, oracle-surface S7)
 5. Contrôle      → node oracles/oracle-exigences.mjs EXIGENCES.json
                    node oracles/oracle-tracabilite.mjs EXIGENCES.json
                    node oracles/oracle-surface.mjs EXIGENCES.json
@@ -93,6 +96,18 @@ n'existe pas dans le produit (aucun compte, aucune donnée de démonstration) n'
 la session ne pose aucune question, elle ajoute à l'entrée `sans_objet: { commande, constat }`, la
 mesure rejouable qui prouve l'absence et ce qu'elle a rendu (`references/schema-referentiel.md`).
 Sans cette clé, `decide_par` reste une décision humaine référencée.
+
+**Un outil que le produit remplace se décline en fonctions (TF-2854).** Quand l'entrant nomme un
+outil de référence ou un usage à remplacer, chaque fonction de base de cet outil est une ligne de
+la clé racine `outils_de_reference`, **retenue** (une exigence la couvre, l'élément de surface cité)
+ou **écartée** (motif d'au moins 20 caractères, décision humaine référencée, date), avant de clore
+le référentiel. Le 25/11/2026, la décision D-29 (a) visait des personnes qui se passent d'un
+abonnement aux outils de conversation du marché ; 14 exigences ont été dérivées sans la liste des
+conversations passées, et le porteur l'a relevée 12 jours plus tard. L'inventaire se fait à
+l'énumération (`enumere-la-surface`) ; ici on écrit l'exigence de chaque fonction retenue.
+`oracle-surface` **S7** juge la clé : absente alors que les besoins parlent de remplacer un outil,
+il avertit sans bloquer ; présente et fausse, il échoue en nommant la fonction. Schéma :
+`references/schema-referentiel.md`.
 
 **Un parcours se déclare pour chaque rôle (TF-2253).** Forge-tests exige un test de bout en bout
 par case « parcours × rôle », et il la lit dans le référentiel : clé racine `parcours` (une entrée

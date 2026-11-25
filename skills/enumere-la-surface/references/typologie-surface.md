@@ -286,6 +286,54 @@ Un objet qui emploie l'un de ces mots sans être un registre (« ligne d'issue d
 journal interne, par exemple) réveille le bloc pour rien. Ce cas se solde par trois écarts
 écrits, en une raison chacun, comme un produit mono-tenant écarte le lien public partageable.
 
+## Les fonctions de base d'un outil de référence (TF-2854)
+
+Retour du 25/11/2026 sur un produit réel (RT-48) : la décision D-29 (a), amendée par le porteur le
+13/11/2026, visait des personnes qui se passent d'un abonnement aux outils de conversation du
+marché. La dérivation a produit 14 exigences, et aucune ne portait la liste des conversations
+passées, fonction de base de ces outils ; une autre en effaçait même le fil à la fermeture de
+l'onglet. Le porteur l'a relevé 12 jours plus tard. Cette surface-là n'est ni dans l'entrant, qui la
+tient pour acquise, ni dans la surface implicite SaaS, qui ne connaît pas l'outil nommé : elle se
+tire de l'outil lui-même.
+
+**Quand.** Dès que l'entrant (CDC, décision, citation du porteur) nomme un outil de référence ou un
+usage qu'un outil connu rend déjà : « remplacer », « se passer de », « alternative à », « équivalent
+de », « outil du marché », « abonnement à ». Un produit qui n'en nomme aucun écrit
+`outils_de_reference: []` et dit ce qu'il a relu (`outils_de_reference_constat`).
+
+**Comment.**
+
+1. Nommer l'outil, ou la famille d'outils, et dire où l'entrant le nomme (`source`).
+2. Inventorier ses fonctions de base **par observation datée** de l'outil (`ENTRANT.md`, section 7,
+   « Observation d'un produit tiers »), jamais de mémoire. Trois au moins. Seule la **liste des
+   conversations passées** est un fait sourcé (le retour ci-dessus) ; nouvelle conversation, envoi
+   d'un message, reprise d'une conversation passée, renommer ou supprimer, recherche dans
+   l'historique, copie d'une réponse sont des pistes à vérifier sur l'outil, pas un constat.
+   L'inventaire de l'outil réel remplace cette liste.
+3. Rendre CHAQUE fonction **retenue** (un élément de surface, puis une exigence qui le couvre) ou
+   **écartée** (motif d'au moins 20 caractères, décision humaine référencée, date), avant de clore
+   la surface. Une fonction ni l'une ni l'autre est un oubli que rien ne distingue d'un choix.
+
+**Où elle s'écrit.** Dans la clé racine `outils_de_reference` du référentiel, un tableau
+`{ nom, source, fonctions }` ; chaque fonction est `{ fonction, statut: "retenue", surface: ["S-03"] }`
+ou `{ fonction, statut: "ecartee", motif, decide_par, date }`. Les fonctions retenues vivent aussi au
+tableau de `SURFACE.md` (section 2), les écartées en section 3. Schéma complet :
+`redige-les-exigences/references/schema-referentiel.md`.
+
+| État d'une fonction | Verdict de `oracle-surface` **S7** |
+|---|---|
+| Retenue, éléments de surface connus, chacun couvert par une exigence | PASS |
+| Écartée, motif d'au moins 20 caractères, décision humaine référencée, date | PASS, message préfixé « [ÉCARTÉE] » |
+| Sans statut, retenue sans `surface` ou vers un élément inconnu ou sans exigence, écartée sans motif ou sans décision humaine, écrite deux fois | **FAIL**, la fonction nommée |
+| Outil à moins de trois fonctions | **FAIL**, l'outil nommé |
+| Clé absente et un besoin dit « remplacer » un outil | Avertissement non bloquant (SANS_OBJET) qui nomme le besoin |
+| Clé absente et aucun besoin n'en parle | PASS motivé, la clé n'est pas due |
+
+Le contrôle est neuf et opposable à des référentiels déjà scellés : une clé absente avertit sans
+bloquer, une clé présente et fausse échoue. Ce que S7 ne juge pas : que l'inventaire soit complet
+(l'oracle ignore ce que fait l'outil ; le plancher de trois fonctions est un seuil de forme) et que
+l'entrant nomme bien un outil (inféré d'un lexique fermé).
+
 ## Identifiants
 
 `S-01`, `S-02`… Numérotation continue, jamais réaffectée.

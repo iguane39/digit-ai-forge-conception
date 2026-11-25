@@ -15,6 +15,8 @@ trois vues aval en sont dérivées. Une modification se fait dans le JSON, jamai
 | `ecarts_exigences_socle` | tableau | **Facultatif.** Les exigences socle candidates délibérément écartées — `oracle-exigences` E10 |
 | `parcours` | tableau | **Dû dès qu'un parcours est énuméré.** Une entrée `{ id, nom, roles }` par élément de surface de type `parcours` — `oracle-surface` S6 (TF-2253) |
 | `roles` | tableau de chaînes | **Dû avec `parcours`, dès que la surface énumère des rôles.** Les libellés des éléments de surface de type `role` — `oracle-surface` S6 (TF-2253) |
+| `outils_de_reference` | tableau | **Dû dès que l'entrant nomme un outil de référence ou un usage à remplacer.** Une entrée `{ nom, source, fonctions }` par outil ; chaque fonction de base est retenue ou écartée — `oracle-surface` S7 (TF-2854) |
+| `outils_de_reference_constat` | chaîne | **Avec `outils_de_reference: []` seulement.** Ce qui a été relu pour conclure qu'aucun outil du marché n'est nommé, 20 caractères au moins — S7 |
 | `besoins` | tableau | `id`, `enonce`, `source` (facultatif) |
 | `surface` | tableau | `id`, `type`, `libelle` — repris de `SURFACE.md` |
 | `exigences` | tableau | Les 8 champs ci-dessous |
@@ -181,6 +183,48 @@ formalisme est réservé aux exigences. Mais un `besoin.enonce` peut porter un c
 le délai de 30 % ») sans qu'aucun champ n'existe pour le sourcer : `source` comble ce trou.
 `oracle-claims` A1 l'accepte comme preuve suffisante, non vide, au même titre que la mention
 « à vérifier » dans l'énoncé. Un besoin sans chiffre n'a pas besoin de `source`.
+
+## Les fonctions de base d'un outil de référence (TF-2854)
+
+Quand l'entrant nomme un outil de référence ou un usage qu'un outil connu rend déjà (« remplacer »,
+« se passer de », « alternative à », « outil du marché »), le référentiel porte l'inventaire des
+fonctions de base de cet outil, chacune retenue ou écartée. Fait du 25/11/2026 (RT-48) : 14 exigences
+dérivées d'une décision qui visait les outils de conversation du marché, sans la liste des
+conversations passées.
+
+```json
+"outils_de_reference": [
+  {
+    "nom": "Outils de conversation par IA du marché",
+    "source": "besoin B-01, décision D-29 (a)",
+    "fonctions": [
+      { "fonction": "Liste des conversations passées", "statut": "retenue", "surface": ["S-03"] },
+      {
+        "fonction": "Partage d'une conversation par lien public",
+        "statut": "ecartee",
+        "motif": "produit interne : une conversation n'a pas de lecteur hors de l'organisation",
+        "decide_par": "le commanditaire du produit (décision D-5)",
+        "date": "2026-11-25"
+      }
+    ]
+  }
+]
+```
+
+| Champ | Contrainte vérifiée par `oracle-surface` S7 |
+|---|---|
+| `nom`, `source` | non vides : l'outil, et où l'entrant le nomme |
+| `fonctions` | tableau d'au moins **3** entrées par outil : un inventaire, pas une mention |
+| `fonction` | le nom de la fonction, écrit une seule fois par outil |
+| `statut` | `retenue` ou `ecartee`, jamais absent |
+| `surface` (retenue) | éléments de surface connus, **chacun couvert par au moins une exigence** |
+| `motif`, `decide_par`, `date` (écartée) | les contraintes de tout écart : motif d'au moins 20 caractères, décision humaine référencée (D-N, entrée de ledger, citation datée ; jamais une session, un agent ou un build), date AAAA-MM-JJ |
+
+Un entrant qui parle de « remplacer » autre chose qu'un outil du marché solde l'avertissement par
+`"outils_de_reference": []` accompagné de `"outils_de_reference_constat"`, une phrase d'au moins 20
+caractères qui dit ce qui a été relu. Un référentiel scellé avant TF-2854 n'est pas migré : la clé
+absente avertit sans bloquer (SANS_OBJET). La **complétude** de l'inventaire et la présence effective
+de la fonction dans le produit livré ne sont pas jugées (déclarées en `non_juge`).
 
 ## Forme d'un besoin (TF-1625)
 

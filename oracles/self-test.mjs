@@ -185,6 +185,15 @@ const ORACLES = [
     args: (dossier) => [join(dossier === VERTE ? SURFIMP_VERTE : SURFIMP_ROUGE, 'EXIGENCES.json')]
   },
   {
+    // TF-2854 : S7 SEULE, sur ses fixtures dediees. La rouge est le MEME referentiel que la
+    // verte, dont la seule fonction « Liste des conversations passees » est ecartee sans motif
+    // suffisant ni decision humaine : S1 a S6 y restent verts, et le seul FAIL possible est celui
+    // d'une fonction de l'outil de reference ni retenue ni ecartee pour de bon.
+    fichier: 'oracle-surface.mjs',
+    regles: ['S7'],
+    args: (dossier) => [join(ICI, 'fixtures', dossier === VERTE ? 'outil-reference-verte' : 'outil-reference-rouge', 'EXIGENCES.json')]
+  },
+  {
     fichier: 'oracle-claims.mjs',
     regles: ['A1'],
     args: (dossier) => [join(dossier, 'EXIGENCES.json')]
@@ -1404,6 +1413,167 @@ for (const o of ORACLES) {
       console.log(`         exits obtenus : 1=${complet.code} 2=${absente.code} 3=${manquant.code} ` +
         `4=${sansRoles.code} 5=${roleInconnu.code} 6=${orphelin.code} 7=${nonTableau.code} ` +
         `8=${sansRole.code} 9=${sansParcours.code}`)
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true })
+  }
+}
+
+// --- branche TF-2854 : S7, les fonctions de base de l'outil de reference ----------------------
+// Fait (lot Produit-82 du 25/11/2026, RT-48) : la decision D-29 (a) visait des personnes qui se
+// passent d'un abonnement aux outils de conversation du marche. La derivation a produit 14
+// exigences sans la liste des conversations passees, fonction de base de ces outils ; le porteur
+// l'a relevee 12 jours plus tard. Aucune etape n'inventoriait l'outil nomme par l'entrant. S7
+// juge la cle racine `outils_de_reference` : chaque fonction de base est RETENUE (un element de
+// surface couvert par une exigence) ou ECARTEE (motif, decision humaine referencee, date). Regle
+// NEUVE opposable a des referentiels deja scelles : cle absente alors que les besoins parlent de
+// remplacer un outil -> avertissement (SANS_OBJET, exit inchange) ; cle presente et fausse -> FAIL
+// qui nomme la fonction. Etats joues :
+//   1. inventaire complet (4 retenues, 1 ecartee valide)   -> 5 PASS, exit 0
+//   2. cle absente, un besoin dit « remplacer … du marche » -> 1 avertissement qui nomme B-01, exit 0
+//   3. cle absente, aucun outil nomme                       -> 1 PASS motive, exit 0
+//   4. fonction sans statut valide                          -> FAIL qui la nomme, exit 1
+//   5. retenue sans lien de surface                         -> FAIL, exit 1
+//   6. retenue vers un element de surface inconnu           -> FAIL qui nomme l'element, exit 1
+//   7. retenue vers un element qu'aucune exigence ne couvre -> FAIL qui nomme l'element, exit 1
+//   8. ecartee, motif trop court                            -> FAIL, exit 1
+//   9. ecartee, decidee par « la session de build »         -> FAIL, exit 1
+//  10. outil a deux fonctions seulement                     -> FAIL (un inventaire, pas une mention), exit 1
+//  11. cle non tableau                                      -> FAIL, exit 1
+//  12. tableau vide sans constat                            -> FAIL ; avec `outils_de_reference_constat` -> PASS motive
+//  13. une fonction ecrite deux fois                        -> FAIL qui la nomme, exit 1
+//  14. remedes joues : la cle ecrite (2), le statut pose (4), la decision referencee (9) -> exit 0
+{
+  const tmp = mkdtempSync(join(tmpdir(), 'forge-conception-tf2854-'))
+  try {
+    const BESOIN_REMPLACE = 'Une personne doit pouvoir remplacer son abonnement à un outil de conversation du marché par l\'assistant interne.'
+    const BESOIN_NEUTRE = 'Une personne doit pouvoir converser avec l\'assistant interne.'
+    const SURFACE = [
+      { id: 'S-01', type: 'objet', libelle: 'Conversation avec l\'assistant' },
+      { id: 'S-02', type: 'point-entree', libelle: 'Zone de saisie du message' },
+      { id: 'S-03', type: 'point-entree', libelle: 'Liste des conversations passées' },
+      { id: 'S-04', type: 'regle', libelle: 'Une conversation reste lisible après sa fermeture' }
+    ]
+    // S-05 : l'element que nulle exigence ne couvre, ajoute a la surface du seul cas 7 (il fait
+    // chuter le ratio de S2 : ce cas attend de toute facon exit 1, les autres l'excluent de leur surface).
+    const S05 = { id: 'S-05', type: 'regle', libelle: 'Élément que nulle exigence ne couvre' }
+    const referentiel = (besoin, outils, extra = {}, surface = SURFACE) => {
+      const ref = {
+        projet: 'Fixture TF-2854 (fonctions de base de l\'outil de référence)',
+        besoins: [{ id: 'B-01', enonce: besoin }],
+        surface,
+        exigences: SURFACE.map((s, i) => ({
+          id: `E-${String(i + 1).padStart(3, '0')}`,
+          besoin: 'B-01',
+          enonce: `Le produit sert ${s.libelle}.`,
+          critere: 'La ressource est affichée.',
+          palier: 'MVP',
+          statut_epistemique: { nature: 'fait constaté', source: 'fixture TF-2854' },
+          surface: [s.id],
+          cotation: { impact: 3, confiance: 3, effort: 2 }
+        })),
+        ...extra
+      }
+      if (outils !== undefined) ref.outils_de_reference = outils
+      return ref
+    }
+    const retenue = (fonction, ...surface) => ({ fonction, statut: 'retenue', surface })
+    const ecartee = (fonction, plus = {}) => ({
+      fonction, statut: 'ecartee',
+      motif: 'produit interne : une conversation n\'a pas de lecteur hors de l\'organisation',
+      decide_par: DECIDEUR_REF, date: '2026-11-25', ...plus
+    })
+    const BASE = [
+      retenue('Nouvelle conversation', 'S-01'),
+      retenue('Envoi d\'un message et lecture de la réponse', 'S-02'),
+      retenue('Liste des conversations passées', 'S-03', 'S-04'),
+      retenue('Reprise d\'une conversation passée', 'S-03'),
+      ecartee('Partage d\'une conversation par lien public')
+    ]
+    const outil = (fonctions) => [{ nom: 'Outils de conversation par IA du marché', source: 'besoin B-01, décision D-29 (a)', fonctions }]
+    const avec = (i, remplacement) => BASE.map((f, j) => (j === i ? remplacement : f))
+    const jouer = (nom, ref) => {
+      const chemin = join(tmp, `EXIGENCES-${nom}.json`)
+      writeFileSync(chemin, JSON.stringify(ref, null, 2) + NL)
+      const r = lancer('oracle-surface.mjs', [chemin])
+      const s7 = (r.rapport?.constats ?? []).filter(x => x.regle === 'S7')
+      return {
+        code: r.code,
+        s7,
+        avert: s7.filter(x => x.statut === 'SANS_OBJET'),
+        fails: s7.filter(x => x.statut === 'FAIL'),
+        dit: (x, ...fragments) => fragments.every(f => `${x.ou} ${x.message}`.includes(f))
+      }
+    }
+
+    const complet = jouer('1-complet', referentiel(BESOIN_REMPLACE, outil(BASE)))
+    const absente = jouer('2-cle-absente', referentiel(BESOIN_REMPLACE))
+    const neutre = jouer('3-sans-outil', referentiel(BESOIN_NEUTRE))
+    const sansStatut = jouer('4-sans-statut', referentiel(BESOIN_REMPLACE, outil(avec(2, { fonction: 'Liste des conversations passées' }))))
+    const sansLien = jouer('5-retenue-sans-lien', referentiel(BESOIN_REMPLACE, outil(avec(2, { fonction: 'Liste des conversations passées', statut: 'retenue' }))))
+    const inconnu = jouer('6-element-inconnu', referentiel(BESOIN_REMPLACE, outil(avec(2, retenue('Liste des conversations passées', 'S-99')))))
+    const nonCouvert = jouer('7-sans-exigence', referentiel(BESOIN_REMPLACE, outil(avec(2, retenue('Liste des conversations passées', 'S-05'))), {}, [...SURFACE, S05]))
+    const motifCourt = jouer('8-motif-court', referentiel(BESOIN_REMPLACE, outil(avec(4, ecartee('Partage d\'une conversation par lien public', { motif: 'inutile' })))))
+    const parLaSession = jouer('9-session', referentiel(BESOIN_REMPLACE, outil(avec(4, ecartee('Partage d\'une conversation par lien public', { decide_par: 'la session de build' })))))
+    const deuxFonctions = jouer('10-deux-fonctions', referentiel(BESOIN_REMPLACE, outil(BASE.slice(0, 2))))
+    const nonTableau = jouer('11-non-tableau', referentiel(BESOIN_REMPLACE, { 'Outils du marché': BASE }))
+    const videSansConstat = jouer('12a-vide-sans-constat', referentiel(BESOIN_REMPLACE, []))
+    const videAvecConstat = jouer('12b-vide-avec-constat', referentiel(BESOIN_REMPLACE, [], {
+      outils_de_reference_constat: 'ENTRANT.md section 3 relue le 2026-11-25 : « remplacer » vise un tableur interne, aucun outil du marché n\'est nommé'
+    }))
+    const doublon = jouer('13-doublon', referentiel(BESOIN_REMPLACE, outil([...BASE, ecartee('liste des conversations passées')])))
+    // Les remedes sont appliques AUX referentiels en defaut, tels que le message les prescrit.
+    const remedeCle = jouer('14a-remede-cle-ecrite', referentiel(BESOIN_REMPLACE, outil(BASE)))
+    const remedeStatut = jouer('14b-remede-statut-pose', referentiel(BESOIN_REMPLACE, outil(avec(2, retenue('Liste des conversations passées', 'S-03')))))
+    const remedeDecision = jouer('14c-remede-decision-referencee', referentiel(BESOIN_REMPLACE, outil(avec(4, ecartee('Partage d\'une conversation par lien public', { decide_par: 'le commanditaire du produit (décision D-5)' })))))
+
+    const cas = [
+      ['1. inventaire complet -> 5 PASS (un par fonction), exit 0',
+        complet.code === 0 && complet.s7.length === 5 && complet.s7.every(x => x.statut === 'PASS')],
+      ['2. cle absente, un besoin dit « remplacer » un outil du marche -> 1 avertissement qui nomme B-01, exit 0 (non bloquant)',
+        absente.code === 0 && absente.s7.length === 1 && absente.avert.length === 1 &&
+        absente.dit(absente.avert[0], 'B-01', 'outils_de_reference')],
+      ['3. cle absente, aucun outil nomme -> 1 PASS motive, exit 0',
+        neutre.code === 0 && neutre.s7.length === 1 && neutre.s7[0].statut === 'PASS' &&
+        neutre.s7[0].message.includes("n'est pas due")],
+      ['4. fonction sans statut valide -> FAIL qui la nomme, exit 1',
+        sansStatut.code === 1 && sansStatut.fails.length === 1 && sansStatut.dit(sansStatut.fails[0], 'Liste des conversations passées', 'statut')],
+      ['5. retenue sans lien de surface -> FAIL qui la nomme, exit 1',
+        sansLien.code === 1 && sansLien.fails.length === 1 && sansLien.dit(sansLien.fails[0], 'Liste des conversations passées', 'surface')],
+      ['6. retenue vers un element de surface inconnu -> FAIL qui nomme l\'element, exit 1',
+        inconnu.code === 1 && inconnu.fails.length === 1 && inconnu.dit(inconnu.fails[0], 'S-99')],
+      ['7. retenue vers un element qu\'aucune exigence ne couvre -> FAIL qui nomme l\'element, exit 1',
+        nonCouvert.code === 1 && nonCouvert.fails.length === 1 && nonCouvert.dit(nonCouvert.fails[0], 'S-05', 'exigence')],
+      ['8. ecartee avec un motif trop court -> FAIL, exit 1',
+        motifCourt.code === 1 && motifCourt.fails.length === 1 && motifCourt.dit(motifCourt.fails[0], 'Partage', 'motif')],
+      ['9. ecartee, decidee par « la session de build » -> FAIL, exit 1',
+        parLaSession.code === 1 && parLaSession.fails.length === 1 && parLaSession.dit(parLaSession.fails[0], 'Partage', 'decide_par')],
+      ['10. outil a deux fonctions -> FAIL (un inventaire, pas une mention), exit 1',
+        deuxFonctions.code === 1 && deuxFonctions.fails.length === 1 && deuxFonctions.dit(deuxFonctions.fails[0], 'Outils de conversation par IA du marché', '2 fonction')],
+      ['11. cle non tableau -> FAIL, exit 1',
+        nonTableau.code === 1 && nonTableau.fails.length === 1 && nonTableau.dit(nonTableau.fails[0], 'tableau')],
+      ['12a. tableau vide sans constat -> FAIL, exit 1',
+        videSansConstat.code === 1 && videSansConstat.fails.length === 1 && videSansConstat.dit(videSansConstat.fails[0], 'outils_de_reference_constat')],
+      ['12b. remede : tableau vide avec son constat -> 1 PASS motive, exit 0',
+        videAvecConstat.code === 0 && videAvecConstat.s7.length === 1 && videAvecConstat.s7[0].statut === 'PASS'],
+      ['13. une fonction ecrite deux fois -> FAIL qui la nomme, exit 1',
+        doublon.code === 1 && doublon.fails.length === 1 && doublon.dit(doublon.fails[0], 'Liste des conversations passées', 'deux fois')],
+      ['14a. remede de 2 joue : la cle ecrite -> plus aucun avertissement, exit 0',
+        remedeCle.code === 0 && remedeCle.avert.length === 0 && remedeCle.s7.every(x => x.statut === 'PASS')],
+      ['14b. remede de 4 joue : le statut pose -> plus aucun FAIL, exit 0',
+        remedeStatut.code === 0 && remedeStatut.fails.length === 0],
+      ['14c. remede de 9 joue : la decision humaine referencee -> plus aucun FAIL, exit 0',
+        remedeDecision.code === 0 && remedeDecision.fails.length === 0]
+    ]
+    const ko = cas.filter(([, ok]) => !ok)
+    console.log('oracle-surface.mjs (branche TF-2854, S7 fonctions de base de l\'outil de reference, fixtures ephemeres, 2 sens + remedes)')
+    for (const [libelle, ok] of cas) console.log(`  [${ok ? 'OK' : 'FAIL'}]   ${libelle}`)
+    console.log(`  ${cas.length} cas comptes : ${cas.length - ko.length} tenus, ${ko.length} en echec`)
+    if (ko.length > 0) {
+      echecs++
+      console.log(`         exits obtenus : 1=${complet.code} 2=${absente.code} 3=${neutre.code} 4=${sansStatut.code} ` +
+        `5=${sansLien.code} 6=${inconnu.code} 7=${nonCouvert.code} 8=${motifCourt.code} 9=${parLaSession.code} ` +
+        `10=${deuxFonctions.code} 11=${nonTableau.code} 12a=${videSansConstat.code} 12b=${videAvecConstat.code} 13=${doublon.code}`)
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true })

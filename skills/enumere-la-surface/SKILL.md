@@ -1,7 +1,7 @@
 ---
 name: enumere-la-surface
 description: Énumère mécaniquement la surface fonctionnelle d'un produit à concevoir — objets métier, rôles, parcours, points d'entrée, règles de gestion — depuis l'entrant qualifié, et produit un SURFACE.md où chaque élément porte un identifiant stable. Inverse le sens de la génération : on énumère d'abord ce qui existe, on rédige ensuite, pour que tout élément non couvert par une exigence soit un manque nommé et non une absence silencieuse. Use when / déclencher dès qu'il faut inventorier ce qu'un produit doit couvrir avant d'écrire des exigences, lister les objets métier, rôles ou parcours d'un CDC ou d'un dépôt existant, ou vérifier qu'une spécification n'oublie pas une partie du périmètre. Ne pas déclencher pour qualifier l'entrant lui-même (→ qualifie-l-entrant), pour rédiger les exigences (→ redige-les-exigences), ni pour énumérer la surface d'un produit déjà construit à des fins de test (→ Forge Tests, qui l'énumère depuis le code exécutable).
-version: 1.5.1
+version: 1.6.0
 ---
 
 # Énumère la surface
@@ -41,6 +41,11 @@ d'identifiants stables qui survivront jusqu'au champ `risque` de Forge Tests.
                    `ecarts_surface_implicite` du référentiel — oracle-surface S4 le juge) ;
                    si un objet est un registre, inventaire ou catalogue : « Surface implicite
                    d'un registre », trois candidats de plus (S5, avertissement)
+3 bis. Outil de référence → si l'entrant nomme un outil à remplacer ou un usage qu'un outil connu
+                   rend déjà : inventaire des fonctions de base de CET outil, chacune retenue
+                   (un élément de surface, puis une exigence) ou écartée avec son motif et sa
+                   décision humaine, dans la clé racine `outils_de_reference` (oracle-surface S7) ;
+                   à faire AVANT de clore la surface
 4. Identifiants  → S-01, S-02… stables, jamais réaffectés
 5. Artefact      → SURFACE.md + le tableau `surface[]` du référentiel
 6. Contrôle      → node oracles/oracle-surface.mjs EXIGENCES.json
@@ -101,6 +106,22 @@ endroit de la forge où l'oubli et la décision cessent de se ressembler. **Un �
 décision humaine référencée (TF-2119)** : `decide_par` nomme l'humain et sa décision (identifiant
 `D-N`, entrée de ledger, ou citation humaine datée) ; « la session de build », un agent ou un
 build, ou un nom d'humain sans référence, font échouer S4.
+
+**L'outil que le produit remplace a ses fonctions de base (TF-2854).** Une règle qui énumère « ce
+qui est dit » ne voit pas ce que l'outil à remplacer fait sans qu'on le dise. Le 25/11/2026, la
+décision D-29 (a) visait des personnes qui se passent d'un abonnement aux outils de conversation
+du marché ; la dérivation a produit 14 exigences sans la liste des conversations passées, fonction
+de base de ces outils, et le porteur l'a relevée 12 jours plus tard. Quand l'entrant nomme un outil
+de référence ou un usage à remplacer (« remplacer », « se passer de », « alternative à », « outil du
+marché »), l'énumération inventorie les fonctions de base de cet outil, tirées de son observation
+datée (`ENTRANT.md` section 7) et jamais de la mémoire, et rend chacune **retenue** (un élément de
+surface, couvert par une exigence) ou **écartée** (motif d'au moins 20 caractères, décision humaine
+référencée, date), avant de clore la surface. L'inventaire s'écrit dans la clé racine
+`outils_de_reference` ; `oracle-surface` **S7** le juge : clé absente alors que les besoins parlent
+de remplacer un outil, avertissement non bloquant ; clé présente et fausse (fonction sans statut,
+retenue sans exigence, écart sans décision, inventaire de moins de trois fonctions), FAIL qui nomme
+la fonction. Liste et gabarit : `references/typologie-surface.md`, « Les fonctions de base d'un outil
+de référence ».
 
 **Un registre a sa propre surface implicite (TF-1655).** Un produit qui tient un registre se
 décrit fiche par fiche, et les usages qui traversent les fiches ne sont écrits par personne. Le

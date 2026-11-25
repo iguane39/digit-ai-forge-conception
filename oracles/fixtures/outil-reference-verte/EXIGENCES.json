@@ -1,0 +1,153 @@
+{
+  "projet": "Assistant de conversation interne (fixture TF-2854, sens vert)",
+  "date_generation": "2026-11-25",
+  "entrant": {
+    "type": "cdc",
+    "libelle": "fixture synthétique — l'entrant nomme les outils de conversation du marché à remplacer",
+    "seuil_suffisance": "atteint : fixture"
+  },
+  "identifiants_retires": [],
+  "ecarts_exigences_socle": [
+    {
+      "element": "donnees-demonstration",
+      "motif": "l'assistant n'embarque aucun jeu de démonstration : la recette se fait sur des conversations créées par les testeurs",
+      "decide_par": "le commanditaire du produit (décision D-1)",
+      "date": "2026-11-25"
+    },
+    {
+      "element": "donnees-volatiles",
+      "motif": "aucun catalogue ni tarif figé dans le code : les modèles proposés se lisent dans la configuration du fournisseur",
+      "decide_par": "le commanditaire du produit (décision D-2)",
+      "date": "2026-11-25"
+    },
+    {
+      "element": "effet-observable",
+      "motif": "chaque exigence de ce référentiel porte déjà son critère observable ; aucune règle transverse supplémentaire n'est retenue",
+      "decide_par": "le commanditaire du produit (décision D-3)",
+      "date": "2026-11-25"
+    },
+    {
+      "element": "identite-unique",
+      "motif": "produit interne sans compte propre : l'accès se règle dans l'annuaire de l'entreprise, qui tient une seule porte humaine",
+      "decide_par": "le commanditaire du produit (décision D-4)",
+      "date": "2026-11-25"
+    }
+  ],
+  "besoins": [
+    {
+      "id": "B-01",
+      "enonce": "Une personne doit pouvoir remplacer son abonnement à un outil de conversation du marché par l'assistant interne."
+    }
+  ],
+  "surface": [
+    {
+      "id": "S-01",
+      "type": "objet",
+      "libelle": "Conversation avec l'assistant"
+    },
+    {
+      "id": "S-02",
+      "type": "point-entree",
+      "libelle": "Zone de saisie du message"
+    },
+    {
+      "id": "S-03",
+      "type": "point-entree",
+      "libelle": "Liste des conversations passées"
+    },
+    {
+      "id": "S-04",
+      "type": "regle",
+      "libelle": "Une conversation reste lisible après sa fermeture"
+    }
+  ],
+  "outils_de_reference": [
+    {
+      "nom": "Outils de conversation par IA du marché",
+      "source": "besoin B-01, décision D-29 (a)",
+      "fonctions": [
+        {
+          "fonction": "Nouvelle conversation",
+          "statut": "retenue",
+          "surface": ["S-01"]
+        },
+        {
+          "fonction": "Envoi d'un message et lecture de la réponse",
+          "statut": "retenue",
+          "surface": ["S-02"]
+        },
+        {
+          "fonction": "Liste des conversations passées",
+          "statut": "retenue",
+          "surface": ["S-03", "S-04"]
+        },
+        {
+          "fonction": "Reprise d'une conversation passée",
+          "statut": "retenue",
+          "surface": ["S-03"]
+        },
+        {
+          "fonction": "Partage d'une conversation par lien public",
+          "statut": "ecartee",
+          "motif": "produit interne : une conversation n'a pas de lecteur hors de l'organisation, le partage se fait par copie du texte",
+          "decide_par": "le commanditaire du produit (décision D-5)",
+          "date": "2026-11-25"
+        }
+      ]
+    }
+  ],
+  "exigences": [
+    {
+      "id": "E-001",
+      "besoin": "B-01",
+      "enonce": "La personne ouvre une nouvelle conversation avec l'assistant.",
+      "critere": "Une conversation vide est affichée après un clic sur le bouton de nouvelle conversation.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-2854"
+      },
+      "surface": ["S-01"],
+      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+    },
+    {
+      "id": "E-002",
+      "besoin": "B-01",
+      "enonce": "La personne envoie un message à l'assistant depuis la zone de saisie.",
+      "critere": "La réponse de l'assistant est affichée sous le message envoyé.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-2854"
+      },
+      "surface": ["S-02"],
+      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+    },
+    {
+      "id": "E-003",
+      "besoin": "B-01",
+      "enonce": "La personne retrouve ses conversations passées dans une liste.",
+      "critere": "La liste est affichée avec les conversations de la personne, de la plus récente à la plus ancienne.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-2854"
+      },
+      "surface": ["S-03"],
+      "cotation": { "impact": 5, "confiance": 4, "effort": 2 }
+    },
+    {
+      "id": "E-004",
+      "besoin": "B-01",
+      "enonce": "Une conversation fermée reste lisible à la réouverture du produit.",
+      "critere": "Après fermeture puis réouverture du produit, la conversation existe avec ses messages d'origine.",
+      "palier": "MVP",
+      "statut_epistemique": {
+        "nature": "fait constaté",
+        "source": "fixture TF-2854"
+      },
+      "surface": ["S-04"],
+      "cotation": { "impact": 4, "confiance": 4, "effort": 2 }
+    }
+  ]
+}
